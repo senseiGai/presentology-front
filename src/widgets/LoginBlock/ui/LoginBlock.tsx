@@ -71,6 +71,7 @@ export const LoginBlock = () => {
             type="password"
           />
           <button
+            onClick={() => router.push("/password-recovery")}
             type="button"
             className="text-[#BEBEC0] text-[14px] font-[500] mt-[8px] flex justify-end w-full cursor-pointer hover:text-[#A0A0A0] transition-colors"
           >

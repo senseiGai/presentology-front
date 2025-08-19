@@ -9,6 +9,8 @@ type Props = {
   value?: string;
   onChange?: (value: string) => void;
   className?: string;
+  isError?: boolean;
+  onBlur?: () => void;
 };
 
 export const InputField = ({
@@ -18,6 +20,8 @@ export const InputField = ({
   className = "",
   value,
   onChange,
+  isError,
+  onBlur,
 }: Props) => {
   const [show, setShow] = useState(false);
   const isPassword = type === "password";
@@ -27,11 +31,14 @@ export const InputField = ({
       <label className="text-[12px] font-[400] text-[#8F8F92]">{label}</label>
       <div className="relative">
         <input
+          onBlur={onBlur}
           type={isPassword && !show ? "password" : "text"}
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          className="w-full rounded-[8px] outline-none border border-gray-200 px-4 h-[40px] text-[14px] placeholder-[#BEBEC0] focus:outline-none"
+          className={`w-full rounded-[8px] outline-none border ${
+            isError ? "border-[#FF514F]" : "border-gray-200"
+          } px-4 h-[40px] text-[14px] placeholder-[#BEBEC0] focus:outline-none`}
         />
         {isPassword && (
           <button

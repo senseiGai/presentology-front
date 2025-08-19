@@ -5,7 +5,7 @@ type ButtonProps = {
   label: string;
   onClick?: () => void;
   disabled?: boolean;
-  variant?: "login" | "outline" | "ghost" | "primary";
+  variant?: "primary" | "outline" | "ghost" | "primary";
   className?: string;
   type?: "button" | "submit" | "reset";
 };
@@ -14,7 +14,7 @@ export const Button = ({
   label,
   onClick,
   disabled = false,
-  variant = "login",
+  variant = "primary",
   className = "",
   type = "button",
 }: ButtonProps) => {
@@ -22,12 +22,11 @@ export const Button = ({
     "rounded-[8px] h-[52px] w-full flex items-center justify-center transition font-medium text-[18px] cursor-pointer";
 
   const variants: Record<string, string> = {
-    login: disabled
+    primary: disabled
       ? "bg-[#DDD1FF] text-white cursor-not-allowed "
       : "bg-primary text-white hover:opacity-90 active:scale-[0.98] ",
     outline: "border border-gray-300 text-gray-700 bg-white hover:bg-gray-50",
     ghost: "bg-[#F4F4F4] text-[#0B0911] ",
-    primary: "bg-purple-600 text-white hover:bg-purple-700",
   };
 
   return (

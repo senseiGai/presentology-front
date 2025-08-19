@@ -48,7 +48,7 @@ export const NewPasswordBlock = () => {
   }, [success, router]);
 
   return (
-    <section className="pt-[24px] pl-[40px] flex flex-row justify-between">
+    <section className="pt-[24px] pl-[40px] flex flex-row justify-between gap-x-[51px]">
       <div className="flex flex-col w-[356px]">
         <div className="relative w-full">
           <LogoIcon />

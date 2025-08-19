@@ -36,7 +36,7 @@ export const LoginBlock = () => {
   };
 
   return (
-    <section className="pt-[24px] pl-[40px] flex flex-row justify-between 2xl:pb-[24px]">
+    <section className="pt-[24px] pl-[40px] flex flex-row justify-between gap-x-[51px] w-full 2xl:pb-[24px]">
       <div className="flex flex-col">
         <div className="relative w-full">
           <LogoIcon />

@@ -50,7 +50,7 @@ export const RegistrationBlock = () => {
   };
 
   return (
-    <section className="pt-[24px] pl-[40px] flex flex-row justify-between">
+    <section className="pt-[24px] pl-[40px] flex flex-row gap-x-[51px] justify-between">
       <div className="flex flex-col w-[356px]">
         <div className="relative w-full">
           <LogoIcon />

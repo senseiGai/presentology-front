@@ -108,10 +108,13 @@ export const useRegisterStore = create<RegisterState>((set, get) => ({
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     let emailError = null;
-    if (!emailRegex.test(email)) {
-      emailError = "Некорректный формат почты";
-    } else if (TEST_ACCOUNTS.includes(email)) {
-      emailError = "Пользователь с такой почтой уже существует";
+
+    if (email.trim() !== "") {
+      if (!emailRegex.test(email)) {
+        emailError = "Некорректный формат почты";
+      } else if (TEST_ACCOUNTS.includes(email)) {
+        emailError = "Пользователь с такой почтой уже существует";
+      }
     }
 
     set({ emailTouched: true, emailError });

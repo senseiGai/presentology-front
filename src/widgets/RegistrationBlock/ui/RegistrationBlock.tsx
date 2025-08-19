@@ -9,7 +9,10 @@ import Link from "next/link";
 import { passwordRules } from "../lib/passwordRules";
 import { useRegisterStore } from "../model/use-registration-store";
 
+import { useRouter } from "next/navigation";
+
 export const RegistrationBlock = () => {
+  const router = useRouter();
   const {
     email,
     password,
@@ -41,6 +44,9 @@ export const RegistrationBlock = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     validateAndSubmit();
+    if (!isLoading) {
+      router.push("/survey");
+    }
   };
 
   return (
@@ -61,11 +67,11 @@ export const RegistrationBlock = () => {
             isError={!!emailError && emailTouched}
           />
 
-          {!!emailError && (
+          {/* {!!emailError && (
             <p className="text-[#FF514F] text-[12px] font-medium mt-[8px]">
               Пользователь с такой почтой уже существует
             </p>
-          )}
+          )} */}
 
           <InputField
             className="mt-[16px]"

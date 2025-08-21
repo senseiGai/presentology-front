@@ -32,6 +32,12 @@ body {
   font-family: var(--font-onest), sans-serif;
 }
 
+h1 {
+  font-size: 68px;
+  font-weight: 500;
+  @apply tracking-[-2%] text-white;
+}
+
 h2 {
   font-weight: 500;
   font-size: 24px;

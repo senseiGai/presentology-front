@@ -115,7 +115,7 @@ export const LoginBlock = () => {
       </div>
       <div className="ml-auto relative h-[784px]">
         <Image
-          src="/assets/login_mask.webp"
+          src="/assets/login_mask.png"
           alt="Login Illustration"
           className="w-[809px] h-full"
           width={809}

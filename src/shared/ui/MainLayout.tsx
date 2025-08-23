@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import HeadphonesIcon from "../../../public/icons/HeadphonesIcon";
 
 export const MainLayout = ({
   children,
@@ -11,7 +12,7 @@ export const MainLayout = ({
   isBg?: boolean;
 }) => {
   return (
-    <div className="flex items-center justify-center overflow-x-hidden">
+    <div className="relative overflow-x-hidden min-h-screen">
       {/* Фоновая картинка */}
       {isBg && (
         <>
@@ -27,7 +28,14 @@ export const MainLayout = ({
       )}
 
       {/* Контент */}
-      <div className="z-10 max-w-[1280px] mx-auto">{children}</div>
+      <div className="max-w-[1280px] mx-auto">
+        <div className="absolute top-1/2 -translate-y-1/2 z-10">{children}</div>
+        {/* {isBg && (
+          <div className="bg-[#FFFFFF] rounded-full w-[40px] h-[40px] flex items-center justify-center fixed bottom-0 right-0">
+            <HeadphonesIcon />
+          </div>
+        )} */}
+      </div>
     </div>
   );
 };

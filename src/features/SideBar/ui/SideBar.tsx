@@ -41,8 +41,14 @@ export default function Sidebar() {
             <SideBarButton key={key} icon={icon} label={label} />
           ))}
           <div className="bg-[#DDD1FF] w-full h-[1px] mt-[16px] mb-[16px]" />
-          {menuItems.slice(3, 5).map(({ key, label, icon }) => (
-            <SideBarButton key={key} icon={icon} label={label} />
+          {menuItems.slice(3, 5).map(({ key, label, icon, isSocial, href }) => (
+            <SideBarButton
+              isSocial={isSocial}
+              href={href}
+              key={key}
+              icon={icon}
+              label={label}
+            />
           ))}
         </nav>
       </div>

@@ -8,6 +8,18 @@ export const menuItems = [
   { key: "create", label: "Создать презентацию", icon: <BigPlusIcon /> },
   { key: "my", label: "Мои презентации", icon: <PresentationIcon /> },
   { key: "about", label: "О сервисе", icon: <CompasIcon /> },
-  { key: "vk", label: "Мы во ВКонтакте", icon: <WhiteVKIcon /> },
-  { key: "tg", label: "Мы в Телеграме", icon: <WhiteTGIcon /> },
+  {
+    key: "vk",
+    label: "Мы во ВКонтакте",
+    icon: <WhiteVKIcon />,
+    isSocial: true,
+    href: "https://vk.com/your_page",
+  },
+  {
+    key: "tg",
+    label: "Мы в Телеграме",
+    icon: <WhiteTGIcon />,
+    isSocial: true,
+    href: "https://t.me/your_channel",
+  },
 ];

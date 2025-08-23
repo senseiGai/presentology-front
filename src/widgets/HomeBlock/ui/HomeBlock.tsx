@@ -49,9 +49,6 @@ export const HomeBlock = () => {
           </div>
         )}
       </div>
-      <div className="bg-[#FFFFFF] rounded-full w-[40px] h-[40px] flex items-center justify-center absolute bottom-0 right-0">
-        <HeadphonesIcon />
-      </div>
     </section>
   );
 };

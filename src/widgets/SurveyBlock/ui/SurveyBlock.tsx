@@ -7,6 +7,7 @@ import { useSurveyStore } from "../model/use-survey-store";
 import LogoIcon from "../../../../public/icons/Logo";
 import { InputField } from "@/shared/ui/InputField"; // Подключи, если у тебя есть
 import { Button } from "@/shared/ui/Button";
+import { Mascot } from "@/shared/ui";
 
 export const SurveyBlock = () => {
   const {
@@ -25,7 +26,7 @@ export const SurveyBlock = () => {
     return (
       <section className="mt-[24px] flex flex-row gap-x-[51px]">
         <Image
-          src="/assets/survey_mask.webp"
+          src="/assets/survey.png"
           alt="Survey Illustration"
           className="w-[809px] h-[784px]"
           width={809}
@@ -40,7 +41,6 @@ export const SurveyBlock = () => {
               ваш аккаунт
             </p>
           </div>
-
           <Button
             className="absolute bottom-0 mb-[24px] max-w-[356px]"
             variant="primary"
@@ -61,14 +61,12 @@ export const SurveyBlock = () => {
 
   return (
     <section className="mt-[24px] flex flex-row gap-x-[51px] py-[35px]">
-      <Image
-        src="/assets/survey_mask.webp"
-        alt="Survey Illustration"
-        className="w-[809px] h-[784px]"
-        width={809}
-        height={784}
-      />
-
+      <div
+        className="relative w-[809px] h-[784px] bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/assets/survey.png')" }}
+      >
+        <Mascot className="!absolute w-[597px] h-[597px] bottom-[-100px]" />
+      </div>
       <div className="flex flex-col">
         <LogoIcon />
         <h2 className="mt-[56px] max-w-[350px] text-[20px] font-bold">

@@ -86,7 +86,7 @@ export const Mascot: React.FC<MascotProps> = ({
           inset 0 1px 0 rgba(255, 255, 255, 0.5),
           inset 0 -1px 0 rgba(255, 255, 255, 0.1),
           inset 0 0 40px 20px rgba(255, 255, 255, 0.02),
-          0 0 50px 50px rgba(253, 163, 69, 0.5),
+          0 0 100px 50px rgba(253, 163, 69, 0.5),
           0 0 150px 75px rgba(255, 255, 255, 1),
           0 0 200px 100px rgba(253, 163, 69, 0.5)
         `,
@@ -178,6 +178,36 @@ export const Mascot: React.FC<MascotProps> = ({
         style={{
           background:
             "linear-gradient(180deg, rgba(255, 255, 255, 0.8), transparent, rgba(255, 255, 255, 0.3))",
+        }}
+      />
+
+      {/* Светящаяся граница (border) */}
+      <div
+        className="absolute inset-[-3px] rounded-full"
+        style={{
+          background: "transparent",
+          border: "2px solid rgba(255, 255, 255, 0.8)",
+          filter: "blur(1px)",
+        }}
+      />
+
+      {/* Дополнительное внешнее свечение */}
+      <div
+        className="absolute inset-[-8px] rounded-full"
+        style={{
+          background: "transparent",
+          border: "1px solid rgba(255, 255, 255, 0.4)",
+          filter: "blur(3px)",
+        }}
+      />
+
+      {/* Мягкое внешнее свечение */}
+      <div
+        className="absolute inset-[-15px] rounded-full"
+        style={{
+          background: "transparent",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          filter: "blur(6px)",
         }}
       />
     </div>

@@ -25,13 +25,12 @@ export const SurveyBlock = () => {
   if (isCompleted) {
     return (
       <section className="mt-[24px] flex flex-row gap-x-[51px]">
-        <Image
-          src="/assets/survey.png"
-          alt="Survey Illustration"
-          className="w-[809px] h-[784px]"
-          width={809}
-          height={784}
-        />
+        <div
+          className="relative w-[809px] h-[784px] bg-cover bg-center bg-no-repeat overflow-hidden flex justify-center"
+          style={{ backgroundImage: "url('/assets/survey.png')" }}
+        >
+          <Mascot className="!absolute w-[429px] h-[429px] bottom-[-80px] left-1/2 transform -translate-x-1/2" />
+        </div>
         <div className="flex flex-col justify-between h-full">
           <div>
             <LogoIcon />

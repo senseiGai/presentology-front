@@ -16,11 +16,12 @@ export const CreatePresentationCard = ({
   onClick,
 }: CreatePresentationCardProps) => {
   return (
-    <div className="flex relative flex-col w-[229px] h-[288px] bg-white rounded-[24px] pt-[24px] pl-[24px]">
+    <div className="group flex cursor-pointer hover:-translate-y-2 transition-transform duration-300 ease-in-out relative flex-col w-[229px] h-[288px] bg-white rounded-[24px] pt-[24px] pl-[24px]">
       <span className="text-[#0C0C0C] text-[24px] font-medium">{label}</span>
       <p className="mt-[16px] text-[14px] text-[#BEBEC0] font-normal leading-[120%] tracking-[-3%] max-w-[182px]">
         {description}
       </p>
+
       <div className="flex flex-row justify-between mt-auto items-end">
         <Image
           src={image}
@@ -36,6 +37,9 @@ export const CreatePresentationCard = ({
           <ArrowRight />
         </button>
       </div>
+
+      {/* Свечение появляется только на hover */}
+      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-[157px] h-[29px] bg-white blur-[21.4px] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
     </div>
   );
 };

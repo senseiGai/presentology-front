@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import TrashIcon from "../../../../public/icons/TrashIcon";
+import { useConfirmDeleteStore } from "../../ConfirmDeletePopup/model/use-confirm-delete-popup";
 
 interface PresentationCardProps {
   images: string[];
@@ -18,6 +19,7 @@ export const PresentationCard = ({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const { openModal } = useConfirmDeleteStore();
 
   // Минимальное расстояние свайпа для срабатывания
   const minSwipeDistance = 50;
@@ -60,7 +62,16 @@ export const PresentationCard = ({
   };
 
   return (
-    <div className="bg-[#FFFFFF80] w-[306px] h-[205px] rounded-[16px] flex flex-col relative overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer">
+    <div
+      className="bg-[#FFFFFF80] w-[306px] h-[205px] rounded-[16px] flex flex-col relative overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={(e) => {
+        // Проверяем, что клик не был по кнопке удаления
+        if ((e.target as HTMLElement).closest("button")) {
+          return;
+        }
+        console.log("Card clicked:", label);
+      }}
+    >
       {/* Превью изображений */}
       <div className="p-4 flex gap-2">
         {images?.map((image, index) => (
@@ -77,13 +88,25 @@ export const PresentationCard = ({
 
       {/* Информационная панель */}
       <div className="absolute w-full h-[69px] bottom-0 rounded-b-[16px] bg-white pl-4 pt-4 flex flex-col ">
-        <div className="absolute top-3.5 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 pointer-events-auto">
           <button
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
-              console.log("Delete presentation");
+              console.log("Button clicked!"); // Для отладки
+              openModal({
+                title: label,
+                description:
+                  "После удаления восстановить презентацию будет невозможно",
+
+                onConfirm: () => {
+                  console.log("Deleting presentation:", label);
+                  // TODO: Add actual delete logic here
+                },
+              });
             }}
-            className="cursror-pointer"
+            className="cursor-pointer w-[32px] h-[32px] flex items-center justify-center transition-colors duration-200 relative z-10"
+            type="button"
           >
             <TrashIcon />
           </button>

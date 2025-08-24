@@ -34,20 +34,23 @@ export const Mascot: React.FC<MascotProps> = ({
   }, []);
 
   const getEyePosition = (isLeft: boolean) => {
-    const maxMovement = 2; // максимальное смещение глаза в пикселях
+    const maxRadius = 8; // максимальный радиус движения глаза в пикселях
     const distance = Math.sqrt(mousePosition.x ** 2 + mousePosition.y ** 2);
-    const normalizedX =
-      distance > 0
-        ? (mousePosition.x / distance) * Math.min(distance / 100, 1)
-        : 0;
-    const normalizedY =
-      distance > 0
-        ? (mousePosition.y / distance) * Math.min(distance / 100, 1)
-        : 0;
+
+    if (distance === 0) {
+      return { x: 0, y: 0 };
+    }
+
+    // Нормализуем направление
+    const normalizedX = mousePosition.x / distance;
+    const normalizedY = mousePosition.y / distance;
+
+    // Ограничиваем движение кругом с более высокой чувствительностью
+    const moveDistance = Math.min(distance / 20, maxRadius);
 
     return {
-      x: normalizedX * maxMovement,
-      y: normalizedY * maxMovement,
+      x: normalizedX * moveDistance,
+      y: normalizedY * moveDistance,
     };
   };
 
@@ -83,7 +86,7 @@ export const Mascot: React.FC<MascotProps> = ({
           inset 0 1px 0 rgba(255, 255, 255, 0.5),
           inset 0 -1px 0 rgba(255, 255, 255, 0.1),
           inset 0 0 40px 20px rgba(255, 255, 255, 0.02),
-          0 0 100px 50px rgba(253, 163, 69, 0.7),
+          0 0 50px 50px rgba(253, 163, 69, 0.5),
           0 0 150px 75px rgba(255, 255, 255, 1),
           0 0 200px 100px rgba(253, 163, 69, 0.5)
         `,
@@ -119,7 +122,15 @@ export const Mascot: React.FC<MascotProps> = ({
           transform: "scale(0.8) translate(10px, -5px)",
         }}
       />
-
+      <div
+        className="absolute bottom-[0px] right-0 w-full h-full rounded-full "
+        style={{
+          background:
+            "radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.5) 60%, transparent 100%)",
+          filter: "blur(120px)",
+          transform: "scale(0.8) translate(10px, -5px)",
+        }}
+      />
       <div
         className="absolute top-[200px] right-0 w-full h-full rounded-full "
         style={{

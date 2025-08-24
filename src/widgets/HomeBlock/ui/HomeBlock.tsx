@@ -69,6 +69,51 @@ export const HomeBlock = () => {
       date: "Вчера",
       tag: "Улучшенная",
     },
+    {
+      images: [
+        "/assets/presentation/presentation01.png",
+        "/assets/presentation/presentation01.png",
+      ],
+      label: "Название презентации",
+      date: "Вчера",
+      tag: "Сгенерированная",
+    },
+    {
+      images: [
+        "/assets/presentation/presentation01.png",
+        "/assets/presentation/presentation01.png",
+      ],
+      label: "Название презентации",
+      date: "Вчера",
+      tag: "Сгенерированная",
+    },
+    {
+      images: [
+        "/assets/presentation/presentation01.png",
+        "/assets/presentation/presentation01.png",
+      ],
+      label: "Название презентации",
+      date: "Вчера",
+      tag: "Сгенерированная",
+    },
+    {
+      images: [
+        "/assets/presentation/presentation01.png",
+        "/assets/presentation/presentation01.png",
+      ],
+      label: "Название презентации",
+      date: "Вчера",
+      tag: "Сгенерированная",
+    },
+    {
+      images: [
+        "/assets/presentation/presentation01.png",
+        "/assets/presentation/presentation01.png",
+      ],
+      label: "Название презентации",
+      date: "Вчера",
+      tag: "Улучшенная",
+    },
   ];
 
   return (
@@ -86,44 +131,46 @@ export const HomeBlock = () => {
             {activeItem === "Мои презентации" && "ПРЕЗЕНТАЦИИ"}
           </h1>
         </div>
-        {activeItem === "Создать презентацию" && (
-          <div className="flex flex-row gap-x-4 mt-[40px]">
-            {createCards.map((item, index) => {
-              return (
-                <CreatePresentationCard
-                  key={index}
-                  label={item.label}
-                  description={item.description}
-                  image={item.image}
-                  onClick={item.onClick}
-                />
-              );
-            })}
-          </div>
-        )}
-        {activeItem === "Мои презентации" &&
-          (presentationsContent.length === 0 ? (
-            <h2 className="text-white mt-[40px]">
-              Создайте презентацию и она появится здесь
-            </h2>
-          ) : (
-            <div className="grid grid-cols-3 gap-x-[24px] gap-y-[24px] mt-[40px]">
-              {presentationsContent.map((item, index) => (
-                <PresentationCard
-                  key={index}
-                  label={item.label}
-                  images={item.images}
-                  date={item.date}
-                  tag={
-                    item.tag as
-                      | "Сгенерированная"
-                      | "Улучшенная"
-                      | "По брендбуку"
-                  }
-                />
-              ))}
+        <div className="overflow-y-auto max-h-[574px] 2xl:max-h-[674px] pb-[24px] flex-1">
+          {activeItem === "Создать презентацию" && (
+            <div className="flex flex-row gap-x-4 mt-[40px]">
+              {createCards.map((item, index) => {
+                return (
+                  <CreatePresentationCard
+                    key={index}
+                    label={item.label}
+                    description={item.description}
+                    image={item.image}
+                    onClick={item.onClick}
+                  />
+                );
+              })}
             </div>
-          ))}
+          )}
+          {activeItem === "Мои презентации" &&
+            (presentationsContent.length === 0 ? (
+              <h2 className="text-white mt-[40px]">
+                Создайте презентацию и она появится здесь
+              </h2>
+            ) : (
+              <div className="grid grid-cols-3 gap-x-[24px] gap-y-[24px] mt-[40px]">
+                {presentationsContent.map((item, index) => (
+                  <PresentationCard
+                    key={index}
+                    label={item.label}
+                    images={item.images}
+                    date={item.date}
+                    tag={
+                      item.tag as
+                        | "Сгенерированная"
+                        | "Улучшенная"
+                        | "По брендбуку"
+                    }
+                  />
+                ))}
+              </div>
+            ))}
+        </div>
       </div>
       <button className="bg-[#FFFFFF] cursor-pointer rounded-full w-[40px] h-[40px] flex items-center justify-center absolute bottom-0 right-[24px]  z-20">
         <HeadphonesIcon />

@@ -18,7 +18,7 @@ export default function Sidebar() {
     <aside
       className={`${
         isCollapsed ? "w-[80px]" : "w-[250px]"
-      } h-[784px] bg-white rounded-[24px] shadow-lg p-4 flex flex-col justify-between transition-all duration-300`}
+      } h-[684px] 2xl:h-[784px] bg-white rounded-[24px] shadow-lg p-4 flex flex-col justify-between transition-all duration-300`}
     >
       <div>
         <div

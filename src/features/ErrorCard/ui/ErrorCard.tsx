@@ -1,5 +1,4 @@
 import { X } from "lucide-react";
-import { ClipboardCopy, Send } from "lucide-react";
 import WarningIcon from "../../../../public/icons/WarningIcon";
 import CopyIcon from "../../../../public/icons/CopyIcon";
 import MiniTGIcon from "../../../../public/icons/MiniTGIcon";

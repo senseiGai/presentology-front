@@ -16,7 +16,6 @@ export const PasswordRecoveryBlock = () => {
   const {
     email,
     emailError,
-    isLoading,
     success,
     resendCooldown,
     setEmail,

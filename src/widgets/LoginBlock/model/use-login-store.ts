@@ -73,7 +73,7 @@ export const useLoginStore = create<LoginState>((set) => ({
       // Успешный вход
       console.log("Успешный вход:", email);
       set({ isLoading: false });
-    } catch (e) {
+    } catch (error) {
       set({
         isLoading: false,
         unknownError: "Что-то пошло не так. Попробуйте позже",

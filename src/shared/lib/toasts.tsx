@@ -99,7 +99,7 @@ export function showRestoredToast({
               Успешно восстановлена
             </div>
             <div className="text-[#8F8F92] text-[14px] font-medium mt-[2px]">
-              Презентация "{title}"
+              Презентация &quot;{title}&quot;
             </div>
           </div>
           <button

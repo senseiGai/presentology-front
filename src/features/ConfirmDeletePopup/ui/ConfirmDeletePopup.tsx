@@ -78,7 +78,6 @@ export function ConfirmDeleteModal() {
           </button>
           <button
             onClick={async () => {
-              await onConfirm?.(); // удалили
               showDeletedToast({
                 title,
                 onUndo: () => {

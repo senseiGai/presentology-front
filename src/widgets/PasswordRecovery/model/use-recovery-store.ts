@@ -53,7 +53,7 @@ export const usePasswordRecoveryStore = create<PasswordRecoveryState>(
     },
 
     submit: async () => {
-      const { email, timerInterval } = get();
+      const { email } = get();
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
       if (!emailRegex.test(email)) {

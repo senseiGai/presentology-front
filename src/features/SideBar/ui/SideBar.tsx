@@ -10,9 +10,12 @@ import UserIcon from "../../../../public/icons/UserIcon";
 import LogoutIcon from "../../../../public/icons/LogOutIcon";
 import { useSideBarStore } from "../model/use-sidebar-store";
 import { menuItems } from "../lib/menuItems";
+import { useSubscriptionPopupStore } from "../../../entities/SubscriptionPopup/model/use-subscription-popup-store";
+import { SubscriptionPopup } from "../../../entities/SubscriptionPopup/ui/SubscriptionPopup";
 
 export default function Sidebar() {
   const { isCollapsed, toggleCollapsed } = useSideBarStore();
+  const { isOpen, openPopup, closePopup } = useSubscriptionPopupStore();
 
   return (
     <aside
@@ -57,7 +60,10 @@ export default function Sidebar() {
       <div className="space-y-2">
         {!isCollapsed && (
           <>
-            <button className="w-full cursor-pointer bg-gradient-to-r from-[#FDA345] to-[#BBA2FE] text-white text-[14px] font-medium h-[40px] rounded-[8px]">
+            <button
+              onClick={openPopup}
+              className="w-full cursor-pointer bg-gradient-to-r from-[#FDA345] to-[#BBA2FE] text-white text-[14px] font-medium h-[40px] rounded-[8px]"
+            >
               Приобрести подписку
             </button>
             <button className="w-full cursor-pointer bg-[#F4F4F4] text-[#0B0911] text-[14px] font-normal h-[40px] rounded-[8px]">

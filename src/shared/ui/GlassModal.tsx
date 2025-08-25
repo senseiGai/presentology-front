@@ -107,7 +107,6 @@ export const GlassModal: React.FC<GlassModalProps> = ({
         )}
       />
 
-      {/* Контент модалки */}
       <div
         className={clsx(
           "relative z-10 animate-[modalIn_.2s_ease-out]",

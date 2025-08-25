@@ -7,8 +7,7 @@ import { showDeletedToast } from "@/shared/lib/toasts";
 import { GlassModal } from "@/shared/ui/GlassModal";
 
 export function ConfirmDeleteModal() {
-  const { open, title, description, onConfirm, closeModal } =
-    useConfirmDeleteStore();
+  const { open, title, description, closeModal } = useConfirmDeleteStore();
 
   return (
     <GlassModal

@@ -1,4 +1,5 @@
-// shared/ui/InputField.tsx
+"use client";
+
 import { EyeOff, Eye } from "lucide-react";
 import { useState } from "react";
 

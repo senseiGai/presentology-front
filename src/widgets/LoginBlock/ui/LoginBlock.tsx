@@ -7,7 +7,9 @@ import { Button } from "@/shared/ui/Button";
 import Image from "next/image";
 
 import { useLoginStore } from "../model/use-login-store";
+import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import LogoIcon from "../../../../public/icons/Logo";
 import { socials } from "../lib/socials";
@@ -16,6 +18,7 @@ import { ErrorCard } from "@/features/ErrorCard/ui/ErrorCard";
 
 export const LoginBlock = () => {
   const router = useRouter();
+  const { setUser } = useAuthStore();
   const {
     email,
     password,
@@ -31,7 +34,18 @@ export const LoginBlock = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email && password) {
-      await login(email, password);
+      const success = await login(email, password);
+      if (success) {
+        // Получаем данные пользователя из localStorage и обновляем глобальный стор
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          const user = JSON.parse(userData);
+          setUser(user);
+        }
+
+        toast.success("Вы успешно вошли в систему!");
+        router.push("/home");
+      }
     }
   };
 

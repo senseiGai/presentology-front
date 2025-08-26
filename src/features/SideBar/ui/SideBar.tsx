@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import MiniLogoIcon from "../../../../public/icons/MiniLogoIcon";
 import SideBarIcon from "../../../../public/icons/SideBarIcon";
@@ -9,12 +11,29 @@ import { SideBarButton } from "./SideBarButton";
 import UserIcon from "../../../../public/icons/UserIcon";
 import LogoutIcon from "../../../../public/icons/LogOutIcon";
 import { useSideBarStore } from "../model/use-sidebar-store";
+import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { menuItems } from "../lib/menuItems";
 import { useSubscriptionPopupStore } from "../../../entities/SubscriptionPopup/model/use-subscription-popup-store";
 import { SubscriptionPopup } from "../../../entities/SubscriptionPopup/ui/SubscriptionPopup";
 
 export default function Sidebar() {
   const { isCollapsed, toggleCollapsed } = useSideBarStore();
+  const { user, logout } = useAuthStore();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success("Вы успешно вышли из системы");
+      router.push("/login");
+    } catch (error) {
+      toast.error("Произошла ошибка при выходе");
+    }
+  };
+
+  // Получаем первую букву имени для аватара
+  const avatarLetter = user?.firstName?.charAt(0)?.toUpperCase() || "U";
+  const displayEmail = user?.email || "email@provider.com";
   const { isOpen, openPopup, closePopup } = useSubscriptionPopupStore();
 
   return (
@@ -82,22 +101,46 @@ export default function Sidebar() {
             <>
               <div className="flex items-center gap-[12px]">
                 <div className="bg-[#BBA2FE] w-[40px] h-[40px] pt-0.5 cursor-pointer flex items-center justify-center rounded-full">
-                  <UserIcon />
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.firstName || "User"}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white text-[16px] font-semibold">
+                      {avatarLetter}
+                    </span>
+                  )}
                 </div>
                 <span className="truncate max-w-[120px] text-[#BBA2FE] text-[12px] font-normal">
-                  emaaaaaaaail@provider.com
+                  {displayEmail}
                 </span>
               </div>
-              <div className="bg-[#F4F4F4] w-[24px] h-[24px] flex items-center justify-center rounded-[8px] cursor-pointer">
+              <button
+                onClick={handleLogout}
+                className="bg-[#F4F4F4] w-[24px] h-[24px] flex items-center justify-center rounded-[8px] cursor-pointer hover:bg-[#E4E4E4] transition-colors"
+                title="Выйти"
+              >
                 <LogoutIcon />
-              </div>
+              </button>
             </>
           ) : (
             <div
               className="bg-[#BBA2FE] w-[40px] h-[40px] pt-0.5 cursor-pointer flex items-center justify-center rounded-full"
-              title="emaaaaaaaail@provider.com"
+              title={displayEmail}
             >
-              <UserIcon />
+              {user?.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.firstName || "User"}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <span className="text-white text-[16px] font-semibold">
+                  {avatarLetter}
+                </span>
+              )}
             </div>
           )}
         </div>

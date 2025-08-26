@@ -1,0 +1,65 @@
+"use client";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { useState, type ReactNode } from "react";
+
+interface Props {
+  children: ReactNode;
+}
+
+export default function QueryProvider({ children }: Props) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            // Время, в течение которого данные считаются свежими
+            staleTime: 1000 * 60 * 5, // 5 минут
+            // Время кэширования данных
+            gcTime: 1000 * 60 * 30, // 30 минут (раньше было cacheTime)
+            // Повторные попытки при ошибке
+            retry: (failureCount, error: any) => {
+              // Не повторяем для 401, 403, 404
+              if (
+                error?.response?.status === 401 ||
+                error?.response?.status === 403 ||
+                error?.response?.status === 404
+              ) {
+                return false;
+              }
+              // Максимум 3 попытки для остальных ошибок
+              return failureCount < 3;
+            },
+            // Интервал между повторными попытками
+            retryDelay: (attemptIndex) =>
+              Math.min(1000 * 2 ** attemptIndex, 30000),
+          },
+          mutations: {
+            // Повторные попытки для мутаций
+            retry: (failureCount, error: any) => {
+              // Не повторяем для клиентских ошибок (4xx)
+              if (
+                error?.response?.status >= 400 &&
+                error?.response?.status < 500
+              ) {
+                return false;
+              }
+              // Максимум 2 попытки для серверных ошибок
+              return failureCount < 2;
+            },
+          },
+        },
+      })
+  );
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      {/* Показываем DevTools только в development режиме */}
+      {process.env.NODE_ENV === "development" && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
+    </QueryClientProvider>
+  );
+}

@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { AuthApi } from "@/shared/api/auth.api";
+import type { LoginRequest } from "@/shared/api/types";
 
 type LoginState = {
   email: string;
@@ -13,13 +15,8 @@ type LoginState = {
   setEmailError: (error: string | null) => void;
   setPasswordError: (error: string | null) => void;
   setUnknownError: (error: string | null) => void;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   reset: () => void;
-};
-
-const TEST_ACCOUNT = {
-  email: "test@example.com",
-  password: "password123",
 };
 
 export const useLoginStore = create<LoginState>((set) => ({
@@ -37,7 +34,7 @@ export const useLoginStore = create<LoginState>((set) => ({
   setPasswordError: (passwordError) => set({ passwordError }),
   setUnknownError: (unknownError) => set({ unknownError }),
 
-  login: async (email: string, password: string) => {
+  login: async (email: string, password: string): Promise<boolean> => {
     set({
       isLoading: true,
       emailError: null,
@@ -46,38 +43,52 @@ export const useLoginStore = create<LoginState>((set) => ({
     });
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      // Валидация email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         set({ isLoading: false, emailError: "Некорректный email" });
-        return;
+        return false;
       }
 
-      if (email !== TEST_ACCOUNT.email) {
+      // Валидация пароля
+      if (!password || password.length < 6) {
         set({
           isLoading: false,
-          emailError: "Пользователь с таким email не найден",
+          passwordError: "Пароль должен содержать минимум 6 символов",
         });
-        return;
+        return false;
       }
 
-      if (password !== TEST_ACCOUNT.password) {
-        set({
-          isLoading: false,
-          passwordError: "Неверный пароль. Попробуйте еще раз",
-        });
-        return;
-      }
+      const loginData: LoginRequest = { email, password };
+      const response = await AuthApi.login(loginData);
 
-      // Успешный вход
-      console.log("Успешный вход:", email);
+      // Сохраняем токены в localStorage
+      localStorage.setItem("accessToken", response.accessToken);
+      localStorage.setItem("refreshToken", response.refreshToken);
+
+      // Сохраняем информацию о пользователе
+      localStorage.setItem("user", JSON.stringify(response.user));
+
       set({ isLoading: false });
-    } catch (error) {
+      return true;
+    } catch (error: any) {
+      console.error("Login error:", error);
+
+      let errorMessage = "Что-то пошло не так. Попробуйте позже";
+
+      if (error.response?.status === 401) {
+        errorMessage = "Неверный email или пароль";
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.message || "Некорректные данные";
+      } else if (error.response?.status === 429) {
+        errorMessage = "Слишком много попыток. Попробуйте позже";
+      }
+
       set({
         isLoading: false,
-        unknownError: "Что-то пошло не так. Попробуйте позже",
+        unknownError: errorMessage,
       });
+      return false;
     }
   },
 

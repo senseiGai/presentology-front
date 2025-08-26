@@ -8,30 +8,41 @@ import LogoIcon from "../../../../public/icons/Logo";
 import Link from "next/link";
 import { passwordRules } from "../lib/passwordRules";
 import { useRegisterStore } from "../model/use-registration-store";
+import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { toast } from "sonner";
 
 import { useRouter } from "next/navigation";
 
 export const RegistrationBlock = () => {
   const router = useRouter();
+  const { setUser } = useAuthStore();
   const {
     email,
     password,
     confirmPassword,
+    firstName,
+    lastName,
     isLoading,
 
     emailError,
     confirmPasswordError,
+    firstNameError,
+    unknownError,
 
     setConfirmPasswordTouched,
     setEmailTouched,
+    setFirstNameTouched,
 
     emailTouched,
     confirmPasswordTouched,
+    firstNameTouched,
 
     passwordStatus,
     setEmail,
     setPassword,
     setConfirmPassword,
+    setFirstName,
+    setLastName,
 
     validateAndSubmit,
     reset,
@@ -41,10 +52,18 @@ export const RegistrationBlock = () => {
     return () => reset();
   }, [reset]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    validateAndSubmit();
-    if (!isLoading) {
+    const success = await validateAndSubmit();
+    if (success) {
+      // Получаем данные пользователя из localStorage и обновляем глобальный стор
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        const user = JSON.parse(userData);
+        setUser(user);
+      }
+
+      toast.success("Регистрация успешно завершена!");
       router.push("/survey");
     }
   };
@@ -59,6 +78,24 @@ export const RegistrationBlock = () => {
 
         <form className="mt-[40px] w-full" onSubmit={handleSubmit}>
           <InputField
+            label="Имя"
+            placeholder="Введите ваше имя"
+            value={firstName}
+            onChange={setFirstName}
+            onBlur={setFirstNameTouched}
+            isError={!!firstNameError && firstNameTouched}
+          />
+
+          <InputField
+            className="mt-[16px]"
+            label="Фамилия (необязательно)"
+            placeholder="Введите вашу фамилию"
+            value={lastName}
+            onChange={setLastName}
+          />
+
+          <InputField
+            className="mt-[16px]"
             label="Электронная почта"
             placeholder="example@provider.com"
             value={email}
@@ -67,11 +104,11 @@ export const RegistrationBlock = () => {
             isError={!!emailError && emailTouched}
           />
 
-          {/* {!!emailError && (
+          {!!emailError && emailTouched && (
             <p className="text-[#FF514F] text-[12px] font-medium mt-[8px]">
-              Пользователь с такой почтой уже существует
+              {emailError}
             </p>
-          )} */}
+          )}
 
           <InputField
             className="mt-[16px]"
@@ -88,10 +125,22 @@ export const RegistrationBlock = () => {
             placeholder="Повторите пароль"
             value={confirmPassword}
             onChange={setConfirmPassword}
-            onBlur={setConfirmPasswordTouched} // 👈
+            onBlur={setConfirmPasswordTouched}
             type="password"
             isError={!!confirmPasswordError && confirmPasswordTouched}
           />
+
+          {!!confirmPasswordError && confirmPasswordTouched && (
+            <p className="text-[#FF514F] text-[12px] font-medium mt-[8px]">
+              {confirmPasswordError}
+            </p>
+          )}
+
+          {!!unknownError && (
+            <p className="text-[#FF514F] text-[12px] font-medium mt-[8px]">
+              {unknownError}
+            </p>
+          )}
 
           <p className="mt-[24px] text-[12px] text-[#C8C8C8] font-[400]">
             Пароль должен содержать:
@@ -113,10 +162,12 @@ export const RegistrationBlock = () => {
             disabled={
               !!emailError ||
               !!confirmPasswordError ||
+              !!firstNameError ||
               !passwordStatus.every(Boolean) ||
               !email ||
               !password ||
               !confirmPassword ||
+              !firstName ||
               isLoading
             }
             className="mt-[24px]"

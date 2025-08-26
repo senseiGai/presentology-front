@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Onest } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import QueryProvider from "@/shared/providers/QueryProvider";
+import AuthInitializer from "@/shared/components/AuthInitializer";
 
 const onest = Onest({
   subsets: ["latin", "cyrillic"], // шрифт поддерживает кириллицу!
@@ -22,7 +24,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={` ${onest.variable} antialiased`}>
-        {children}
+        <QueryProvider>
+          <AuthInitializer>{children}</AuthInitializer>
+        </QueryProvider>
         <Toaster
           position="bottom-left"
           richColors

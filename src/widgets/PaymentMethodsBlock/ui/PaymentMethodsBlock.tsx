@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { InputField } from "@/shared/ui/InputField";
 import { Button } from "@/shared/ui/Button";
 import { Checkbox } from "@/shared/ui/Checkbox";
@@ -12,6 +12,7 @@ import SecureMasterCardIcon from "../../../../public/icons/SecureMasterCardIcon"
 import SecureVisaIcon from "../../../../public/icons/SecureVisaIcon";
 import SecureMirIcon from "../../../../public/icons/SecureMirIcon";
 import { usePaymentStore } from "@/shared/stores/usePaymentStore";
+import { Mascot } from "@/shared/ui";
 
 export const PaymentMethodsBlock = () => {
   const router = useRouter();
@@ -41,6 +42,64 @@ export const PaymentMethodsBlock = () => {
     setEmail,
     validateCardForm,
   } = usePaymentStore();
+
+  // Disable page scroll while this block is mounted (restore on unmount)
+  useEffect(() => {
+    const scrollY = window.scrollY || window.pageYOffset;
+
+    // save previous inline styles to restore later
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyPosition = document.body.style.position;
+    const prevBodyTop = document.body.style.top;
+    const prevBodyWidth = document.body.style.width;
+
+    // lock scrolling by fixing body position and hiding overflow
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+
+    const preventDefault = (e: Event) => {
+      e.preventDefault();
+    };
+
+    // prevent wheel and touch move
+    window.addEventListener("wheel", preventDefault, { passive: false });
+    window.addEventListener("touchmove", preventDefault, { passive: false });
+
+    // also prevent space/arrow keys causing scroll
+    const onKeyDown = (e: KeyboardEvent) => {
+      const keys = [
+        " ",
+        "ArrowUp",
+        "ArrowDown",
+        "PageUp",
+        "PageDown",
+        "Home",
+        "End",
+      ];
+      if (keys.includes(e.key)) e.preventDefault();
+    };
+    window.addEventListener("keydown", onKeyDown, { passive: false });
+
+    return () => {
+      // restore styles
+      window.removeEventListener("wheel", preventDefault);
+      window.removeEventListener("touchmove", preventDefault);
+      window.removeEventListener("keydown", onKeyDown as any);
+
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.position = prevBodyPosition;
+      document.body.style.top = prevBodyTop;
+      document.body.style.width = prevBodyWidth;
+
+      // restore scroll position
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
 
   const handleCardPayment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,15 +144,23 @@ export const PaymentMethodsBlock = () => {
         </div>
 
         <div className="ml-auto relative h-[784px]">
-          <Image
-            priority
-            src="/assets/subscription/subscription_mask02.png"
-            alt="Login Illustration"
-            className="w-[809px] h-full"
-            width={809}
-            height={784}
-          />
-
+          <div className="relative">
+            <Image
+              priority
+              src="/assets/subscription/subscription_mask02.png"
+              alt="Login Illustration"
+              className="w-[809px] h-full"
+              width={809}
+              height={784}
+            />
+            <Button
+              variant="ghost"
+              className="absolute top-[334px] left-1/2 -translate-x-1/2 w-[292px] max-w-[292px]"
+              label="Перейти к подписке"
+              onClick={handleGoToHome}
+            />
+            <Mascot className="!absolute w-[429px] h-[429px] bottom-[-120px] left-[330px] transform -translate-x-1/2 -rotate-[-9.65deg]" />
+          </div>
           <Link href="#" className="absolute right-4 bottom-[14px]">
             <Image
               src="/assets/logos_telegram.webp"

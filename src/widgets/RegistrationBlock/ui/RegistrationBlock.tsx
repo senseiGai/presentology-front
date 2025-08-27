@@ -77,7 +77,7 @@ export const RegistrationBlock = () => {
         <h2 className="mt-[48px]">Регистрация</h2>
 
         <form className="mt-[40px] w-full" onSubmit={handleSubmit}>
-          <InputField
+          {/* <InputField
             label="Имя"
             placeholder="Введите ваше имя"
             value={firstName}
@@ -92,7 +92,7 @@ export const RegistrationBlock = () => {
             placeholder="Введите вашу фамилию"
             value={lastName}
             onChange={setLastName}
-          />
+          /> */}
 
           <InputField
             className="mt-[16px]"
@@ -162,12 +162,10 @@ export const RegistrationBlock = () => {
             disabled={
               !!emailError ||
               !!confirmPasswordError ||
-              !!firstNameError ||
               !passwordStatus.every(Boolean) ||
               !email ||
               !password ||
               !confirmPassword ||
-              !firstName ||
               isLoading
             }
             className="mt-[24px]"
@@ -175,7 +173,7 @@ export const RegistrationBlock = () => {
           />
         </form>
 
-        <p className="mt-[135px] max-w-[356px] text-[12px] leading-[18px] tracking-[-0.2px] text-[#BEBEC0] font-normal">
+        <p className="mt-auto max-w-[356px] text-[12px] leading-[18px] tracking-[-0.2px] text-[#BEBEC0] font-normal">
           Продолжая регистрацию и вход, вы соглашаетесь с Пользовательским
           соглашением, Политикой конфиденциальности, Политикой
           возвратов и даёте Согласие на обработку персональных данных

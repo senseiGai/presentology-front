@@ -59,7 +59,7 @@ export const SurveyBlock = () => {
     step.allowCustomInput && originalSelected?.toLowerCase() === "другое";
 
   return (
-    <section className="mt-[24px] flex flex-row gap-x-[51px] py-[35px]">
+    <section className="mt-[24px] flex flex-row gap-x-[51px]">
       <div
         className="relative w-[809px] h-[784px] bg-cover bg-center bg-no-repeat overflow-hidden flex justify-center"
         style={{ backgroundImage: "url('/assets/survey.png')" }}
@@ -85,6 +85,7 @@ export const SurveyBlock = () => {
 
         {isOtherSelected && step.allowCustomInput && (
           <InputField
+            className="mb-[24px]"
             label="Введите свой вариант"
             placeholder="Свой вариант"
             value={customInput}

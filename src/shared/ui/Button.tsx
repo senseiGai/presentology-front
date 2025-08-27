@@ -2,7 +2,8 @@ import React from "react";
 import clsx from "clsx";
 
 type ButtonProps = {
-  label: string;
+  children?: React.ReactNode;
+  label?: string;
   onClick?: () => void;
   disabled?: boolean;
   variant?: "primary" | "outline" | "ghost" | "primary";
@@ -17,6 +18,7 @@ export const Button = ({
   variant = "primary",
   className = "",
   type = "button",
+  children,
 }: ButtonProps) => {
   const base =
     "rounded-[8px] h-[52px] w-full flex items-center justify-center transition font-medium text-[18px] cursor-pointer";
@@ -36,7 +38,7 @@ export const Button = ({
       onClick={onClick}
       disabled={disabled}
     >
-      {label}
+      {children || label}
     </button>
   );
 };

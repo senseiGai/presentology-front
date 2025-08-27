@@ -62,13 +62,9 @@ export const Checkbox = ({
           htmlFor={checkboxId}
           className={`
             ${sizeClasses[size]}
-            w-[24px] h-[24px] rounded-md cursor-pointer transition-all duration-200 flex items-center justify-center
-            ${
-              checked
-                ? "bg-[#00CF1B] border-none text-white"
-                : "bg-white  border-2 border-[#E5E5E5] "
-            }
-            ${disabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-sm"}
+            w-[24px] h-[24px] rounded-md cursor-pointer flex items-center justify-center
+            ${checked ? "bg-[#00CF1B] text-white" : "bg-[#F4F4F4]"}
+            ${disabled ? "opacity-50 cursor-not-allowed" : ""}
           `}
         >
           {checked && (

@@ -38,8 +38,10 @@ export const InputField = ({
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           className={`w-full rounded-[8px] outline-none border ${
-            isError ? "border-[#FF514F]" : "border-gray-200"
-          } px-4 h-[40px] text-[14px] placeholder-[#BEBEC0] focus:outline-none`}
+            isError
+              ? "border-[#FF514F]"
+              : "border-gray-200 focus:border-[#BBA2FE] focus:shadow-[0px_2px_5px_0px_#BBA2FECC]"
+          } px-4 h-[40px] text-[14px] placeholder-[#BEBEC0] focus:outline-none transition-all duration-200`}
         />
         {isPassword && (
           <button

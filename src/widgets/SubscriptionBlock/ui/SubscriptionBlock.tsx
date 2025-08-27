@@ -8,8 +8,7 @@ import { usePromoCodeStore } from "../model/use-promo-code-store";
 import Image from "next/image";
 import LogoIcon from "../../../../public/icons/Logo";
 import Link from "next/link";
-import ArrowLeft from "../../../../public/icons/ArrowLeft";
-import { Check, X } from "lucide-react";
+import { Check } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 
@@ -17,6 +16,7 @@ export const SubscriptionBlock = () => {
   const router = useRouter();
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [subscribeToUpdates, setSubscribeToUpdates] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     enteredCode,
@@ -27,21 +27,35 @@ export const SubscriptionBlock = () => {
     setEnteredCode,
     validatePromoCode,
     clearPromoCode,
+    reset,
   } = usePromoCodeStore();
 
-  //   useEffect(() => {
-  //     return () => reset();
-  //   }, [reset]);
+  useEffect(() => {
+    return () => reset();
+  }, [reset]);
 
-  //   const handleSubmit = async (e: React.FormEvent) => {
-  //     e.preventDefault();
-  //     setEmailTouched();
-  //     await submit();
-  //   };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  //   const handleResend = async () => {
-  //     await resend();
-  //   };
+    if (!agreeToTerms) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // On success, navigate to payment methods
+      router.push("/payment-methods");
+    } catch (error) {
+      console.error("Subscription submission failed:", error);
+      // Handle error here if needed
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <section className="pt-[24px] pl-[40px] flex flex-row justify-between gap-x-[51px]">
@@ -71,7 +85,7 @@ export const SubscriptionBlock = () => {
 
         <div className="bg-[#E5E5E5] h-[1px] w-full mt-[24px]" />
 
-        <form className="mt-[24px] w-full">
+        <form className="mt-[24px] w-full" onSubmit={handleSubmit}>
           <div className="relative">
             <InputField
               label="Промокод"
@@ -164,64 +178,29 @@ export const SubscriptionBlock = () => {
             type="submit"
             variant="primary"
             className="mt-[24px]"
-            label={"Далее"}
-            disabled={!agreeToTerms}
-            // disabled={!email || !!emailError || success}
+            label={isSubmitting ? "Обработка..." : "Далее"}
+            disabled={!agreeToTerms || isSubmitting}
           />
         </form>
         <div className="flex flex-row items-center gap-x-[24px] mt-auto">
           <Link
             href="#"
-            className="scursor-pointer text-[#C0C0C0] hover:underline hover:text-[#9B82FE] transition-colors ease-in-out"
+            className="cursor-pointer text-[#C0C0C0] hover:underline hover:text-[#9B82FE] transition-colors ease-in-out"
           >
             Политика возврата
           </Link>
           <Link
             href="#"
-            className="scursor-pointer text-[#C0C0C0] hover:underline hover:text-[#9B82FE] transition-colors ease-in-out"
+            className="cursor-pointer text-[#C0C0C0] hover:underline hover:text-[#9B82FE] transition-colors ease-in-out"
           >
             Платежные реквизиты
           </Link>
         </div>
-        {/* {success && (
-          <>
-            <p className="text-green-500 text-[14px] font-medium mt-[16px]">
-              Ссылка отправлена. Проверьте почту
-            </p>
-
-            <p className="text-[#BEBEC0] text-[14px] font-medium mt-[16px] tracking-[-0.4px]">
-              Не получили письмо?{" "}
-              {resendCooldown > 0 ? (
-                <span>
-                  Прислать повторно через 00:
-                  {resendCooldown.toString().padStart(2, "0")}
-                </span>
-              ) : (
-                <button
-                  onClick={handleResend}
-                  disabled={resentSuccess}
-                  className={`text-[18px] bg-[#F4F4F4] font-normal ml-[12px] tracking-[-0.4px] w-[196px] h-[40px] rounded-[8px] cursor-pointer transition-colors ${
-                    resentSuccess
-                      ? "text-[#BEBEC0] cursor-not-allowed"
-                      : " text-[#0B0911]  hover:bg-[#E9E9E9]"
-                  }`}
-                >
-                  Прислать повторно
-                </button>
-              )}
-            </p>
-
-            {resentSuccess && (
-              <p className="text-green-500 text-[14px] font-medium mt-[16px]">
-                Ссылка отправлена повторно. Проверьте почту
-              </p>
-            )}
-          </>
-        )} */}
       </div>
 
       <div className="ml-auto relative h-[784px]">
         <Image
+          priority
           src="/assets/subscription/subscription_mask.png"
           alt="Login Illustration"
           className="w-[809px] h-full"

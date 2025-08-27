@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { AuthApi } from "@/shared/api/auth.api";
 
 interface PasswordRecoveryState {
   email: string;
@@ -61,10 +62,9 @@ export const usePasswordRecoveryStore = create<PasswordRecoveryState>(
         return;
       }
 
-      set({ isLoading: true });
+      set({ isLoading: true, emailError: null });
       try {
-        await new Promise((res) => setTimeout(res, 1000));
-        console.log("Первичная отправка:", email);
+        await AuthApi.forgotPassword({ email });
 
         const cooldown = 60;
 
@@ -85,8 +85,17 @@ export const usePasswordRecoveryStore = create<PasswordRecoveryState>(
         }, 1000);
 
         set({ timerInterval: interval });
-      } catch {
-        set({ emailError: "Произошла ошибка. Попробуйте позже." });
+      } catch (error: any) {
+        console.error("Password recovery error:", error);
+        let errorMessage = "Произошла ошибка. Попробуйте позже.";
+
+        if (error.response?.status === 404) {
+          errorMessage = "Пользователь с указанной почтой не найден";
+        } else if (error.response?.status === 429) {
+          errorMessage = "Слишком много попыток. Попробуйте позже";
+        }
+
+        set({ emailError: errorMessage });
       } finally {
         set({ isLoading: false });
       }
@@ -97,11 +106,17 @@ export const usePasswordRecoveryStore = create<PasswordRecoveryState>(
 
       set({ isLoading: true });
       try {
-        await new Promise((res) => setTimeout(res, 1000));
-        console.log("Повторная отправка:", email);
-        set({ resentSuccess: true }); // ✅ просто отображаем сообщение, не трогаем cooldown
-      } catch {
-        set({ emailError: "Произошла ошибка при повторной отправке." });
+        await AuthApi.forgotPassword({ email });
+        set({ resentSuccess: true });
+      } catch (error: any) {
+        console.error("Resend password recovery error:", error);
+        let errorMessage = "Произошла ошибка при повторной отправке.";
+
+        if (error.response?.status === 429) {
+          errorMessage = "Слишком много попыток. Попробуйте позже";
+        }
+
+        set({ emailError: errorMessage });
       } finally {
         set({ isLoading: false });
       }

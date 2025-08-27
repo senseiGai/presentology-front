@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const API_BASE_URL =
-  "https://presentology-back-production.up.railway.app/";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 // Создаем экземпляр axios с базовой конфигурацией
 export const apiClient = axios.create({
@@ -72,6 +72,8 @@ export const API_ENDPOINTS = {
     VK: "/auth/vk",
     YANDEX: "/auth/yandex",
     TELEGRAM: "/auth/telegram",
+    FORGOT_PASSWORD: "/auth/forgot-password",
+    RESET_PASSWORD: "/auth/reset-password",
   },
   USERS: {
     PROFILE: "/users/profile",

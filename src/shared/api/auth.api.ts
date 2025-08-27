@@ -7,6 +7,9 @@ import type {
   User,
   SocialAuthResponse,
   UpdateProfileRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+  ForgotPasswordResponse,
 } from "./types";
 
 export class AuthApi {
@@ -31,6 +34,28 @@ export class AuthApi {
   // Выход из системы
   static async logout(): Promise<void> {
     await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);
+  }
+
+  // Запрос на восстановление пароля
+  static async forgotPassword(
+    data: ForgotPasswordRequest
+  ): Promise<ForgotPasswordResponse> {
+    const response = await apiClient.post(
+      API_ENDPOINTS.AUTH.FORGOT_PASSWORD,
+      data
+    );
+    return response.data;
+  }
+
+  // Сброс пароля по токену
+  static async resetPassword(
+    data: ResetPasswordRequest
+  ): Promise<ForgotPasswordResponse> {
+    const response = await apiClient.post(
+      API_ENDPOINTS.AUTH.RESET_PASSWORD,
+      data
+    );
+    return response.data;
   }
 
   // Получение профиля пользователя

@@ -24,7 +24,6 @@ export const RegistrationBlock = () => {
 
     emailError,
     confirmPasswordError,
-    firstNameError,
     unknownError,
 
     setConfirmPasswordTouched,
@@ -146,9 +145,28 @@ export const RegistrationBlock = () => {
             }
             className="mt-[24px]"
             label={isLoading ? "Регистрация..." : "Зарегистрироваться"}
-            onClick={() =>
-              handleSubmit({ preventDefault: () => {} } as React.FormEvent)
-            }
+            onClick={() => {
+              console.log("Button clicked! Debug info:", {
+                emailError,
+                confirmPasswordError,
+                passwordStatus,
+                passwordStatusEvery: passwordStatus.every(Boolean),
+                email,
+                password,
+                confirmPassword,
+                isLoading,
+                disabled: !!(
+                  !!emailError ||
+                  !!confirmPasswordError ||
+                  !passwordStatus.every(Boolean) ||
+                  !email ||
+                  !password ||
+                  !confirmPassword ||
+                  isLoading
+                ),
+              });
+              handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+            }}
           />
         </form>
 

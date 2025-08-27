@@ -187,19 +187,11 @@ export const useRegisterStore = create<RegisterState>((set, get) => ({
   },
 
   validateAndSubmit: async (): Promise<boolean> => {
-    const {
-      email,
-      password,
-      confirmPassword,
-      firstName,
-      lastName,
-      passwordStatus,
-    } = get();
+    const { email, password, confirmPassword, passwordStatus } = get();
 
     let emailError = null;
     let passwordError = null;
     let confirmPasswordError = null;
-    let firstNameError = null;
 
     // Валидация email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -217,21 +209,14 @@ export const useRegisterStore = create<RegisterState>((set, get) => ({
       confirmPasswordError = "Пароли не совпадают";
     }
 
-    // Валидация имени
-    if (firstName.trim().length < 2) {
-      firstNameError = "Имя должно содержать минимум 2 символа";
-    }
-
-    if (emailError || passwordError || confirmPasswordError || firstNameError) {
+    if (emailError || passwordError || confirmPasswordError) {
       set({
         emailError,
         passwordError,
         confirmPasswordError,
-        firstNameError,
         emailTouched: true,
         passwordTouched: true,
         confirmPasswordTouched: true,
-        firstNameTouched: true,
       });
       return false;
     }
@@ -242,8 +227,6 @@ export const useRegisterStore = create<RegisterState>((set, get) => ({
       const registerData: RegisterRequest = {
         email,
         password,
-        firstName,
-        lastName: lastName || undefined,
       };
 
       const response = await AuthApi.register(registerData);

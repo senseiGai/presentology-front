@@ -7,7 +7,7 @@ export interface LoginRequest {
 export interface RegisterRequest {
   email: string;
   password: string;
-  firstName: string;
+  firstName?: string;
   lastName?: string;
   username?: string;
 }

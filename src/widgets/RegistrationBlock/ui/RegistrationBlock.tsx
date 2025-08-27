@@ -145,10 +145,12 @@ export const RegistrationBlock = () => {
             disabled={
               !!emailError ||
               !!confirmPasswordError ||
+              !!firstNameError ||
               !passwordStatus.every(Boolean) ||
               !email ||
               !password ||
               !confirmPassword ||
+              !firstName ||
               isLoading
             }
             className="mt-[24px]"

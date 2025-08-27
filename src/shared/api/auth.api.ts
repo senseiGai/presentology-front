@@ -102,20 +102,17 @@ export class AuthApi {
 
   // Получение URL для социальной авторизации
   static getGoogleAuthUrl(): string {
-    return `${
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
-    }/auth/google`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    return `${baseUrl}/auth/google`;
   }
 
   static getYandexAuthUrl(): string {
-    return `${
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
-    }/auth/yandex`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    return `${baseUrl}/auth/yandex`;
   }
 
   static getVkAuthUrl(): string {
-    return `${
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
-    }/auth/vk`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    return `${baseUrl}/auth/vk`;
   }
 }

@@ -27,7 +27,13 @@ export const MainLayout = ({
 
       {/* Контент */}
       <div className="max-w-[1280px] mx-auto relative min-h-screen">
-        <div className="absolute min-h-screen grid place-items-center z-10 w-full">
+        <div
+          className={`absolute ${
+            isBg
+              ? "top-1/2 -translate-y-1/2"
+              : "grid place-items-center min-h-screen"
+          } z-10 w-full`}
+        >
           {children}
         </div>
       </div>

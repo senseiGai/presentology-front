@@ -14,7 +14,6 @@ import { useSideBarStore } from "../model/use-sidebar-store";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { menuItems } from "../lib/menuItems";
 import { useSubscriptionPopupStore } from "../../../entities/SubscriptionPopup/model/use-subscription-popup-store";
-import { SubscriptionPopup } from "../../../entities/SubscriptionPopup/ui/SubscriptionPopup";
 
 export default function Sidebar() {
   const { isCollapsed, toggleCollapsed } = useSideBarStore();
@@ -34,7 +33,7 @@ export default function Sidebar() {
   // Получаем первую букву имени для аватара
   const avatarLetter = user?.firstName?.charAt(0)?.toUpperCase() || "U";
   const displayEmail = user?.email || "email@provider.com";
-  const { isOpen, openPopup, closePopup } = useSubscriptionPopupStore();
+  const { openPopup } = useSubscriptionPopupStore();
 
   return (
     <aside

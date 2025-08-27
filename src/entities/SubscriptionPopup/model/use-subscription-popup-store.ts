@@ -6,6 +6,7 @@ type SubscriptionPopupState = {
   hasDiscount: boolean;
   openPopup: () => void;
   closePopup: () => void;
+  directClose: () => void;
   openConfirmExit: () => void;
   closeConfirmExit: () => void;
   forceClose: () => void;
@@ -17,8 +18,18 @@ export const useSubscriptionPopupStore = create<SubscriptionPopupState>(
     isOpen: false,
     isConfirmExitOpen: false,
     hasDiscount: false,
-    openPopup: () => set({ isOpen: true }),
-    closePopup: () => set({ isConfirmExitOpen: true }),
+    openPopup: () => {
+      console.log("Opening popup");
+      set({ isOpen: true });
+    },
+    closePopup: () => {
+      console.log("Closing popup (opening confirm)");
+      set({ isConfirmExitOpen: true });
+    },
+    directClose: () => {
+      console.log("Direct close");
+      set({ isOpen: false });
+    },
     openConfirmExit: () => set({ isConfirmExitOpen: true }),
     closeConfirmExit: () => set({ isConfirmExitOpen: false }),
     forceClose: () =>

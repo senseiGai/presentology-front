@@ -28,7 +28,7 @@ export const ConfirmExitPopup = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center">
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center">
       <div className="absolute inset-0 bg-[#BBA2FE66] backdrop-blur-sm" />
 
       <div className="relative z-10 max-w-[450px] animate-[modalIn_.2s_ease-out]">

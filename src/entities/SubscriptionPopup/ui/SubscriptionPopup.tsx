@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import React, { useEffect } from "react";
 import { ConfirmExitPopup } from "./ConfirmExitPopup";
 import { useSubscriptionPopupStore } from "../model/use-subscription-popup-store";
+import { useRouter } from "next/navigation";
 
 interface SubscriptionPopupProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const SubscriptionPopup = ({
     hasDiscount,
     applyDiscount,
   } = useSubscriptionPopupStore();
+  const router = useRouter();
   useEffect(() => {
     if (!isOpen || !closeOnEscape) return;
 
@@ -50,6 +52,13 @@ export const SubscriptionPopup = ({
 
   if (!isOpen) return null;
 
+  console.log(
+    "SubscriptionPopup render, isOpen:",
+    isOpen,
+    "isConfirmExitOpen:",
+    isConfirmExitOpen
+  );
+
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (closeOnBackdropClick && onClose && e.target === e.currentTarget) {
       onClose();
@@ -58,8 +67,9 @@ export const SubscriptionPopup = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
       onClick={handleBackdropClick}
+      style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0 }}
     >
       <div className="absolute inset-0 bg-[#E0D6FB] backdrop-blur-sm" />
 
@@ -120,7 +130,7 @@ export const SubscriptionPopup = ({
                 "Лучшие ИИ‑модели для текстa и картинок",
               ]}
               ctaLabel="Подключить"
-              onClick={() => alert("Подписка оформлена!")}
+              onClick={() => router.push("/subscription")}
               accent="orange"
               highlight
             />

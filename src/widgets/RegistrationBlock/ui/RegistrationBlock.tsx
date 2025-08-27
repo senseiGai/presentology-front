@@ -77,23 +77,6 @@ export const RegistrationBlock = () => {
         <h2 className="mt-[48px]">Регистрация</h2>
 
         <form className="mt-[40px] w-full" onSubmit={handleSubmit}>
-          {/* <InputField
-            label="Имя"
-            placeholder="Введите ваше имя"
-            value={firstName}
-            onChange={setFirstName}
-            onBlur={setFirstNameTouched}
-            isError={!!firstNameError && firstNameTouched}
-          />
-
-          <InputField
-            className="mt-[16px]"
-            label="Фамилия (необязательно)"
-            placeholder="Введите вашу фамилию"
-            value={lastName}
-            onChange={setLastName}
-          /> */}
-
           <InputField
             className="mt-[16px]"
             label="Электронная почта"

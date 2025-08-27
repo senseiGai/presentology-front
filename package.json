@@ -8,12 +8,6 @@
     "start": "next start",
     "lint": "next lint"
   },
-  "engines": {
-    "node": ">=18 <=20"
-  },
-  "overrides": {
-    "file-type": "16.5.0"
-  },
   "dependencies": {
     "@tanstack/react-query": "^5.85.5",
     "axios": "^1.11.0",

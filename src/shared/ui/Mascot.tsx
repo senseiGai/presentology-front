@@ -9,11 +9,7 @@ interface MascotProps {
   showImage?: boolean;
 }
 
-export const Mascot: React.FC<MascotProps> = ({
-  className,
-  size = "md",
-  showImage: _showImage = true,
-}) => {
+export const Mascot: React.FC<MascotProps> = ({ className, size = "md" }) => {
   const mascotRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 

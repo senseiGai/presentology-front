@@ -12,7 +12,6 @@ export type PricingCardProps = {
   title: string; // e.g., "Пробуй" | "Создавай"
   price?: number | string; // e.g., 0 | 299 | "299"
   originalPrice?: string; // для зачеркнутой цены при скидке
-  currency?: string; // e.g., "₽"
   period?: string; // e.g., "/ месяц"
   sublabel?: string; // short muted text under the price line
   features: string[]; // bullet list
@@ -30,7 +29,6 @@ export function PricingCard({
   title,
   price = 0,
   originalPrice,
-  currency = "₽",
   period = "/ месяц",
   sublabel,
   features,

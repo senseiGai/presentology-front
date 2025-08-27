@@ -4,7 +4,6 @@ import React, { useEffect } from "react";
 import { ConfirmExitPopup } from "./ConfirmExitPopup";
 import { useSubscriptionPopupStore } from "../model/use-subscription-popup-store";
 import { useRouter } from "next/navigation";
-import { on } from "events";
 
 interface SubscriptionPopupProps {
   isOpen: boolean;
@@ -100,7 +99,6 @@ export const SubscriptionPopup = ({
             <PricingCard
               title="Пробуй"
               price={0}
-              currency="₽"
               period="месяц"
               badge="Ваш тариф"
               sublabel="Для тестирования сервиса и разовой подготовки презентаций"
@@ -119,7 +117,6 @@ export const SubscriptionPopup = ({
               title="Создавай"
               price={hasDiscount ? 199 : 299}
               originalPrice={hasDiscount ? "299" : undefined}
-              currency="₽"
               period="месяц"
               sublabel="Для активной работы и регулярной генерации презентаций"
               features={[

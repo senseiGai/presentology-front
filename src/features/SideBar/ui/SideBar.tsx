@@ -27,6 +27,7 @@ export default function Sidebar() {
       router.push("/login");
     } catch (error) {
       toast.error("Произошла ошибка при выходе");
+      console.error("Logout error:", error);
     }
   };
 

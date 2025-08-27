@@ -2,7 +2,6 @@
 import React from "react";
 import { useConfirmDeleteStore } from "../model/use-confirm-delete-popup";
 import { X } from "lucide-react";
-import { toast } from "sonner"; // ⬅️ добавили
 import { showDeletedToast } from "@/shared/lib/toasts";
 import { GlassModal } from "@/shared/ui/GlassModal";
 

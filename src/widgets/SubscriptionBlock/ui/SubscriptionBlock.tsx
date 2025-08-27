@@ -15,7 +15,6 @@ import { useRouter } from "next/navigation";
 export const SubscriptionBlock = () => {
   const router = useRouter();
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const [subscribeToUpdates, setSubscribeToUpdates] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -26,7 +25,6 @@ export const SubscriptionBlock = () => {
     discountedPrice,
     setEnteredCode,
     validatePromoCode,
-    clearPromoCode,
     reset,
   } = usePromoCodeStore();
 

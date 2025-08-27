@@ -109,16 +109,18 @@ export const useResetPasswordStore = create<ResetPasswordState>((set, get) => ({
       });
 
       return true;
-    } catch (error: any) {
-      console.error("Reset password error:", error);
+    } catch (err) {
+      console.error("Reset password error:", err);
+      const error = err as any;
 
       let errorMessage = "Произошла ошибка при изменении пароля";
 
-      if (error.response?.status === 400) {
+      const status = error?.response?.status;
+      if (status === 400) {
         errorMessage = "Недействительная или истёкшая ссылка";
-      } else if (error.response?.status === 404) {
+      } else if (status === 404) {
         errorMessage = "Токен не найден";
-      } else if (error.response?.status === 429) {
+      } else if (status === 429) {
         errorMessage = "Слишком много попыток. Попробуйте позже";
       }
 

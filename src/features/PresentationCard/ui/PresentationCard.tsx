@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
 import TrashIcon from "../../../../public/icons/TrashIcon";
 import { useConfirmDeleteStore } from "../../ConfirmDeletePopup/model/use-confirm-delete-popup";

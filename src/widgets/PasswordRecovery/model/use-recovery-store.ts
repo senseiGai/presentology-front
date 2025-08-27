@@ -85,13 +85,15 @@ export const usePasswordRecoveryStore = create<PasswordRecoveryState>(
         }, 1000);
 
         set({ timerInterval: interval });
-      } catch (error: any) {
-        console.error("Password recovery error:", error);
+      } catch (err) {
+        console.error("Password recovery error:", err);
+        const error = err as any;
         let errorMessage = "Произошла ошибка. Попробуйте позже.";
 
-        if (error.response?.status === 404) {
+        const status = error?.response?.status;
+        if (status === 404) {
           errorMessage = "Пользователь с указанной почтой не найден";
-        } else if (error.response?.status === 429) {
+        } else if (status === 429) {
           errorMessage = "Слишком много попыток. Попробуйте позже";
         }
 
@@ -108,11 +110,13 @@ export const usePasswordRecoveryStore = create<PasswordRecoveryState>(
       try {
         await AuthApi.forgotPassword({ email });
         set({ resentSuccess: true });
-      } catch (error: any) {
-        console.error("Resend password recovery error:", error);
+      } catch (err) {
+        console.error("Resend password recovery error:", err);
+        const error = err as any;
         let errorMessage = "Произошла ошибка при повторной отправке.";
 
-        if (error.response?.status === 429) {
+        const status = error?.response?.status;
+        if (status === 429) {
           errorMessage = "Слишком много попыток. Попробуйте позже";
         }
 

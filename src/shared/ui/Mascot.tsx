@@ -12,7 +12,7 @@ interface MascotProps {
 export const Mascot: React.FC<MascotProps> = ({
   className,
   size = "md",
-  showImage = true,
+  showImage: _showImage = true,
 }) => {
   const mascotRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -35,7 +35,7 @@ export const Mascot: React.FC<MascotProps> = ({
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  const getEyePosition = (isLeft: boolean) => {
+  const getEyePosition = (_isLeft: boolean) => {
     const maxRadius = 8; // максимальный радиус движения глаза в пикселях
     const distance = Math.sqrt(mousePosition.x ** 2 + mousePosition.y ** 2);
 

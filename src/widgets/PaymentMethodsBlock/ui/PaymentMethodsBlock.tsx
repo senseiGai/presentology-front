@@ -88,7 +88,7 @@ export const PaymentMethodsBlock = () => {
       // restore styles
       window.removeEventListener("wheel", preventDefault);
       window.removeEventListener("touchmove", preventDefault);
-      window.removeEventListener("keydown", onKeyDown as any);
+      window.removeEventListener("keydown", onKeyDown as EventListener);
 
       document.body.style.overflow = prevBodyOverflow;
       document.documentElement.style.overflow = prevHtmlOverflow;
@@ -228,23 +228,12 @@ export const PaymentMethodsBlock = () => {
             type="submit"
             variant="ghost"
             className={`${emailError ? "mt-[32px]" : "mt-[24px]"}`}
-            children={
-              <Image
-                src="/sbp-icon.svg"
-                alt="SBP Icon"
-                width={64}
-                height={32}
-              />
-            }
-          />
-          <Button
-            type="submit"
-            variant="ghost"
-            className="mt-[8px]"
-            children={
-              <Image src="/t-pay.svg" alt="TPay Icon" width={72} height={32} />
-            }
-          />
+          >
+            <Image src="/sbp-icon.svg" alt="SBP Icon" width={64} height={32} />
+          </Button>
+          <Button type="submit" variant="ghost" className="mt-[8px]">
+            <Image src="/t-pay.svg" alt="TPay Icon" width={72} height={32} />
+          </Button>
           <Button
             variant="ghost"
             className="mt-[8px]"

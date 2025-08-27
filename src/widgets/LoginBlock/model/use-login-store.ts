@@ -71,16 +71,19 @@ export const useLoginStore = create<LoginState>((set) => ({
 
       set({ isLoading: false });
       return true;
-    } catch (error: any) {
-      console.error("Login error:", error);
+    } catch (err) {
+      console.error("Login error:", err);
+
+      const error = err as any;
 
       let errorMessage = "Что-то пошло не так. Попробуйте позже";
 
-      if (error.response?.status === 401) {
+      const status = error?.response?.status;
+      if (status === 401) {
         errorMessage = "Неверный email или пароль";
-      } else if (error.response?.status === 400) {
-        errorMessage = error.response.data?.message || "Некорректные данные";
-      } else if (error.response?.status === 429) {
+      } else if (status === 400) {
+        errorMessage = error.response?.data?.message || "Некорректные данные";
+      } else if (status === 429) {
         errorMessage = "Слишком много попыток. Попробуйте позже";
       }
 

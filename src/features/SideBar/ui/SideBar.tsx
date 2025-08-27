@@ -8,7 +8,7 @@ import MiniLogoIcon from "../../../../public/icons/MiniLogoIcon";
 import SideBarIcon from "../../../../public/icons/SideBarIcon";
 
 import { SideBarButton } from "./SideBarButton";
-import UserIcon from "../../../../public/icons/UserIcon";
+import Image from "next/image";
 import LogoutIcon from "../../../../public/icons/LogOutIcon";
 import { useSideBarStore } from "../model/use-sidebar-store";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
@@ -102,9 +102,11 @@ export default function Sidebar() {
               <div className="flex items-center gap-[12px]">
                 <div className="bg-[#BBA2FE] w-[40px] h-[40px] pt-0.5 cursor-pointer flex items-center justify-center rounded-full">
                   {user?.avatar ? (
-                    <img
+                    <Image
                       src={user.avatar}
                       alt={user.firstName || "User"}
+                      width={40}
+                      height={40}
                       className="w-full h-full rounded-full object-cover"
                     />
                   ) : (
@@ -131,9 +133,11 @@ export default function Sidebar() {
               title={displayEmail}
             >
               {user?.avatar ? (
-                <img
+                <Image
                   src={user.avatar}
                   alt={user.firstName || "User"}
+                  width={40}
+                  height={40}
                   className="w-full h-full rounded-full object-cover"
                 />
               ) : (

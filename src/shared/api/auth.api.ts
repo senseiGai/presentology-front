@@ -92,10 +92,12 @@ export class AuthApi {
   }
 
   // Telegram OAuth
-  static async telegramAuth(telegramData: any): Promise<SocialAuthResponse> {
+  static async telegramAuth(
+    telegramData: unknown
+  ): Promise<SocialAuthResponse> {
     const response = await apiClient.post(
       API_ENDPOINTS.AUTH.TELEGRAM,
-      telegramData
+      telegramData as Record<string, unknown>
     );
     return response.data;
   }

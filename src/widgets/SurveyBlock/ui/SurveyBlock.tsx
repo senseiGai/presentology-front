@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { SurveyCard } from "@/features/SurveyCard/ui/SurveyCard";
 import { useSurveyStore } from "../model/use-survey-store";
 import LogoIcon from "../../../../public/icons/Logo";

@@ -19,13 +19,11 @@ export default function QueryProvider({ children }: Props) {
             // Время кэширования данных
             gcTime: 1000 * 60 * 30, // 30 минут (раньше было cacheTime)
             // Повторные попытки при ошибке
-            retry: (failureCount, error: any) => {
+            retry: (failureCount, error: unknown) => {
               // Не повторяем для 401, 403, 404
-              if (
-                error?.response?.status === 401 ||
-                error?.response?.status === 403 ||
-                error?.response?.status === 404
-              ) {
+              // safe-guard: inspect as any-like object
+              const status = (error as any)?.response?.status;
+              if (status === 401 || status === 403 || status === 404) {
                 return false;
               }
               // Максимум 3 попытки для остальных ошибок
@@ -37,12 +35,10 @@ export default function QueryProvider({ children }: Props) {
           },
           mutations: {
             // Повторные попытки для мутаций
-            retry: (failureCount, error: any) => {
+            retry: (failureCount, error: unknown) => {
               // Не повторяем для клиентских ошибок (4xx)
-              if (
-                error?.response?.status >= 400 &&
-                error?.response?.status < 500
-              ) {
+              const status = (error as any)?.response?.status;
+              if (typeof status === "number" && status >= 400 && status < 500) {
                 return false;
               }
               // Максимум 2 попытки для серверных ошибок

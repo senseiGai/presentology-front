@@ -117,7 +117,7 @@ export const HomeBlock = () => {
   ];
 
   return (
-    <section className="flex flex-row gap-x-[24px] mt-[24px] relative">
+    <section className="flex flex-row gap-x-[24px] 2xl:gap-x-[20px] mt-[24px] relative">
       <Sidebar />
       <div>
         <div className="flex flex-row items-center">
@@ -133,7 +133,7 @@ export const HomeBlock = () => {
         </div>
         <div className="overflow-y-auto max-h-[574px] 2xl:max-h-[674px] pb-[24px] flex-1">
           {activeItem === "Создать презентацию" && (
-            <div className="flex flex-row gap-x-4 mt-[40px]">
+            <div className="flex flex-row gap-x-4 mt-[40px] 2xl:mt-[32px]">
               {createCards.map((item, index) => {
                 return (
                   <CreatePresentationCard
@@ -153,7 +153,7 @@ export const HomeBlock = () => {
                 Создайте презентацию и она появится здесь
               </h2>
             ) : (
-              <div className="grid grid-cols-3 gap-x-[24px] gap-y-[24px] mt-[40px]">
+              <div className="grid grid-cols-3 gap-[24px] 2xl:gap-[20px] mt-[40px]">
                 {presentationsContent.map((item, index) => (
                   <PresentationCard
                     key={index}

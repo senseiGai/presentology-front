@@ -4,9 +4,11 @@ import React from "react";
 import { SurveyCard } from "@/features/SurveyCard/ui/SurveyCard";
 import { useSurveyStore } from "../model/use-survey-store";
 import LogoIcon from "../../../../public/icons/Logo";
-import { InputField } from "@/shared/ui/InputField"; // Подключи, если у тебя есть
+import { InputField } from "@/shared/ui/InputField";
 import { Button } from "@/shared/ui/Button";
 import { Mascot } from "@/shared/ui";
+
+import { useRouter } from "next/navigation";
 
 export const SurveyBlock = () => {
   const {
@@ -20,6 +22,7 @@ export const SurveyBlock = () => {
   } = useSurveyStore();
 
   const isCompleted = currentStepIndex >= steps.length;
+  const router = useRouter();
 
   if (isCompleted) {
     return (
@@ -42,7 +45,7 @@ export const SurveyBlock = () => {
           <Button
             className="absolute bottom-0 mb-[24px] max-w-[356px]"
             variant="primary"
-            onClick={() => {}}
+            onClick={() => router.push("/home")}
             label="На главную"
           />
         </div>
@@ -94,7 +97,7 @@ export const SurveyBlock = () => {
 
         <button
           onClick={skipStep}
-          className="mt-auto w-[147px] h-[52px] text-[18px] text-[#0B0911] border-[1px] border-[#C0C0C1] rounded-[8px] cursor-pointer transition-colors hover:bg-[#E9E9E9] flex items-center justify-center"
+          className="mt-auto mb-[10px] w-[147px] h-[52px] text-[18px] text-[#0B0911] border-[1px] border-[#C0C0C1] rounded-[8px] cursor-pointer transition-colors hover:bg-[#E9E9E9] flex items-center justify-center"
         >
           Пропустить
         </button>

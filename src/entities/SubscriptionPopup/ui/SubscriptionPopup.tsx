@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { ConfirmExitPopup } from "./ConfirmExitPopup";
 import { useSubscriptionPopupStore } from "../model/use-subscription-popup-store";
 import { useRouter } from "next/navigation";
+import { on } from "events";
 
 interface SubscriptionPopupProps {
   isOpen: boolean;
@@ -130,7 +131,10 @@ export const SubscriptionPopup = ({
                 "Лучшие ИИ‑модели для текстa и картинок",
               ]}
               ctaLabel="Подключить"
-              onClick={() => router.push("/subscription")}
+              onClick={() => {
+                router.push("/subscription");
+                onClose?.();
+              }}
               accent="orange"
               highlight
             />

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { InputField } from "@/shared/ui/InputField";
 import { Button } from "@/shared/ui/Button";
 import { Checkbox } from "@/shared/ui/Checkbox";
@@ -42,64 +42,6 @@ export const PaymentMethodsBlock = () => {
     setEmail,
     validateCardForm,
   } = usePaymentStore();
-
-  // Disable page scroll while this block is mounted (restore on unmount)
-  useEffect(() => {
-    const scrollY = window.scrollY || window.pageYOffset;
-
-    // save previous inline styles to restore later
-    const prevBodyOverflow = document.body.style.overflow;
-    const prevHtmlOverflow = document.documentElement.style.overflow;
-    const prevBodyPosition = document.body.style.position;
-    const prevBodyTop = document.body.style.top;
-    const prevBodyWidth = document.body.style.width;
-
-    // lock scrolling by fixing body position and hiding overflow
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = "100%";
-
-    const preventDefault = (e: Event) => {
-      e.preventDefault();
-    };
-
-    // prevent wheel and touch move
-    window.addEventListener("wheel", preventDefault, { passive: false });
-    window.addEventListener("touchmove", preventDefault, { passive: false });
-
-    // also prevent space/arrow keys causing scroll
-    const onKeyDown = (e: KeyboardEvent) => {
-      const keys = [
-        " ",
-        "ArrowUp",
-        "ArrowDown",
-        "PageUp",
-        "PageDown",
-        "Home",
-        "End",
-      ];
-      if (keys.includes(e.key)) e.preventDefault();
-    };
-    window.addEventListener("keydown", onKeyDown, { passive: false });
-
-    return () => {
-      // restore styles
-      window.removeEventListener("wheel", preventDefault);
-      window.removeEventListener("touchmove", preventDefault);
-      window.removeEventListener("keydown", onKeyDown as EventListener);
-
-      document.body.style.overflow = prevBodyOverflow;
-      document.documentElement.style.overflow = prevHtmlOverflow;
-      document.body.style.position = prevBodyPosition;
-      document.body.style.top = prevBodyTop;
-      document.body.style.width = prevBodyWidth;
-
-      // restore scroll position
-      window.scrollTo(0, scrollY);
-    };
-  }, []);
 
   const handleCardPayment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,7 +85,7 @@ export const PaymentMethodsBlock = () => {
           </div>
         </div>
 
-        <div className="ml-auto relative h-[784px]">
+        <div className="ml-auto relative h-[784px] overflow-hidden">
           <div className="relative">
             <Image
               priority
@@ -228,12 +170,23 @@ export const PaymentMethodsBlock = () => {
             type="submit"
             variant="ghost"
             className={`${emailError ? "mt-[32px]" : "mt-[24px]"}`}
-          >
-            <Image src="/sbp-icon.svg" alt="SBP Icon" width={64} height={32} />
-          </Button>
-          <Button type="submit" variant="ghost" className="mt-[8px]">
-            <Image src="/t-pay.svg" alt="TPay Icon" width={72} height={32} />
-          </Button>
+            children={
+              <Image
+                src="/sbp-icon.svg"
+                alt="SBP Icon"
+                width={64}
+                height={32}
+              />
+            }
+          />
+          <Button
+            type="submit"
+            variant="ghost"
+            className="mt-[8px]"
+            children={
+              <Image src="/t-pay.svg" alt="TPay Icon" width={72} height={32} />
+            }
+          />
           <Button
             variant="ghost"
             className="mt-[8px]"

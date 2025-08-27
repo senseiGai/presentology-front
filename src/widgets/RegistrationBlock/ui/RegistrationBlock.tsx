@@ -20,8 +20,6 @@ export const RegistrationBlock = () => {
     email,
     password,
     confirmPassword,
-    firstName,
-    lastName,
     isLoading,
 
     emailError,
@@ -31,18 +29,14 @@ export const RegistrationBlock = () => {
 
     setConfirmPasswordTouched,
     setEmailTouched,
-    setFirstNameTouched,
 
     emailTouched,
     confirmPasswordTouched,
-    firstNameTouched,
 
     passwordStatus,
     setEmail,
     setPassword,
     setConfirmPassword,
-    setFirstName,
-    setLastName,
 
     validateAndSubmit,
     reset,
@@ -56,7 +50,6 @@ export const RegistrationBlock = () => {
     e.preventDefault();
     const success = await validateAndSubmit();
     if (success) {
-      // Получаем данные пользователя из localStorage и обновляем глобальный стор
       const userData = localStorage.getItem("user");
       if (userData) {
         const user = JSON.parse(userData);
@@ -145,16 +138,17 @@ export const RegistrationBlock = () => {
             disabled={
               !!emailError ||
               !!confirmPasswordError ||
-              !!firstNameError ||
               !passwordStatus.every(Boolean) ||
               !email ||
               !password ||
               !confirmPassword ||
-              !firstName ||
               isLoading
             }
             className="mt-[24px]"
             label={isLoading ? "Регистрация..." : "Зарегистрироваться"}
+            onClick={() =>
+              handleSubmit({ preventDefault: () => {} } as React.FormEvent)
+            }
           />
         </form>
 

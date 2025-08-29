@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { useAccountSettingsStore } from "../model/use-account-settings-store";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { useChangeEmailStore } from "../../ChangeEmailPopup/model/use-change-email-store";
 import { InputField } from "@/shared/ui/InputField";
 import { Button } from "@/shared/ui/Button";
 import { toast } from "sonner";
@@ -40,6 +41,7 @@ export default function AccountSettingsPopup() {
   } = useAccountSettingsStore();
 
   const { user } = useAuthStore();
+  const { openPopup: openChangeEmailPopup } = useChangeEmailStore();
 
   // Initialize form when popup opens
   useEffect(() => {
@@ -81,8 +83,9 @@ export default function AccountSettingsPopup() {
         toast.success("Email успешно изменен");
       }
     } else {
-      // Включить режим редактирования
-      setEditingEmail(true);
+      // Закрыть основной попап и открыть попап изменения email
+      closePopup();
+      openChangeEmailPopup(email);
     }
   };
 
@@ -184,12 +187,14 @@ export default function AccountSettingsPopup() {
             <InputField
               label="Электронная почта"
               value={email}
+              disabled={true}
               onChange={setEmail}
               placeholder="example@provider.com"
               isError={emailError}
             />
             <Button
               variant="ghost"
+              onClick={handleEmailChange}
               className="max-w-[130px] !h-[40px] bg-[#F4F4F4] !text-[18px] font-normal text-[#0B0911]"
             >
               Изменить
@@ -201,6 +206,7 @@ export default function AccountSettingsPopup() {
               label="Пароль"
               type="password"
               value={password}
+              disabled={true}
               onChange={setPassword}
               placeholder="••••••"
               isError={passwordError}
@@ -216,7 +222,7 @@ export default function AccountSettingsPopup() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-1 mt-auto w-full">
+        <div className="flex gap-2 mt-auto w-full">
           <Button variant="ghost" onClick={handleCancel} disabled={isLoading}>
             Отменить
           </Button>

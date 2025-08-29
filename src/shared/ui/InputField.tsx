@@ -12,6 +12,7 @@ type Props = {
   className?: string;
   isError?: boolean;
   onBlur?: () => void;
+  disabled?: boolean;
 };
 
 export const InputField = ({
@@ -23,6 +24,7 @@ export const InputField = ({
   onChange,
   isError,
   onBlur,
+  disabled = false,
 }: Props) => {
   const [show, setShow] = useState(false);
   const isPassword = type === "password";
@@ -32,6 +34,7 @@ export const InputField = ({
       <label className="text-[12px] font-[400] text-[#8F8F92]">{label}</label>
       <div className="relative">
         <input
+          disabled={disabled}
           onBlur={onBlur}
           type={isPassword && !show ? "password" : "text"}
           placeholder={placeholder}

@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import QueryProvider from "@/shared/providers/QueryProvider";
 import AuthInitializer from "@/shared/components/AuthInitializer";
 import { AccountSettingsPopup } from "@/features/AccountSettingsPopup";
+import { ChangeEmailPopup } from "@/features/ChangeEmailPopup";
 
 const onest = Onest({
   subsets: ["latin", "cyrillic"], // шрифт поддерживает кириллицу!
@@ -28,6 +29,7 @@ export default function RootLayout({
         <QueryProvider>
           <AuthInitializer>{children}</AuthInitializer>
           <AccountSettingsPopup />
+          <ChangeEmailPopup />
         </QueryProvider>
         <Toaster
           position="bottom-left"

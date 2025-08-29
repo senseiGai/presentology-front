@@ -24,6 +24,7 @@ export const SubscriptionPopup = ({
     forceClose,
     hasDiscount,
     applyDiscount,
+    openConfirmExit,
   } = useSubscriptionPopupStore();
   const router = useRouter();
   useEffect(() => {
@@ -31,13 +32,13 @@ export const SubscriptionPopup = ({
 
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose?.();
+        openConfirmExit();
       }
     };
 
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [isOpen, closeOnEscape, onClose]);
+  }, [isOpen, closeOnEscape, openConfirmExit]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -60,8 +61,8 @@ export const SubscriptionPopup = ({
   );
 
   const handleBackdropClick = (e: React.MouseEvent) => {
-    if (closeOnBackdropClick && onClose && e.target === e.currentTarget) {
-      onClose();
+    if (closeOnBackdropClick && e.target === e.currentTarget) {
+      openConfirmExit();
     }
   };
 
@@ -79,7 +80,7 @@ export const SubscriptionPopup = ({
             <span className="text-[18px] font-[400] text-[#8F8F92]">esc</span>
             <button
               aria-label="Закрыть"
-              onClick={onClose}
+              onClick={openConfirmExit}
               className="text-[#8F8F92] cursor-pointer"
             >
               <X />

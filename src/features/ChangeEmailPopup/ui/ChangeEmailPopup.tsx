@@ -90,6 +90,7 @@ export default function ChangeEmailPopup() {
   const handleCancel = () => {
     resetForm();
     closePopup();
+    openAccountSettings();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

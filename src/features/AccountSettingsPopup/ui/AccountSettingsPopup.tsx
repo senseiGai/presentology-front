@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { useAccountSettingsStore } from "../model/use-account-settings-store";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { useChangeEmailStore } from "../../ChangeEmailPopup/model/use-change-email-store";
+import { useChangePasswordStore } from "../../ChangePasswordPopup/model/use-change-password-store";
 import { InputField } from "@/shared/ui/InputField";
 import { Button } from "@/shared/ui/Button";
 import { toast } from "sonner";
@@ -42,6 +43,7 @@ export default function AccountSettingsPopup() {
 
   const { user } = useAuthStore();
   const { openPopup: openChangeEmailPopup } = useChangeEmailStore();
+  const { openPopup: openChangePasswordPopup } = useChangePasswordStore();
 
   // Initialize form when popup opens
   useEffect(() => {
@@ -97,8 +99,9 @@ export default function AccountSettingsPopup() {
         toast.success("Пароль успешно изменен");
       }
     } else {
-      // Включить режим редактирования
-      setEditingPassword(true);
+      // Закрыть основной попап и открыть попап изменения пароля
+      closePopup();
+      openChangePasswordPopup();
     }
   };
 
@@ -214,6 +217,7 @@ export default function AccountSettingsPopup() {
             />
             <Button
               variant="ghost"
+              onClick={handlePasswordChange}
               className="max-w-[130px] !h-[40px] bg-[#F4F4F4] !text-[18px] font-normal text-[#0B0911]"
             >
               Изменить

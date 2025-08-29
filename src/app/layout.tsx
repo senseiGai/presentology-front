@@ -6,6 +6,7 @@ import QueryProvider from "@/shared/providers/QueryProvider";
 import AuthInitializer from "@/shared/components/AuthInitializer";
 import { AccountSettingsPopup } from "@/features/AccountSettingsPopup";
 import { ChangeEmailPopup } from "@/features/ChangeEmailPopup";
+import ChangePasswordPopup from "@/features/ChangePasswordPopup";
 
 const onest = Onest({
   subsets: ["latin", "cyrillic"], // шрифт поддерживает кириллицу!
@@ -30,6 +31,7 @@ export default function RootLayout({
           <AuthInitializer>{children}</AuthInitializer>
           <AccountSettingsPopup />
           <ChangeEmailPopup />
+          <ChangePasswordPopup />
         </QueryProvider>
         <Toaster
           position="bottom-left"

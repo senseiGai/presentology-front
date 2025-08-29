@@ -14,6 +14,7 @@ export function ConfirmDeleteModal() {
       onClose={closeModal}
       size="md"
       className="h-[378px]"
+      closeOnEscape={true}
     >
       <div className="flex items-center justify-center flex-col h-full relative">
         <div className="absolute right-0 top-0 w-[85px] h-[40px] flex items-center justify-center rounded-[8px] gap-x-2 bg-[#F4F4F4] hover:bg-[#E9EAEE] transition-colors duration-300 ease-in-out">

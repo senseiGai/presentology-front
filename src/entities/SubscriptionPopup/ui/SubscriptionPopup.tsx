@@ -130,7 +130,9 @@ export const SubscriptionPopup = ({
               ctaLabel="Подключить"
               onClick={() => {
                 router.push("/subscription");
-                onClose?.();
+                setTimeout(() => {
+                  onClose?.();
+                }, 300); // Плавное закрытие после редиректа
               }}
               accent="orange"
               highlight

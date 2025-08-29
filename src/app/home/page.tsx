@@ -9,7 +9,7 @@ import { HomeBlock } from "@/widgets/HomeBlock/ui/HomeBlock";
 import { useSubscriptionPopupStore } from "@/entities/SubscriptionPopup/model/use-subscription-popup-store";
 
 export default function Registration() {
-  const { isOpen, closePopup } = useSubscriptionPopupStore();
+  const { isOpen, forceClose } = useSubscriptionPopupStore();
 
   return (
     <ProtectedRoute>
@@ -19,7 +19,7 @@ export default function Registration() {
       <ConfirmDeleteModal />
       <SubscriptionPopup
         isOpen={isOpen}
-        onClose={closePopup}
+        onClose={forceClose}
         closeOnEscape={true}
         closeOnBackdropClick={true}
       />

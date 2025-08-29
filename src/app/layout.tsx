@@ -34,7 +34,7 @@ export default function RootLayout({
           duration={5000}
           toastOptions={{
             classNames: {
-              toast: "rounded-[20px]",
+              toast: "rounded-[20px] ml-24 mb-8",
               title: "text-[#0B0911] font-semibold",
               description: "text-[#8F8F92]",
               actionButton: "rounded-[12px] border border-[#D9D9DE] px-4 py-2",

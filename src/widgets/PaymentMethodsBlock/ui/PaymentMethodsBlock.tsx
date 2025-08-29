@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { InputField } from "@/shared/ui/InputField";
 import { Button } from "@/shared/ui/Button";
 import { Checkbox } from "@/shared/ui/Checkbox";
@@ -13,9 +13,11 @@ import SecureVisaIcon from "../../../../public/icons/SecureVisaIcon";
 import SecureMirIcon from "../../../../public/icons/SecureMirIcon";
 import { usePaymentStore } from "@/shared/stores/usePaymentStore";
 import { Mascot } from "@/shared/ui";
+import { useSubscriptionPopupStore } from "@/entities/SubscriptionPopup/model/use-subscription-popup-store";
 
 export const PaymentMethodsBlock = () => {
   const router = useRouter();
+  const { forceClose } = useSubscriptionPopupStore();
 
   // Zustand store
   const {
@@ -41,7 +43,20 @@ export const PaymentMethodsBlock = () => {
     setCardholderName,
     setEmail,
     validateCardForm,
+    resetCardForm,
   } = usePaymentStore();
+
+  // Reset store when component unmounts
+  useEffect(() => {
+    // Reset stores on mount to ensure clean state
+    resetCardForm();
+    forceClose();
+
+    return () => {
+      resetCardForm();
+      forceClose();
+    };
+  }, [resetCardForm, forceClose]);
 
   const handleCardPayment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +70,8 @@ export const PaymentMethodsBlock = () => {
   };
 
   const handleGoToHome = () => {
+    resetCardForm(); // Reset payment store
+    forceClose(); // Close subscription popup
     router.push("/home");
   };
 

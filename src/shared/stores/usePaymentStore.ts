@@ -239,6 +239,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       cvv: "",
       cardholderName: "",
       showCardForm: false,
+      paymentSuccess: false,
       cardNumberError: false,
       expiryDateError: false,
       cvvError: false,

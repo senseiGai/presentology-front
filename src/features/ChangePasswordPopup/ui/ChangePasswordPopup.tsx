@@ -238,24 +238,26 @@ export default function ChangePasswordPopup() {
             </div>
           )}
         </>
-        <div className="flex-1 flex flex-col  mt-[16px]">
-          <div className=" mb-[60px]">
-            <p className="text-[#00CF1B] text-[14px] font-[400] mb-4">
-              Ваш пароль был успешно изменен!
-            </p>
-          </div>
+        {isSuccess && (
+          <div className="flex-1 flex flex-col  mt-[16px]">
+            <div className=" mb-[60px]">
+              <p className="text-[#00CF1B] text-[14px] font-[400] mb-4">
+                Ваш пароль был успешно изменен!
+              </p>
+            </div>
 
-          {/* Back to Settings Button */}
-          <div className="mt-auto w-full">
-            <Button
-              variant="primary"
-              onClick={handleBackToSettings}
-              className="w-full !h-[48px] !text-[17px] !font-[400]"
-            >
-              Вернуться к настройкам
-            </Button>
+            {/* Back to Settings Button */}
+            <div className="mt-auto w-full">
+              <Button
+                variant="primary"
+                onClick={handleBackToSettings}
+                className="w-full !h-[48px] !text-[17px] !font-[400]"
+              >
+                Вернуться к настройкам
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

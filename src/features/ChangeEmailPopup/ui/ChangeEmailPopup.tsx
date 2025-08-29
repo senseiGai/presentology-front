@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useChangeEmailStore } from "../model/use-change-email-store";
 import { InputField } from "@/shared/ui/InputField";
 import { Button } from "@/shared/ui/Button";
@@ -33,6 +33,19 @@ export default function ChangeEmailPopup() {
   } = useChangeEmailStore();
   const { openPopup: openAccountSettings } = useAccountSettingsStore();
 
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleCancel();
+      }
+    };
+
+    document.addEventListener("keydown", handleEsc);
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, []);
+
   const handleSendCode = async () => {
     const success = await sendCode();
     if (!success) {
@@ -61,17 +74,6 @@ export default function ChangeEmailPopup() {
     setNewEmail(value);
     // Очищаем ошибки при начале ввода
     if (newEmailError && value.length > 0) {
-      clearErrors();
-    }
-  };
-
-  const handleCodeChange = (value: string) => {
-    // Ограничиваем ввод только цифрами и максимум 6 символов
-    const numericValue = value.replace(/\D/g, "").slice(0, 6);
-    setVerificationCode(numericValue);
-
-    // Очищаем ошибки при начале ввода нового кода
-    if (codeError && numericValue.length > 0) {
       clearErrors();
     }
   };

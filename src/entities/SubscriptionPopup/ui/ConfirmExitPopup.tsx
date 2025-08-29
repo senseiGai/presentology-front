@@ -1,29 +1,38 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
 interface ConfirmExitPopupProps {
   isOpen: boolean;
   onConfirm: () => void;
-  onCancel: () => void;
+  onCancel: () => void; // Нажатие «Отказаться» → закрыть всё
+  onDismiss?: () => void; // ESC/крестик → закрыть только Confirm
 }
 
 export const ConfirmExitPopup = ({
   isOpen,
   onConfirm,
   onCancel,
+  onDismiss,
 }: ConfirmExitPopupProps) => {
+  const onDismissRef = useRef(onDismiss);
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
+
   useEffect(() => {
     if (!isOpen) return;
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onCancel();
-      }
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onDismiss?.();
     };
-
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onCancel]);
+    const t = setTimeout(
+      () => window.addEventListener("keyup", handler, { capture: true }),
+      50
+    );
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("keyup", handler, { capture: true });
+    };
+  }, [isOpen, onDismiss]);
 
   if (!isOpen) return null;
 

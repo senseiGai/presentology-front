@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useAccountSettingsStore } from "../model/use-account-settings-store";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { useChangeEmailStore } from "../../ChangeEmailPopup/model/use-change-email-store";
@@ -45,6 +45,19 @@ export default function AccountSettingsPopup() {
   const { openPopup: openChangeEmailPopup } = useChangeEmailStore();
   const { openPopup: openChangePasswordPopup } = useChangePasswordStore();
 
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleCancel();
+      }
+    };
+
+    document.addEventListener("keydown", handleEsc);
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, []);
+
   // Initialize form when popup opens
   useEffect(() => {
     if (isOpen && user) {
@@ -66,16 +79,29 @@ export default function AccountSettingsPopup() {
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     resetForm();
     closePopup();
-  };
+  }, [resetForm, closePopup]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      handleCancel();
-    }
-  };
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      // поддержим и старое 'Esc'
+      if (e.key === "Escape" || e.key === "Esc") {
+        e.preventDefault();
+        handleCancel();
+      }
+    };
+
+    // слушаем на window, capture: true, чтобы обойти stopPropagation/FocusTrap
+    window.addEventListener("keyup", onKeyUp, { capture: true });
+
+    return () => {
+      window.removeEventListener("keyup", onKeyUp, { capture: true });
+    };
+  }, [isOpen, handleCancel]);
 
   const handleEmailChange = () => {
     if (isEditingEmail) {
@@ -111,8 +137,6 @@ export default function AccountSettingsPopup() {
     <div
       className="fixed inset-0 bg-[#BBA2FE66] backdrop-blur-[8px] flex items-center justify-center z-50"
       onClick={handleCancel}
-      onKeyDown={handleKeyDown}
-      tabIndex={-1}
     >
       <div
         className="bg-white rounded-[24px] px-[24px] pt-[29px] pb-[30px] w-[514px] h-[700px] relative flex flex-col"

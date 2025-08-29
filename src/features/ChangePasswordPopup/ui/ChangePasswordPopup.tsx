@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useChangePasswordStore } from "../model/use-change-password-store";
 import { useAccountSettingsStore } from "../../AccountSettingsPopup/model/use-account-settings-store";
 import { InputField } from "@/shared/ui/InputField";
@@ -36,6 +36,19 @@ export default function ChangePasswordPopup() {
 
   const { openPopup: openAccountSettings } = useAccountSettingsStore();
 
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleCancel();
+      }
+    };
+
+    document.addEventListener("keydown", handleEsc);
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, []);
+
   const handleBackToSettings = () => {
     closePopup();
     openAccountSettings();
@@ -51,12 +64,6 @@ export default function ChangePasswordPopup() {
     resetForm();
     closePopup();
     openAccountSettings();
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      handleCancel();
-    }
   };
 
   // Обработчик изменения старого пароля
@@ -92,7 +99,6 @@ export default function ChangePasswordPopup() {
     <div
       className="fixed inset-0 bg-[#BBA2FE66] backdrop-blur-[8px] flex items-center justify-center z-50"
       onClick={handleCancel}
-      onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
       <div

@@ -27,18 +27,21 @@ export const SubscriptionPopup = ({
     openConfirmExit,
   } = useSubscriptionPopupStore();
   const router = useRouter();
+
   useEffect(() => {
     if (!isOpen || !closeOnEscape) return;
 
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isConfirmExitOpen) {
+        e.preventDefault();
         openConfirmExit();
       }
     };
 
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [isOpen, closeOnEscape, openConfirmExit]);
+    window.addEventListener("keyup", onKeyUp, { capture: true });
+    return () =>
+      window.removeEventListener("keyup", onKeyUp, { capture: true });
+  }, [isOpen, closeOnEscape, isConfirmExitOpen, openConfirmExit]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -161,10 +164,13 @@ export const SubscriptionPopup = ({
         onConfirm={() => {
           applyDiscount();
         }}
+        onDismiss={() => {
+          closeConfirmExit();
+        }} // Esc/крестик
         onCancel={() => {
           closeConfirmExit();
           forceClose();
-        }}
+        }} // Кнопка «Отказаться»
       />
     </div>
   );

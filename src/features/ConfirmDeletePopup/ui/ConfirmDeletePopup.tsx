@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { useConfirmDeleteStore } from "../model/use-confirm-delete-popup";
 import { X } from "lucide-react";
 import { showDeletedToast } from "@/shared/lib/toasts";
@@ -7,6 +7,19 @@ import { GlassModal } from "@/shared/ui/GlassModal";
 
 export function ConfirmDeleteModal() {
   const { open, title, description, closeModal } = useConfirmDeleteStore();
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeModal();
+      }
+    };
+
+    document.addEventListener("keydown", handleEsc);
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, []);
 
   return (
     <GlassModal

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import QueryProvider from "@/shared/providers/QueryProvider";
 import AuthInitializer from "@/shared/components/AuthInitializer";
+import { AccountSettingsPopup } from "@/features/AccountSettingsPopup";
 
 const onest = Onest({
   subsets: ["latin", "cyrillic"], // шрифт поддерживает кириллицу!
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body className={` ${onest.variable} antialiased`}>
         <QueryProvider>
           <AuthInitializer>{children}</AuthInitializer>
+          <AccountSettingsPopup />
         </QueryProvider>
         <Toaster
           position="bottom-left"

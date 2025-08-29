@@ -14,6 +14,7 @@ import { useSideBarStore } from "../model/use-sidebar-store";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { menuItems } from "../lib/menuItems";
 import { useSubscriptionPopupStore } from "../../../entities/SubscriptionPopup/model/use-subscription-popup-store";
+import { useAccountSettingsStore } from "../../AccountSettingsPopup/model/use-account-settings-store";
 
 export default function Sidebar() {
   const { isCollapsed, toggleCollapsed } = useSideBarStore();
@@ -35,6 +36,7 @@ export default function Sidebar() {
   const avatarLetter = user?.firstName?.charAt(0)?.toUpperCase() || "U";
   const displayEmail = user?.email || "email@provider.com";
   const { openPopup } = useSubscriptionPopupStore();
+  const { openPopup: openAccountSettings } = useAccountSettingsStore();
 
   return (
     <aside
@@ -100,7 +102,11 @@ export default function Sidebar() {
           {!isCollapsed ? (
             <>
               <div className="flex items-center gap-[12px]">
-                <div className="bg-[#BBA2FE] w-[40px] h-[40px] pt-0.5 cursor-pointer flex items-center justify-center rounded-full">
+                <div
+                  className="bg-[#BBA2FE] w-[40px] h-[40px] pt-0.5 cursor-pointer flex items-center justify-center rounded-full hover:bg-[#A689FD] transition-colors"
+                  onClick={openAccountSettings}
+                  title="Настройки аккаунта"
+                >
                   {user?.avatar ? (
                     <Image
                       src={user.avatar}
@@ -129,8 +135,9 @@ export default function Sidebar() {
             </>
           ) : (
             <div
-              className="bg-[#BBA2FE] w-[40px] h-[40px] pt-0.5 cursor-pointer flex items-center justify-center rounded-full"
+              className="bg-[#BBA2FE] w-[40px] h-[40px] pt-0.5 cursor-pointer flex items-center justify-center rounded-full hover:bg-[#A689FD] transition-colors"
               title={displayEmail}
+              onClick={openAccountSettings}
             >
               {user?.avatar ? (
                 <Image

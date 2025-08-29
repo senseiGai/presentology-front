@@ -21,7 +21,7 @@ export function showDeletedToast({
 }: DeletedToastArgs) {
   toast.custom(
     (t) => (
-      <div className="relative  left-[88px] w-[350px] h-[157px] rounded-[20px] bg-white shadow-lg p-3">
+      <div className="relative -ml-7 w-[350px] h-[157px] rounded-[20px] bg-white shadow-lg p-3">
         <div className="flex items-start gap-3">
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#00CF1B] text-white text-sm">
             ✓
@@ -89,7 +89,7 @@ export function showRestoredToast({
 }: RestoredToastArgs) {
   toast.custom(
     (t) => (
-      <div className="relative left-[88px] w-[350px] h-[106px] rounded-[20px] bg-white shadow-lg p-3">
+      <div className="relative -ml-7 w-[350px] h-[106px] rounded-[20px] bg-white shadow-lg p-3">
         <div className="flex items-start gap-x-3">
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#00CF1B] text-white text-sm">
             ✓

@@ -13,8 +13,8 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
+  access_token: string;
+  refresh_token?: string;
   user: User;
 }
 
@@ -36,8 +36,8 @@ export interface ForgotPasswordResponse {
 }
 
 export interface SocialAuthResponse {
-  accessToken: string;
-  refreshToken: string;
+  access_token: string;
+  refresh_token?: string;
   user: User;
   isNewUser: boolean;
 }
@@ -68,6 +68,28 @@ export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
   avatar?: string;
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordResponse {
+  message: string;
+}
+
+export interface SendEmailVerificationRequest {
+  newEmail: string;
+}
+
+export interface VerifyEmailChangeRequest {
+  newEmail: string;
+  code: string;
+}
+
+export interface EmailVerificationResponse {
+  message: string;
 }
 
 // Presentation Types

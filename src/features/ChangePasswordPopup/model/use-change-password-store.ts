@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { AuthApi } from "@/shared/api/auth.api";
+import type { ChangePasswordRequest } from "@/shared/api/types";
 
 interface ChangePasswordState {
   // UI state
@@ -310,33 +312,31 @@ export const useChangePasswordStore = create<ChangePasswordState>(
       set({ isLoading: true });
 
       try {
-        // Here you would make API call to change password
-        // const response = await UserApi.changePassword({
-        //   oldPassword: state.oldPassword,
-        //   newPassword: state.newPassword
-        // });
+        const changePasswordData: ChangePasswordRequest = {
+          oldPassword: state.oldPassword,
+          newPassword: state.newPassword,
+        };
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Моковая валидация: текущий пароль должен быть "oldpass123"
-        if (state.oldPassword !== "oldpass123") {
-          set({
-            isLoading: false,
-            oldPasswordError: true,
-            oldPasswordErrorMessage: "Неверный текущий пароль",
-          });
-          return false;
-        }
+        await AuthApi.changePassword(changePasswordData);
 
         set({ isLoading: false, isSuccess: true });
         return true;
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error changing password:", error);
+
+        let errorMessage = "Произошла ошибка при изменении пароля";
+
+        if (error?.response?.status === 400) {
+          errorMessage =
+            error.response.data?.message || "Неверный текущий пароль";
+        } else if (error?.response?.status === 401) {
+          errorMessage = "Необходимо войти в систему";
+        }
+
         set({
           isLoading: false,
           oldPasswordError: true,
-          oldPasswordErrorMessage: "Произошла ошибка при изменении пароля",
+          oldPasswordErrorMessage: errorMessage,
         });
         return false;
       }

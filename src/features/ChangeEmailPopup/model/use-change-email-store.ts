@@ -1,4 +1,10 @@
 import { create } from "zustand";
+import { AuthApi } from "@/shared/api/auth.api";
+import { useAuthStore } from "@/shared/stores/auth-store";
+import type {
+  SendEmailVerificationRequest,
+  VerifyEmailChangeRequest,
+} from "@/shared/api/types";
 
 interface ChangeEmailState {
   // UI state
@@ -257,19 +263,30 @@ export const useChangeEmailStore = create<ChangeEmailState>((set, get) => ({
     set({ isLoading: true });
 
     try {
-      // Here you would make API call to send verification code
-      // const response = await UserApi.sendEmailVerificationCode({
-      //   newEmail: state.newEmail
-      // });
+      const sendCodeData: SendEmailVerificationRequest = {
+        newEmail: state.newEmail,
+      };
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await AuthApi.sendEmailVerification(sendCodeData);
 
       set({ isLoading: false, step: "code" });
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending code:", error);
-      set({ isLoading: false });
+
+      let errorMessage = "Произошла ошибка при отправке кода";
+
+      if (error?.response?.status === 400) {
+        errorMessage = error.response.data?.message || "Некорректный email";
+      } else if (error?.response?.status === 409) {
+        errorMessage = "Пользователь с таким email уже существует";
+      }
+
+      set({
+        isLoading: false,
+        newEmailError: true,
+        newEmailErrorMessage: errorMessage,
+      });
       return false;
     }
   },
@@ -285,31 +302,40 @@ export const useChangeEmailStore = create<ChangeEmailState>((set, get) => ({
     set({ isLoading: true });
 
     try {
-      // Here you would make API call to verify code and change email
-      // const response = await UserApi.verifyEmailChange({
-      //   newEmail: state.newEmail,
-      //   code: state.verificationCode
-      // });
+      const verifyData: VerifyEmailChangeRequest = {
+        newEmail: state.newEmail,
+        code: state.verificationCode,
+      };
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const updatedUser = await AuthApi.verifyEmailChange(verifyData);
 
-      // Моковая валидация: правильный код - "123456"
-      if (state.verificationCode !== "123456") {
-        set({
-          isLoading: false,
-          codeError: true,
-          codeErrorMessage: "Неправильный код",
-        });
-        return false;
-      }
+      // Обновляем пользователя в auth store
+      const authStore = useAuthStore.getState();
+      authStore.updateUser(updatedUser);
 
       // Переход к экрану успеха
-      set({ isLoading: false, step: "success" });
+      set({
+        isLoading: false,
+        step: "success",
+        oldEmail: updatedUser.email, // Обновляем старый email на новый
+      });
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error verifying code:", error);
-      set({ isLoading: false });
+
+      let errorMessage = "Неправильный код";
+
+      if (error?.response?.status === 400) {
+        errorMessage = error.response.data?.message || "Неправильный код";
+      } else if (error?.response?.status === 401) {
+        errorMessage = "Необходимо войти в систему";
+      }
+
+      set({
+        isLoading: false,
+        codeError: true,
+        codeErrorMessage: errorMessage,
+      });
       return false;
     }
   },

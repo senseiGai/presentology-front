@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { AuthApi } from "@/shared/api/auth.api";
+import { useAuthStore } from "@/shared/stores/auth-store";
 import type { RegisterRequest } from "@/shared/api/types";
 
 interface RegisterState {
@@ -231,12 +232,10 @@ export const useRegisterStore = create<RegisterState>((set, get) => ({
 
       const response = await AuthApi.register(registerData);
 
-      // Сохраняем токены в localStorage
-      localStorage.setItem("accessToken", response.accessToken);
-      localStorage.setItem("refreshToken", response.refreshToken);
-
-      // Сохраняем информацию о пользователе
-      localStorage.setItem("user", JSON.stringify(response.user));
+      // Сохраняем токены и пользователя в Zustand store
+      const authStore = useAuthStore.getState();
+      authStore.setTokens(response.access_token, response.refresh_token || "");
+      authStore.setUser(response.user);
 
       set({ isLoading: false });
       return true;

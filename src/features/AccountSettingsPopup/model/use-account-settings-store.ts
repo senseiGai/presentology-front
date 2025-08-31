@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { AuthApi } from "@/shared/api/auth.api";
-import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { useAuthStore } from "@/shared/stores/auth-store";
 import type { UpdateProfileRequest } from "@/shared/api/types";
 
 interface AccountSettingsState {
@@ -97,7 +97,19 @@ export const useAccountSettingsStore = create<AccountSettingsState>(
     isEditingPassword: false,
 
     // UI actions
-    openPopup: () => set({ isOpen: true }),
+    openPopup: () => {
+      set({ isOpen: true });
+
+      // Загружаем данные пользователя из auth store
+      const authStore = useAuthStore.getState();
+      if (authStore.user) {
+        set({
+          firstName: authStore.user.firstName || "",
+          lastName: authStore.user.lastName || "",
+          email: authStore.user.email || "",
+        });
+      }
+    },
     closePopup: () => set({ isOpen: false }),
     setLoading: (loading: boolean) => set({ isLoading: loading }),
 
@@ -241,10 +253,7 @@ export const useAccountSettingsStore = create<AccountSettingsState>(
 
         // Update the global auth store with new user data
         const authStore = useAuthStore.getState();
-        authStore.setUser(updatedUser);
-
-        // Update localStorage as well
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+        authStore.updateUser(updatedUser);
 
         set({ isLoading: false });
         return true;

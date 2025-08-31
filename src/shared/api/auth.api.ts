@@ -7,6 +7,11 @@ import type {
   User,
   SocialAuthResponse,
   UpdateProfileRequest,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
+  SendEmailVerificationRequest,
+  VerifyEmailChangeRequest,
+  EmailVerificationResponse,
   ForgotPasswordRequest,
   ResetPasswordRequest,
   ForgotPasswordResponse,
@@ -68,6 +73,39 @@ export class AuthApi {
   static async updateProfile(data: UpdateProfileRequest): Promise<User> {
     const response = await apiClient.patch(
       API_ENDPOINTS.USERS.UPDATE_PROFILE,
+      data
+    );
+    return response.data;
+  }
+
+  // Изменение пароля
+  static async changePassword(
+    data: ChangePasswordRequest
+  ): Promise<ChangePasswordResponse> {
+    const response = await apiClient.patch(
+      API_ENDPOINTS.USERS.CHANGE_PASSWORD,
+      data
+    );
+    return response.data;
+  }
+
+  // Отправка кода для изменения email
+  static async sendEmailVerification(
+    data: SendEmailVerificationRequest
+  ): Promise<EmailVerificationResponse> {
+    const response = await apiClient.patch(
+      API_ENDPOINTS.USERS.SEND_EMAIL_VERIFICATION,
+      data
+    );
+    return response.data;
+  }
+
+  // Подтверждение изменения email
+  static async verifyEmailChange(
+    data: VerifyEmailChangeRequest
+  ): Promise<User> {
+    const response = await apiClient.patch(
+      API_ENDPOINTS.USERS.VERIFY_EMAIL_CHANGE,
       data
     );
     return response.data;

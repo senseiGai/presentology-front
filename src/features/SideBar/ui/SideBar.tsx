@@ -36,7 +36,6 @@ export default function Sidebar() {
   // Получаем первую букву имени для аватара
   const avatarLetter = user?.firstName?.charAt(0)?.toUpperCase() || "U";
   const displayEmail = user?.email || "email@provider.com";
-  const { openPopup } = useSubscriptionPopupStore();
   const { openPopup: openAccountSettings } = useAccountSettingsStore();
   const { setActiveItem } = useSideBarStore();
 

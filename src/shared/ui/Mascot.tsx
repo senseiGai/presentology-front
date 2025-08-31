@@ -31,7 +31,7 @@ export const Mascot: React.FC<MascotProps> = ({ className, size = "md" }) => {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  const getEyePosition = (_isLeft: boolean) => {
+  const getEyePosition = () => {
     const maxRadius = 8; // максимальный радиус движения глаза в пикселях
     const distance = Math.sqrt(mousePosition.x ** 2 + mousePosition.y ** 2);
 
@@ -155,8 +155,8 @@ export const Mascot: React.FC<MascotProps> = ({ className, size = "md" }) => {
           top: "30%",
           left: "50%",
           transform: `translate(calc(-50% - 11.5px), -50%) translate(${
-            getEyePosition(true).x
-          }px, ${getEyePosition(true).y}px)`,
+            getEyePosition().x
+          }px, ${getEyePosition().y}px)`,
         }}
       />
       <div
@@ -165,8 +165,8 @@ export const Mascot: React.FC<MascotProps> = ({ className, size = "md" }) => {
           top: "30%",
           left: "50%",
           transform: `translate(calc(-50% + 11.5px), -50%) translate(${
-            getEyePosition(false).x
-          }px, ${getEyePosition(false).y}px)`,
+            getEyePosition().x
+          }px, ${getEyePosition().y}px)`,
         }}
       />
 

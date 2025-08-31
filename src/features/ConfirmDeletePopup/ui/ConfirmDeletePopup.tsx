@@ -19,7 +19,7 @@ export function ConfirmDeleteModal() {
     return () => {
       document.removeEventListener("keydown", handleEsc);
     };
-  }, []);
+  }, [closeModal]);
 
   return (
     <GlassModal

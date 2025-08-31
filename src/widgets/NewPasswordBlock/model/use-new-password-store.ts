@@ -131,7 +131,7 @@ export const useNewPasswordStore = create<NewPasswordState>((set, get) => ({
       await new Promise((resolve) => setTimeout(resolve, 1000));
       console.log("Пароль успешно сохранён");
       set({ success: true }); // ✅ редирект триггер
-    } catch (_e) {
+    } catch {
       set({ passwordError: "Произошла ошибка. Попробуйте позже." });
     } finally {
       set({ isLoading: false });

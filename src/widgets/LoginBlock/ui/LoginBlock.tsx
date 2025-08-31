@@ -7,9 +7,7 @@ import { Button } from "@/shared/ui/Button";
 import Image from "next/image";
 
 import { useLoginStore } from "../model/use-login-store";
-import { useAuthStore } from "@/shared/stores/auth-store";
 import { useRouter } from "next/navigation";
-import { SurveyApi } from "@/shared/api/survey.api";
 import { toast } from "sonner";
 
 import LogoIcon from "../../../../public/icons/Logo";

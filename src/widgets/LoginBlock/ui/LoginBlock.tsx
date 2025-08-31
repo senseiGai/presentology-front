@@ -7,7 +7,7 @@ import { Button } from "@/shared/ui/Button";
 import Image from "next/image";
 
 import { useLoginStore } from "../model/use-login-store";
-import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { useAuthStore } from "@/shared/stores/auth-store";
 import { useRouter } from "next/navigation";
 import { SurveyApi } from "@/shared/api/survey.api";
 import { toast } from "sonner";
@@ -19,7 +19,6 @@ import { ErrorCard } from "@/features/ErrorCard/ui/ErrorCard";
 
 export const LoginBlock = () => {
   const router = useRouter();
-  const { setUser } = useAuthStore();
   const {
     email,
     password,
@@ -36,30 +35,29 @@ export const LoginBlock = () => {
     e.preventDefault();
     if (email && password) {
       const success = await login(email, password);
+      console.log("Login success:", success);
+      
       if (success) {
-        // Получаем данные пользователя из localStorage и обновляем глобальный стор
-        const userData = localStorage.getItem("user");
-        if (userData) {
-          const user = JSON.parse(userData);
-          setUser(user);
-        }
-
         toast.success("Вы успешно вошли в систему!");
 
-        // Проверяем статус опроса после успешного входа
-        try {
-          const surveyStatus = await SurveyApi.getSurveyStatus();
+        // Временно редиректим сразу на /home для тестирования
+        console.log("Redirecting to /home");
+        router.push("/home");
 
-          if (surveyStatus.hasCompletedSurvey) {
-            router.push("/home");
-          } else {
-            router.push("/survey");
-          }
-        } catch (error) {
-          console.error("Error checking survey status:", error);
-          // В случае ошибки проверки опроса идем на главную
-          router.push("/home");
-        }
+        // Проверяем статус опроса после успешного входа
+        // try {
+        //   const surveyStatus = await SurveyApi.getSurveyStatus();
+
+        //   if (surveyStatus.hasCompletedSurvey) {
+        //     router.push("/home");
+        //   } else {
+        //     router.push("/survey");
+        //   }
+        // } catch (error) {
+        //   console.error("Error checking survey status:", error);
+        //   // В случае ошибки проверки опроса идем на главную
+        //   router.push("/home");
+        // }
       }
     }
   };

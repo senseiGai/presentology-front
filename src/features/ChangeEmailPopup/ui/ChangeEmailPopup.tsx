@@ -398,24 +398,6 @@ export default function ChangeEmailPopup() {
                     </div>
                   </div>
                 )}
-
-                {/* Кнопка для быстрого ввода кода из логов */}
-                <div className="mt-2">
-                  <button
-                    className="text-[#FDA345] text-[11px] font-[400] hover:text-[#F59E0B] cursor-pointer underline"
-                    onClick={() => {
-                      const logCode = "277678";
-                      setVerificationCode(logCode);
-                      setDebugCode(logCode);
-                      console.log(
-                        "🚀 [ChangeEmailPopup] Using code from logs:",
-                        logCode
-                      );
-                    }}
-                  >
-                    [БЫСТРО] Ввести код из логов: 277678
-                  </button>
-                </div>
               </div>
             </div>
 

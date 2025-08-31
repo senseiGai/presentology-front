@@ -93,6 +93,27 @@ export interface UpdatePresentationRequest {
   content?: any;
 }
 
+// Survey Types
+export interface SurveyRequest {
+  answers: Record<string, string>;
+  isFirstTime?: boolean;
+}
+
+export interface SurveyResponse {
+  message: string;
+  pointsEarned: number;
+}
+
+export interface SurveyStatusResponse {
+  hasCompletedSurvey: boolean;
+  surveyData?: {
+    id: string;
+    answers: Record<string, string>;
+    isCompleted: boolean;
+    completedAt: string;
+  };
+}
+
 // API Response Types
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -117,5 +138,8 @@ export const QUERY_KEYS = {
   PRESENTATIONS: {
     LIST: ["presentations", "list"],
     DETAIL: (id: string) => ["presentations", "detail", id],
+  },
+  SURVEY: {
+    STATUS: ["survey", "status"],
   },
 } as const;

@@ -4,6 +4,7 @@ import React, { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { AuthApi } from "@/shared/api/auth.api";
+import { SurveyApi } from "@/shared/api/survey.api";
 import { toast } from "sonner";
 
 function AuthCallbackContent() {
@@ -55,11 +56,24 @@ function AuthCallbackContent() {
 
         toast.success("Успешная авторизация!");
 
-        // Перенаправляем на нужную страницу
+        // Для новых пользователей всегда показываем опрос
         if (response.isNewUser) {
           router.push("/survey");
         } else {
-          router.push("/home");
+          // Для существующих пользователей проверяем статус опроса
+          try {
+            const surveyStatus = await SurveyApi.getSurveyStatus();
+
+            if (surveyStatus.hasCompletedSurvey) {
+              router.push("/home");
+            } else {
+              router.push("/survey");
+            }
+          } catch (error) {
+            console.error("Error checking survey status:", error);
+            // В случае ошибки проверки опроса идем на главную для существующих пользователей
+            router.push("/home");
+          }
         }
       } catch (error: any) {
         console.error("Social auth error:", error);

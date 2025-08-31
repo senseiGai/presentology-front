@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { SurveyApi } from "@/shared/api/survey.api";
+import { toast } from "sonner";
 
 interface SurveyStep {
   id: number;
@@ -12,11 +14,15 @@ interface SurveyState {
   currentStepIndex: number;
   answers: Record<number, string>;
   customInput: string;
+  isSubmitting: boolean;
+  isCompleted: boolean;
+  error: string | null;
 
   selectAnswer: (answer: string) => void;
   setCustomInput: (text: string) => void;
   nextStep: () => void;
   skipStep: () => void;
+  submitSurvey: () => Promise<void>;
   reset: () => void;
 }
 
@@ -78,6 +84,9 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
   currentStepIndex: 0,
   answers: {},
   customInput: "",
+  isSubmitting: false,
+  isCompleted: false,
+  error: null,
 
   selectAnswer: (answer) => {
     const { steps, currentStepIndex } = get();
@@ -94,8 +103,8 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       if (currentStepIndex < steps.length - 1) {
         set({ currentStepIndex: currentStepIndex + 1, customInput: "" });
       } else {
-        set({ currentStepIndex: steps.length });
-        console.log("Завершено:", get().answers);
+        // Автоматически отправляем опрос при завершении
+        get().submitSurvey();
       }
     }
   },
@@ -107,16 +116,22 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
 
     // Запускаем дебаунс перехода
     if (text.trim().length > 1) {
-      typingTimeout = setTimeout(() => {
+      typingTimeout = setTimeout(async () => {
         const { currentStepIndex, steps } = get();
+        const currentStep = steps[currentStepIndex];
+
+        // Сохраняем кастомный ответ
+        set((state) => ({
+          answers: { ...state.answers, [currentStep.id]: text.trim() },
+        }));
+
         const isLastStep = currentStepIndex === steps.length - 1;
 
         if (!isLastStep) {
           set({ currentStepIndex: currentStepIndex + 1, customInput: "" });
         } else {
-          // Завершить — делаем индекс больше длины
-          set({ currentStepIndex: steps.length });
-          console.log("Опрос завершён", get().answers);
+          // Автоматически отправляем опрос при завершении
+          await get().submitSurvey();
         }
       }, 4000);
     }
@@ -129,9 +144,8 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     if (!isLastStep) {
       set({ currentStepIndex: currentStepIndex + 1, customInput: "" });
     } else {
-      // Завершить — индекс за пределы массива
-      set({ currentStepIndex: steps.length });
-      console.log("Опрос завершён (skip)", get().answers);
+      // Автоматически отправляем опрос при завершении
+      get().submitSurvey();
     }
   },
 
@@ -142,13 +156,62 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       answers: { ...state.answers, [steps[currentStepIndex].id]: "Пропущено" },
     }));
 
-    get().nextStep(); // <-- теперь корректно завершает
+    get().nextStep();
   },
 
-  reset: () =>
+  submitSurvey: async () => {
+    const { answers } = get();
+
+    try {
+      set({ isSubmitting: true, error: null });
+
+      // Конвертируем ответы в строковые ключи для API
+      const stringAnswers: Record<string, string> = {};
+      Object.entries(answers).forEach(([key, value]) => {
+        stringAnswers[key] = value;
+      });
+
+      const response = await SurveyApi.submitSurvey({
+        answers: stringAnswers,
+        isFirstTime: true,
+      });
+
+      set({
+        isCompleted: true,
+        currentStepIndex: get().steps.length,
+        isSubmitting: false,
+      });
+
+      toast.success(
+        `Спасибо за участие в опросе! Вы получили ${response.pointsEarned} баллов.`
+      );
+
+      console.log("Опрос успешно отправлен:", response);
+    } catch (err) {
+      const error = err as any;
+      const errorMessage =
+        error?.response?.data?.message ||
+        "Произошла ошибка при отправке опроса";
+
+      set({
+        error: errorMessage,
+        isSubmitting: false,
+      });
+
+      toast.error(errorMessage);
+      console.error("Ошибка отправки опроса:", error);
+    }
+  },
+
+  reset: () => {
+    clearTimeout(typingTimeout);
     set({
       currentStepIndex: 0,
       answers: {},
       customInput: "",
-    }),
+      isSubmitting: false,
+      isCompleted: false,
+      error: null,
+    });
+  },
 }));

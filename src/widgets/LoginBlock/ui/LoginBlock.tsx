@@ -9,6 +9,7 @@ import Image from "next/image";
 import { useLoginStore } from "../model/use-login-store";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { useRouter } from "next/navigation";
+import { SurveyApi } from "@/shared/api/survey.api";
 import { toast } from "sonner";
 
 import LogoIcon from "../../../../public/icons/Logo";
@@ -44,7 +45,21 @@ export const LoginBlock = () => {
         }
 
         toast.success("Вы успешно вошли в систему!");
-        router.push("/home");
+
+        // Проверяем статус опроса после успешного входа
+        try {
+          const surveyStatus = await SurveyApi.getSurveyStatus();
+
+          if (surveyStatus.hasCompletedSurvey) {
+            router.push("/home");
+          } else {
+            router.push("/survey");
+          }
+        } catch (error) {
+          console.error("Error checking survey status:", error);
+          // В случае ошибки проверки опроса идем на главную
+          router.push("/home");
+        }
       }
     }
   };

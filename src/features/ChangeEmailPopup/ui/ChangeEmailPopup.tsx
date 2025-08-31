@@ -42,6 +42,37 @@ export default function ChangeEmailPopup() {
   // Локальное состояние для отображения кода
   const [debugCode, setDebugCode] = React.useState<string | null>(null);
 
+  // Слушаем события обновления кода
+  React.useEffect(() => {
+    const handleCodeUpdate = (event: any) => {
+      console.log(
+        "🔄 [ChangeEmailPopup] Debug code updated:",
+        event.detail.code
+      );
+      setDebugCode(event.detail.code);
+    };
+
+    // Проверяем есть ли код в localStorage при монтировании
+    const savedCode = localStorage.getItem("debugVerificationCode");
+    if (savedCode) {
+      console.log("🔍 [ChangeEmailPopup] Found saved debug code:", savedCode);
+      setDebugCode(savedCode);
+    }
+
+    window.addEventListener("debugCodeUpdated", handleCodeUpdate);
+    return () => {
+      window.removeEventListener("debugCodeUpdated", handleCodeUpdate);
+    };
+  }, []);
+
+  // Очищаем код при закрытии попапа
+  React.useEffect(() => {
+    if (!isOpen) {
+      setDebugCode(null);
+      localStorage.removeItem("debugVerificationCode");
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
 

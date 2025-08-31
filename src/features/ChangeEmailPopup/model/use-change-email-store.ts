@@ -267,12 +267,74 @@ export const useChangeEmailStore = create<ChangeEmailState>((set, get) => ({
         newEmail: state.newEmail,
       };
 
+      console.log(
+        "📤 [ChangeEmailStore] Sending verification code to:",
+        state.newEmail
+      );
       await AuthApi.sendEmailVerification(sendCodeData);
+
+      // Автоматически получаем код из бэкенда для отображения
+      try {
+        console.log(
+          "🔍 [ChangeEmailStore] Getting code from backend for debug..."
+        );
+        const codeResult = await AuthApi.getVerificationCode();
+        if (codeResult.code) {
+          console.log(
+            "🔑 [ChangeEmailStore] Debug code retrieved:",
+            codeResult.code
+          );
+          // Сохраняем код в localStorage для отображения в UI
+          localStorage.setItem("debugVerificationCode", codeResult.code);
+          // Диспатчим событие для обновления UI
+          window.dispatchEvent(
+            new CustomEvent("debugCodeUpdated", {
+              detail: { code: codeResult.code },
+            })
+          );
+        }
+      } catch (codeError: any) {
+        console.log(
+          "⚠️ [ChangeEmailStore] Could not get debug code:",
+          codeError.message
+        );
+      }
 
       set({ isLoading: false, step: "code" });
       return true;
     } catch (error: any) {
-      console.error("Error sending code:", error);
+      console.error("❌ [ChangeEmailStore] Error sending code:", {
+        error: error.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+      });
+
+      // Даже при ошибке отправки пытаемся получить код из логов
+      try {
+        console.log(
+          "🧪 [ChangeEmailStore] Trying to get code despite send error..."
+        );
+        const codeResult = await AuthApi.getVerificationCode();
+        if (codeResult.code) {
+          console.log(
+            "🎯 [ChangeEmailStore] Found code in logs despite send error:",
+            codeResult.code
+          );
+          // Сохраняем код и переходим к вводу
+          localStorage.setItem("debugVerificationCode", codeResult.code);
+          window.dispatchEvent(
+            new CustomEvent("debugCodeUpdated", {
+              detail: { code: codeResult.code },
+            })
+          );
+
+          // Переходим к шагу ввода кода, несмотря на ошибку email
+          set({ isLoading: false, step: "code" });
+          return true;
+        }
+      } catch (codeError: any) {
+        console.log("⚠️ [ChangeEmailStore] No code found in logs");
+      }
 
       let errorMessage = "Произошла ошибка при отправке кода";
 

@@ -9,13 +9,15 @@ import Link from "next/link";
 import { passwordRules } from "../lib/passwordRules";
 import { useRegisterStore } from "../model/use-registration-store";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { useSurveyStatus } from "@/shared/hooks/useSurvey";
 import { toast } from "sonner";
-
 import { useRouter } from "next/navigation";
 
 export const RegistrationBlock = () => {
   const router = useRouter();
   const { setUser } = useAuthStore();
+  const { refetch: refetchSurveyStatus } = useSurveyStatus();
+
   const {
     email,
     password,
@@ -56,7 +58,23 @@ export const RegistrationBlock = () => {
       }
 
       toast.success("Регистрация успешно завершена!");
-      router.push("/survey");
+
+      // Проверяем статус опроса после успешной регистрации
+      try {
+        const surveyStatus = await refetchSurveyStatus();
+
+        if (surveyStatus.data?.hasCompletedSurvey) {
+          // Если опрос уже пройден, идем на главную
+          router.push("/home");
+        } else {
+          // Если опрос не пройден, идем на страницу опроса
+          router.push("/survey");
+        }
+      } catch (error) {
+        console.error("Error checking survey status:", error);
+        // В случае ошибки по умолчанию идем на опрос (для новых пользователей)
+        router.push("/survey");
+      }
     }
   };
 

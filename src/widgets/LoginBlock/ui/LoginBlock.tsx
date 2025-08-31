@@ -36,7 +36,7 @@ export const LoginBlock = () => {
     if (email && password) {
       const success = await login(email, password);
       console.log("Login success:", success);
-      
+
       if (success) {
         toast.success("Вы успешно вошли в систему!");
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, ReactNode } from "react";
+import { useEffect, ReactNode, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { useAuthStore } from "@/shared/stores/auth-store";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -13,17 +13,23 @@ export default function ProtectedRoute({
   children,
   redirectTo = "/login",
 }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
   const router = useRouter();
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push(redirectTo);
-    }
-  }, [isAuthenticated, isLoading, router, redirectTo]);
+    if (_hasHydrated) {
+      setIsInitialized(true);
 
-  // Показываем загрузку пока проверяем авторизацию
-  if (isLoading) {
+      if (!isAuthenticated) {
+        console.log("Not authenticated, redirecting to:", redirectTo);
+        router.replace(redirectTo);
+      }
+    }
+  }, [isAuthenticated, _hasHydrated, router, redirectTo]);
+
+  // Показываем загрузку пока не завершилась гидратация
+  if (!_hasHydrated || !isInitialized) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

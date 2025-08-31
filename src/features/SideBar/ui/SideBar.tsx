@@ -14,7 +14,6 @@ import LogoutIcon from "../../../../public/icons/LogOutIcon";
 import { useSideBarStore } from "../model/use-sidebar-store";
 import { useAuthStore } from "@/shared/stores/auth-store";
 import { menuItems } from "../lib/menuItems";
-import { useSubscriptionPopupStore } from "../../../entities/SubscriptionPopup/model/use-subscription-popup-store";
 import { useAccountSettingsStore } from "../../AccountSettingsPopup/model/use-account-settings-store";
 
 export default function Sidebar() {

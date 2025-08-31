@@ -1,4 +1,7 @@
 import { create } from "zustand";
+import { AuthApi } from "@/shared/api/auth.api";
+import { useAuthStore } from "@/shared/stores/useAuthStore";
+import type { UpdateProfileRequest } from "@/shared/api/types";
 
 interface AccountSettingsState {
   // UI state
@@ -222,23 +225,45 @@ export const useAccountSettingsStore = create<AccountSettingsState>(
       set({ isLoading: true });
 
       try {
-        // Here you would make API call to update user data
-        // const response = await UserApi.updateProfile({
-        //   firstName: state.firstName,
-        //   lastName: state.lastName,
-        //   email: state.email,
-        //   ...(state.password && { password: state.password })
-        // });
+        // Prepare update data - only include fields that have values
+        const updateData: UpdateProfileRequest = {};
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        if (state.firstName.trim()) {
+          updateData.firstName = state.firstName.trim();
+        }
+
+        if (state.lastName.trim()) {
+          updateData.lastName = state.lastName.trim();
+        }
+
+        // Call API to update profile
+        const updatedUser = await AuthApi.updateProfile(updateData);
+
+        // Update the global auth store with new user data
+        const authStore = useAuthStore.getState();
+        authStore.setUser(updatedUser);
+
+        // Update localStorage as well
+        localStorage.setItem("user", JSON.stringify(updatedUser));
 
         set({ isLoading: false });
         return true;
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error saving account settings:", error);
+
+        // Handle specific error cases
+        let errorMessage = "Произошла ошибка при сохранении";
+
+        if (error?.response?.status === 400) {
+          errorMessage = error.response.data?.message || "Некорректные данные";
+        } else if (error?.response?.status === 409) {
+          errorMessage = "Пользователь с таким email уже существует";
+        } else if (error?.response?.status === 401) {
+          errorMessage = "Необходимо войти в систему";
+        }
+
         set({ isLoading: false });
-        return false;
+        throw new Error(errorMessage);
       }
     },
   })

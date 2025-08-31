@@ -77,12 +77,15 @@ export default function AccountSettingsPopup() {
   }, [isOpen, user, initializeForm]);
 
   const handleSave = async () => {
-    const success = await saveChanges();
-    if (success) {
-      toast.success("Настройки аккаунта успешно обновлены");
-      closePopup();
-    } else {
-      toast.error("Произошла ошибка при сохранении");
+    try {
+      const success = await saveChanges();
+      if (success) {
+        toast.success("Настройки аккаунта успешно обновлены");
+        closePopup();
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || "Произошла ошибка при сохранении";
+      toast.error(errorMessage);
     }
   };
 

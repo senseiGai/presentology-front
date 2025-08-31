@@ -47,8 +47,8 @@ function AuthCallbackContent() {
         }
 
         // Сохраняем токены
-        localStorage.setItem("accessToken", response.accessToken);
-        localStorage.setItem("refreshToken", response.refreshToken);
+        localStorage.setItem("accessToken", response.access_token);
+        // localStorage.setItem("refreshToken", response.refresh_token);
         localStorage.setItem("user", JSON.stringify(response.user));
 
         // Обновляем глобальный стейт

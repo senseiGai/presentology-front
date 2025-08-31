@@ -19,23 +19,50 @@ apiClient.interceptors.request.use(
   (config) => {
     // Получаем токен из Zustand store
     const token = useAuthStore.getState().accessToken;
+    console.log(
+      "🔐 [API Request] Token from store:",
+      token ? "Token exists" : "No token"
+    );
+    console.log("🔗 [API Request] URL:", config.url);
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log("✅ [API Request] Bearer token added to headers");
+    } else {
+      console.log("❌ [API Request] No token found in store");
     }
+
+    console.log("📤 [API Request] Final headers:", config.headers);
     return config;
   },
   (error) => {
+    console.error("❌ [API Request] Request interceptor error:", error);
     return Promise.reject(error);
   }
 );
 
 // Интерцептор для обработки ответов и обновления токенов
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(
+      "✅ [API Response] Success:",
+      response.status,
+      response.config.url
+    );
+    return response;
+  },
   async (error) => {
+    console.error("❌ [API Response] Error:", {
+      status: error.response?.status,
+      url: error.config?.url,
+      message: error.message,
+      data: error.response?.data,
+    });
+
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      console.log("🔄 [API Response] 401 error, attempting token refresh...");
       originalRequest._retry = true;
 
       const authStore = useAuthStore.getState();
@@ -43,6 +70,7 @@ apiClient.interceptors.response.use(
 
       if (refreshToken) {
         try {
+          console.log("🔄 [API Response] Refreshing token...");
           const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
             refreshToken,
           });
@@ -51,16 +79,22 @@ apiClient.interceptors.response.use(
 
           // Обновляем токены в Zustand store
           authStore.setTokens(access_token, refresh_token || "");
+          console.log("✅ [API Response] Token refreshed successfully");
 
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
           return apiClient(originalRequest);
         } catch (refreshError) {
+          console.error(
+            "❌ [API Response] Token refresh failed:",
+            refreshError
+          );
           // Очищаем store при ошибке обновления токена
           authStore.logout();
           window.location.href = "/login";
           return Promise.reject(refreshError);
         }
       } else {
+        console.log("❌ [API Response] No refresh token, logging out");
         // Нет refresh токена - разлогиниваем
         authStore.logout();
         window.location.href = "/login";

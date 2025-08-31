@@ -59,6 +59,51 @@ const TestAvatarPage = () => {
     }
   };
 
+  const testEmailVerification = async () => {
+    try {
+      const response = await fetch(
+        "https://presentology-back-production.up.railway.app/users/send-email-verification",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization:
+              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InJ1c2xhbm1ha2htYXRvdkBnbWFpbC5jb20iLCJzdWIiOiJjbWV0dWV6czMwMDAwcDkxMTZieXUwbnhxIiwiaWF0IjoxNzU2NjUzNTQ3LCJleHAiOjE3NTcyNTgzNDd9.I2xSWLsajTrUaiGlHDHdafTRvFqR90gnwS_YRLuYgms",
+          },
+          body: JSON.stringify({ newEmail: "test@example.com" }),
+        }
+      );
+
+      const result = await response.json();
+      console.log("Email verification result:", result);
+      alert("Email verification: " + JSON.stringify(result));
+    } catch (error) {
+      console.error("Email verification error:", error);
+      alert("Email verification error: " + error);
+    }
+  };
+
+  const testGetVerificationCode = async () => {
+    try {
+      const response = await fetch(
+        "https://presentology-back-production.up.railway.app/users/verification-code",
+        {
+          headers: {
+            Authorization:
+              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InJ1c2xhbm1ha2htYXRvdkBnbWFpbC5jb20iLCJzdWIiOiJjbWV0dWV6czMwMDAwcDkxMTZieXUwbnhxIiwiaWF0IjoxNzU2NjUzNTQ3LCJleHAiOjE3NTcyNTgzNDd9.I2xSWLsajTrUaiGlHDHdafTRvFqR90gnwS_YRLuYgms",
+          },
+        }
+      );
+
+      const result = await response.json();
+      console.log("Verification code:", result);
+      alert("Verification code: " + JSON.stringify(result));
+    } catch (error) {
+      console.error("Get code error:", error);
+      alert("Get code error: " + error);
+    }
+  };
+
   return (
     <div style={{ padding: "20px" }}>
       <h1>Test Avatar Functionality</h1>
@@ -70,6 +115,18 @@ const TestAvatarPage = () => {
         style={{ margin: "10px", padding: "10px" }}
       >
         Test Get Avatar
+      </button>
+      <button
+        onClick={testEmailVerification}
+        style={{ margin: "10px", padding: "10px" }}
+      >
+        Test Email Verification
+      </button>
+      <button
+        onClick={testGetVerificationCode}
+        style={{ margin: "10px", padding: "10px" }}
+      >
+        Get Verification Code
       </button>
     </div>
   );

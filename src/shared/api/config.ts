@@ -5,7 +5,6 @@ import { useAuthStore } from "@/shared/stores/auth-store";
 export const API_BASE_URL =
   "https://presentology-back-production.up.railway.app/";
 
-// Создаем экземпляр axios с базовой конфигурацией
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -14,7 +13,6 @@ export const apiClient = axios.create({
   },
 });
 
-// Интерцептор для добавления токена в каждый запрос
 apiClient.interceptors.request.use(
   (config) => {
     // Получаем токен из Zustand store
@@ -41,7 +39,6 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Интерцептор для обработки ответов и обновления токенов
 apiClient.interceptors.response.use(
   (response) => {
     console.log(

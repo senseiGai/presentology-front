@@ -74,6 +74,8 @@ export const API_ENDPOINTS = {
     TELEGRAM: "/auth/telegram",
     FORGOT_PASSWORD: "/auth/forgot-password",
     RESET_PASSWORD: "/auth/reset-password",
+    SURVEY_SUBMIT: "/auth/survey",
+    SURVEY_STATUS: "/auth/survey/status",
   },
   USERS: {
     PROFILE: "/users/profile",

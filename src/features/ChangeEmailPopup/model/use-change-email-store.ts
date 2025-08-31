@@ -295,7 +295,15 @@ export const useChangeEmailStore = create<ChangeEmailState>((set, get) => ({
   verifyCode: async () => {
     const state = get();
 
+    console.log("🔍 [ChangeEmailStore] Starting code verification:", {
+      oldEmail: state.oldEmail,
+      newEmail: state.newEmail,
+      code: state.verificationCode,
+      codeLength: state.verificationCode.length,
+    });
+
     if (!state.validateCode()) {
+      console.log("❌ [ChangeEmailStore] Code validation failed");
       return false;
     }
 
@@ -307,7 +315,15 @@ export const useChangeEmailStore = create<ChangeEmailState>((set, get) => ({
         code: state.verificationCode,
       };
 
+      console.log(
+        "📤 [ChangeEmailStore] Sending verification request:",
+        verifyData
+      );
       const updatedUser = await AuthApi.verifyEmailChange(verifyData);
+      console.log("✅ [ChangeEmailStore] Email change successful:", {
+        oldEmail: state.oldEmail,
+        newEmail: updatedUser.email,
+      });
 
       // Обновляем пользователя в auth store
       const authStore = useAuthStore.getState();
@@ -321,7 +337,13 @@ export const useChangeEmailStore = create<ChangeEmailState>((set, get) => ({
       });
       return true;
     } catch (error: any) {
-      console.error("Error verifying code:", error);
+      console.error("❌ [ChangeEmailStore] Error verifying code:", {
+        error: error.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+        sentCode: state.verificationCode,
+        sentEmail: state.newEmail,
+      });
 
       let errorMessage = "Неправильный код";
 

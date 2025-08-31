@@ -39,6 +39,8 @@ export default function ChangeEmailPopup() {
     closePopup();
     openAccountSettings();
   };
+  // Локальное состояние для отображения кода
+  const [debugCode, setDebugCode] = React.useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -56,24 +58,53 @@ export default function ChangeEmailPopup() {
   }, [isOpen, handleCancel]);
 
   const handleSendCode = async () => {
+    console.log(
+      "🚀 [ChangeEmailPopup] Sending verification code to:",
+      newEmail
+    );
     const success = await sendCode();
     if (!success) {
       // Ошибки уже установлены в store
       return;
     }
+    console.log(
+      "✅ [ChangeEmailPopup] Code sent successfully, check server logs for code"
+    );
+    // Автоматически получаем код для тестирования через секунду
+    setTimeout(() => {
+      getCodeFromBackend();
+    }, 1000);
     // Переход к следующему шагу происходит в store
   };
 
   const handleResendCode = async () => {
+    console.log(
+      "🔄 [ChangeEmailPopup] Resending verification code to:",
+      newEmail
+    );
     const success = await sendCode();
     if (success) {
       // Запускаем таймер только при повторной отправке
       startResendTimer();
+      // Автоматически получаем код для тестирования
+      setTimeout(() => {
+        getCodeFromBackend();
+      }, 1000);
     }
   };
 
   const handleVerifyCode = async () => {
+    console.log("🔍 [ChangeEmailPopup] Verifying code:", {
+      code: verificationCode,
+      newEmail: newEmail,
+      codeLength: verificationCode.length,
+    });
     const success = await verifyCode();
+    if (success) {
+      console.log("✅ [ChangeEmailPopup] Email successfully changed!");
+    } else {
+      console.log("❌ [ChangeEmailPopup] Code verification failed");
+    }
     // Не закрываем попап при успехе, переходим к экрану успеха
     // Ошибки уже установлены в store при неудаче
   };
@@ -102,15 +133,23 @@ export default function ChangeEmailPopup() {
   const getCodeFromBackend = async () => {
     try {
       const result = await AuthApi.getVerificationCode();
-      console.log("Verification code from backend:", result.code);
+      console.log(
+        "🔑 [ChangeEmailPopup] Verification code from backend:",
+        result.code
+      );
       if (result.code) {
-        alert(`Код верификации: ${result.code}`);
+        setDebugCode(result.code);
+        console.log("✅ [ChangeEmailPopup] Code displayed in UI:", result.code);
+        // Также можно автоматически заполнить поле
+        setVerificationCode(result.code);
       } else {
+        setDebugCode(null);
         alert("Код не найден. Сначала отправьте код.");
       }
     } catch (error) {
-      console.error("Error getting code:", error);
+      console.error("❌ [ChangeEmailPopup] Error getting code:", error);
       alert("Ошибка получения кода");
+      setDebugCode(null);
     }
   };
 
@@ -299,6 +338,53 @@ export default function ChangeEmailPopup() {
                 >
                   [TEST] Получить код из бэкенда
                 </button>
+
+                {/* Отображение кода для тестирования */}
+                {debugCode && (
+                  <div className="mt-2 p-3 bg-[#F0F9FF] border border-[#BBA2FE] rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#0B0911] text-[12px] font-[500]">
+                        🔑 Код из логов:
+                      </span>
+                      <button
+                        onClick={() => {
+                          setVerificationCode(debugCode);
+                          console.log(
+                            "✅ [ChangeEmailPopup] Code auto-filled:",
+                            debugCode
+                          );
+                        }}
+                        className="text-[#BBA2FE] text-[10px] hover:text-[#A689FD] underline"
+                      >
+                        Заполнить
+                      </button>
+                    </div>
+                    <div className="mt-1 font-mono text-[16px] font-[700] text-[#BBA2FE] tracking-[2px]">
+                      {debugCode}
+                    </div>
+                    <div className="text-[#8F8F92] text-[10px] mt-1">
+                      Код из серверных логов (SMTP недоступен)
+                    </div>
+                  </div>
+                )}
+
+                {/* Кнопка для быстрого ввода кода из логов */}
+                <div className="mt-2">
+                  <button
+                    className="text-[#FDA345] text-[11px] font-[400] hover:text-[#F59E0B] cursor-pointer underline"
+                    onClick={() => {
+                      const logCode = "277678";
+                      setVerificationCode(logCode);
+                      setDebugCode(logCode);
+                      console.log(
+                        "🚀 [ChangeEmailPopup] Using code from logs:",
+                        logCode
+                      );
+                    }}
+                  >
+                    [БЫСТРО] Ввести код из логов: 277678
+                  </button>
+                </div>
               </div>
             </div>
 

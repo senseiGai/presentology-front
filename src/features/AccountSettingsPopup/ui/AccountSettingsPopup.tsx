@@ -54,19 +54,6 @@ export default function AccountSettingsPopup() {
   const { openPopup: openChangeEmailPopup } = useChangeEmailStore();
   const { openPopup: openChangePasswordPopup } = useChangePasswordStore();
 
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        handleCancel();
-      }
-    };
-
-    document.addEventListener("keydown", handleEsc);
-    return () => {
-      document.removeEventListener("keydown", handleEsc);
-    };
-  }, []);
-
   // Initialize form when popup opens
   useEffect(() => {
     if (isOpen && user) {
@@ -104,19 +91,22 @@ export default function AccountSettingsPopup() {
   useEffect(() => {
     if (!isOpen) return;
 
-    const onKeyUp = (e: KeyboardEvent) => {
-      // поддержим и старое 'Esc'
+    const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === "Esc") {
+        if (e.repeat) return; // игнорируем автоповтор при удержании
         e.preventDefault();
-        handleCancel();
+        e.stopPropagation(); // не даём событию уйти вверх (вдруг там «open»)
+        handleCancel(); // только закрываем
       }
     };
 
-    // слушаем на window, capture: true, чтобы обойти stopPropagation/FocusTrap
-    window.addEventListener("keyup", onKeyUp, { capture: true });
+    // слушаем ТОЛЬКО когда открыт и раньше всех с более высоким приоритетом
+    window.addEventListener("keydown", onKeyDown, { capture: true });
 
     return () => {
-      window.removeEventListener("keyup", onKeyUp, { capture: true });
+      window.removeEventListener("keydown", onKeyDown, {
+        capture: true,
+      } as any);
     };
   }, [isOpen, handleCancel]);
 

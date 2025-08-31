@@ -7,6 +7,7 @@ interface AccountSettingsState {
   // UI state
   isOpen: boolean;
   isLoading: boolean;
+  recentlyClosed: boolean;
 
   // Form data
   firstName: string;
@@ -89,6 +90,7 @@ export const useAccountSettingsStore = create<AccountSettingsState>(
     // Initial state
     isOpen: false,
     isLoading: false,
+    recentlyClosed: false,
     firstName: "",
     lastName: "",
     email: "",
@@ -102,19 +104,28 @@ export const useAccountSettingsStore = create<AccountSettingsState>(
 
     // UI actions
     openPopup: () => {
-      set({ isOpen: true });
+      const { recentlyClosed } = get();
+      if (!recentlyClosed) {
+        set({ isOpen: true });
 
-      // Загружаем данные пользователя из auth store
-      const authStore = useAuthStore.getState();
-      if (authStore.user) {
-        set({
-          firstName: authStore.user.firstName || "",
-          lastName: authStore.user.lastName || "",
-          email: authStore.user.email || "",
-        });
+        // Загружаем данные пользователя из auth store
+        const authStore = useAuthStore.getState();
+        if (authStore.user) {
+          set({
+            firstName: authStore.user.firstName || "",
+            lastName: authStore.user.lastName || "",
+            email: authStore.user.email || "",
+          });
+        }
       }
     },
-    closePopup: () => set({ isOpen: false }),
+    closePopup: () => {
+      set({ isOpen: false, recentlyClosed: true });
+      // Сбрасываем флаг через 100ms, чтобы предотвратить повторное открытие
+      setTimeout(() => {
+        set({ recentlyClosed: false });
+      }, 100);
+    },
     setLoading: (loading: boolean) => set({ isLoading: loading }),
 
     // Edit mode setters

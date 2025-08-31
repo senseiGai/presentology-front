@@ -36,7 +36,15 @@ export default function ChangePasswordPopup() {
 
   const { openPopup: openAccountSettings } = useAccountSettingsStore();
 
+  const handleCancel = () => {
+    resetForm();
+    closePopup();
+    openAccountSettings();
+  };
+
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         handleCancel();
@@ -47,7 +55,7 @@ export default function ChangePasswordPopup() {
     return () => {
       document.removeEventListener("keydown", handleEsc);
     };
-  }, []);
+  }, [isOpen, handleCancel]);
 
   const handleBackToSettings = () => {
     closePopup();
@@ -58,12 +66,6 @@ export default function ChangePasswordPopup() {
     const success = await changePassword();
     // При успехе не закрываем попап, показываем экран успеха
     // Ошибки уже установлены в store при неудаче
-  };
-
-  const handleCancel = () => {
-    resetForm();
-    closePopup();
-    openAccountSettings();
   };
 
   // Обработчик изменения старого пароля

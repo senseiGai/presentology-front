@@ -34,7 +34,15 @@ export default function ChangeEmailPopup() {
   } = useChangeEmailStore();
   const { openPopup: openAccountSettings } = useAccountSettingsStore();
 
+  const handleCancel = () => {
+    resetForm();
+    closePopup();
+    openAccountSettings();
+  };
+
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         handleCancel();
@@ -45,7 +53,7 @@ export default function ChangeEmailPopup() {
     return () => {
       document.removeEventListener("keydown", handleEsc);
     };
-  }, []);
+  }, [isOpen, handleCancel]);
 
   const handleSendCode = async () => {
     const success = await sendCode();
@@ -88,12 +96,6 @@ export default function ChangeEmailPopup() {
     closePopup();
     openAccountSettings();
     clearErrors();
-  };
-
-  const handleCancel = () => {
-    resetForm();
-    closePopup();
-    openAccountSettings();
   };
 
   // Функция для получения кода из бэкенда (только для тестирования)

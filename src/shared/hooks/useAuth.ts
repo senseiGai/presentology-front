@@ -17,7 +17,7 @@ export const useLogin = () => {
     mutationFn: (data: LoginRequest) => AuthApi.login(data),
     onSuccess: (data: AuthResponse) => {
       // Сохраняем токены в localStorage
-      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("accessToken", data.access_token);
       localStorage.setItem("refreshToken", data.refreshToken);
 
       // Обновляем кэш пользователя
@@ -37,7 +37,7 @@ export const useRegister = () => {
     mutationFn: (data: RegisterRequest) => AuthApi.register(data),
     onSuccess: (data: AuthResponse) => {
       // Сохраняем токены в localStorage
-      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("accessToken", data.access_token);
       localStorage.setItem("refreshToken", data.refreshToken);
 
       // Обновляем кэш пользователя
@@ -104,7 +104,7 @@ export const useGoogleAuth = () => {
     mutationFn: (code: string) => AuthApi.googleAuth(code),
     onSuccess: (data) => {
       // Сохраняем токены в localStorage
-      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("accessToken", data.access_token);
       localStorage.setItem("refreshToken", data.refreshToken);
 
       // Обновляем кэш пользователя
@@ -124,7 +124,7 @@ export const useYandexAuth = () => {
     mutationFn: (code: string) => AuthApi.yandexAuth(code),
     onSuccess: (data) => {
       // Сохраняем токены в localStorage
-      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("accessToken", data.access_token);
       localStorage.setItem("refreshToken", data.refreshToken);
 
       // Обновляем кэш пользователя
@@ -144,7 +144,7 @@ export const useVkAuth = () => {
     mutationFn: (code: string) => AuthApi.vkAuth(code),
     onSuccess: (data) => {
       // Сохраняем токены в localStorage
-      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("accessToken", data.access_token);
       localStorage.setItem("refreshToken", data.refreshToken);
 
       // Обновляем кэш пользователя
@@ -164,7 +164,7 @@ export const useTelegramAuth = () => {
     mutationFn: (telegramData: any) => AuthApi.telegramAuth(telegramData),
     onSuccess: (data) => {
       // Сохраняем токены в localStorage
-      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("accessToken", data.access_token);
       localStorage.setItem("refreshToken", data.refreshToken);
 
       // Обновляем кэш пользователя

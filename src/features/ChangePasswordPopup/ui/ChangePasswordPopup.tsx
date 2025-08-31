@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { useChangePasswordStore } from "../model/use-change-password-store";
 import { useAccountSettingsStore } from "../../AccountSettingsPopup/model/use-account-settings-store";
 import { InputField } from "@/shared/ui/InputField";
@@ -36,11 +36,11 @@ export default function ChangePasswordPopup() {
 
   const { openPopup: openAccountSettings } = useAccountSettingsStore();
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     resetForm();
     closePopup();
     openAccountSettings();
-  };
+  }, [resetForm, closePopup, openAccountSettings]);
 
   useEffect(() => {
     if (!isOpen) return;

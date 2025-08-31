@@ -149,6 +149,24 @@ export default function ChangeEmailPopup() {
     }
   };
 
+  // Функция для синхронизации email в коде на бэкенде
+  const syncEmailInCode = async (newEmailValue: string) => {
+    try {
+      // Проверяем есть ли код в памяти
+      const codeResult = await AuthApi.getVerificationCode();
+      if (codeResult.code && step === "code") {
+        console.log(
+          "🔄 [ChangeEmailPopup] Syncing email in backend code:",
+          newEmailValue
+        );
+        // Здесь можно добавить API вызов для обновления email в коде
+        // Пока что просто логируем
+      }
+    } catch (error) {
+      console.log("⚠️ [ChangeEmailPopup] Could not sync email in code");
+    }
+  };
+
   const handleBackToSettings = () => {
     closePopup();
     openAccountSettings();
@@ -278,7 +296,8 @@ export default function ChangeEmailPopup() {
           <div className="space-y-6 mt-[32px] flex-1 flex flex-col">
             <div className="flex-1">
               <p className="text-[#8F8F92] text-[12px] font-[400] mb-4">
-                Код подтверждения был отправлен на вашу новую почту
+                Код подтверждения был отправлен на вашу новую почту:{" "}
+                <span className="font-[500] text-[#0B0911]">{newEmail}</span>
               </p>
 
               <div className="flex gap-2 mb-2">
@@ -398,6 +417,36 @@ export default function ChangeEmailPopup() {
                     </div>
                   </div>
                 )}
+
+                {/* Быстрые кнопки для кодов из логов */}
+                <div className="mt-2 space-y-1">
+                  <div className="text-[#8F8F92] text-[10px] mb-1">
+                    Коды из логов:
+                  </div>
+                  <button
+                    className="text-[#FDA345] text-[10px] font-[400] hover:text-[#F59E0B] cursor-pointer underline block"
+                    onClick={() => {
+                      const logCode = "298760";
+                      setVerificationCode(logCode);
+                      setDebugCode(logCode);
+                      console.log("🚀 [ChangeEmailPopup] Using code 298760");
+                    }}
+                  >
+                    [СВЕЖИЙ] 298760 (последний из логов)
+                  </button>
+
+                  <button
+                    className="text-[#FDA345] text-[10px] font-[400] hover:text-[#F59E0B] cursor-pointer underline block"
+                    onClick={() => {
+                      const logCode = "277678";
+                      setVerificationCode(logCode);
+                      setDebugCode(logCode);
+                      console.log("🚀 [ChangeEmailPopup] Using code 277678");
+                    }}
+                  >
+                    [СТАРЫЙ] 277678
+                  </button>
+                </div>
               </div>
             </div>
 

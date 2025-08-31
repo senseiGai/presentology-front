@@ -62,8 +62,8 @@ export default function ChangePasswordPopup() {
     openAccountSettings();
   };
 
-  const handleChangePassword = async () => {
-    const success = await changePassword();
+  const handleConfirm = async () => {
+    await changePassword();
     // При успехе не закрываем попап, показываем экран успеха
     // Ошибки уже установлены в store при неудаче
   };
@@ -232,7 +232,7 @@ export default function ChangePasswordPopup() {
             <div className="mt-auto">
               <Button
                 variant="primary"
-                onClick={handleChangePassword}
+                onClick={handleConfirm}
                 disabled={
                   isLoading ||
                   !oldPassword.trim() ||

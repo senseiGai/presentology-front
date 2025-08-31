@@ -29,16 +29,10 @@ export default function ChangeEmailPopup() {
     sendCode,
     verifyCode,
     clearErrors,
-    setStep,
     startResendTimer,
   } = useChangeEmailStore();
   const { openPopup: openAccountSettings } = useAccountSettingsStore();
 
-  const handleCancel = () => {
-    resetForm();
-    closePopup();
-    openAccountSettings();
-  };
   // Локальное состояние для отображения кода
   const [debugCode, setDebugCode] = React.useState<string | null>(null);
 
@@ -72,6 +66,23 @@ export default function ChangeEmailPopup() {
       localStorage.removeItem("debugVerificationCode");
     }
   }, [isOpen]);
+
+  const handleCancel = React.useCallback(() => {
+    resetForm();
+    closePopup();
+    openAccountSettings();
+  }, [resetForm, closePopup, openAccountSettings]);
+
+  const handleBack = React.useCallback(() => {
+    closePopup();
+    openAccountSettings();
+    clearErrors();
+  }, [closePopup, openAccountSettings, clearErrors]);
+
+  const handleBackToSettings = React.useCallback(() => {
+    closePopup();
+    openAccountSettings();
+  }, [closePopup, openAccountSettings]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -147,35 +158,6 @@ export default function ChangeEmailPopup() {
     if (newEmailError && value.length > 0) {
       clearErrors();
     }
-  };
-
-  // Функция для синхронизации email в коде на бэкенде
-  const syncEmailInCode = async (newEmailValue: string) => {
-    try {
-      // Проверяем есть ли код в памяти
-      const codeResult = await AuthApi.getVerificationCode();
-      if (codeResult.code && step === "code") {
-        console.log(
-          "🔄 [ChangeEmailPopup] Syncing email in backend code:",
-          newEmailValue
-        );
-        // Здесь можно добавить API вызов для обновления email в коде
-        // Пока что просто логируем
-      }
-    } catch (error) {
-      console.log("⚠️ [ChangeEmailPopup] Could not sync email in code");
-    }
-  };
-
-  const handleBackToSettings = () => {
-    closePopup();
-    openAccountSettings();
-  };
-
-  const handleBack = () => {
-    closePopup();
-    openAccountSettings();
-    clearErrors();
   };
 
   // Функция для получения кода из бэкенда (только для тестирования)

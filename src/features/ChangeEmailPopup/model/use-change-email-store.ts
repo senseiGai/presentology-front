@@ -333,7 +333,10 @@ export const useChangeEmailStore = create<ChangeEmailState>((set, get) => ({
           return true;
         }
       } catch (codeError: any) {
-        console.log("⚠️ [ChangeEmailStore] No code found in logs");
+        console.log(
+          "⚠️ [ChangeEmailStore] No code found in logs",
+          codeError.message
+        );
       }
 
       let errorMessage = "Произошла ошибка при отправке кода";

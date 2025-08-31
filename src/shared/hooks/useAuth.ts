@@ -18,7 +18,7 @@ export const useLogin = () => {
     onSuccess: (data: AuthResponse) => {
       // Сохраняем токены в localStorage
       localStorage.setItem("accessToken", data.access_token);
-      localStorage.setItem("refreshToken", data.refreshToken);
+      localStorage.setItem("refreshToken", data.refresh_token);
 
       // Обновляем кэш пользователя
       queryClient.setQueryData(QUERY_KEYS.AUTH.USER, data.user);
@@ -38,7 +38,7 @@ export const useRegister = () => {
     onSuccess: (data: AuthResponse) => {
       // Сохраняем токены в localStorage
       localStorage.setItem("accessToken", data.access_token);
-      localStorage.setItem("refreshToken", data.refreshToken);
+      localStorage.setItem("refreshToken", data.refresh_token);
 
       // Обновляем кэш пользователя
       queryClient.setQueryData(QUERY_KEYS.AUTH.USER, data.user);
@@ -105,7 +105,7 @@ export const useGoogleAuth = () => {
     onSuccess: (data) => {
       // Сохраняем токены в localStorage
       localStorage.setItem("accessToken", data.access_token);
-      localStorage.setItem("refreshToken", data.refreshToken);
+      localStorage.setItem("refreshToken", data.refresh_token);
 
       // Обновляем кэш пользователя
       queryClient.setQueryData(QUERY_KEYS.AUTH.USER, data.user);
@@ -125,7 +125,7 @@ export const useYandexAuth = () => {
     onSuccess: (data) => {
       // Сохраняем токены в localStorage
       localStorage.setItem("accessToken", data.access_token);
-      localStorage.setItem("refreshToken", data.refreshToken);
+      localStorage.setItem("refreshToken", data.refresh_token);
 
       // Обновляем кэш пользователя
       queryClient.setQueryData(QUERY_KEYS.AUTH.USER, data.user);
@@ -145,7 +145,7 @@ export const useVkAuth = () => {
     onSuccess: (data) => {
       // Сохраняем токены в localStorage
       localStorage.setItem("accessToken", data.access_token);
-      localStorage.setItem("refreshToken", data.refreshToken);
+      localStorage.setItem("refreshToken", data.refresh_token);
 
       // Обновляем кэш пользователя
       queryClient.setQueryData(QUERY_KEYS.AUTH.USER, data.user);
@@ -165,7 +165,7 @@ export const useTelegramAuth = () => {
     onSuccess: (data) => {
       // Сохраняем токены в localStorage
       localStorage.setItem("accessToken", data.access_token);
-      localStorage.setItem("refreshToken", data.refreshToken);
+      localStorage.setItem("refreshToken", data.refresh_token);
 
       // Обновляем кэш пользователя
       queryClient.setQueryData(QUERY_KEYS.AUTH.USER, data.user);

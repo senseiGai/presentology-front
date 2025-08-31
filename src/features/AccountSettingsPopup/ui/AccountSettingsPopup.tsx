@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import { useAccountSettingsStore } from "../model/use-account-settings-store";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { useChangeEmailStore } from "../../ChangeEmailPopup/model/use-change-email-store";
@@ -201,10 +202,12 @@ export default function AccountSettingsPopup() {
         <div className="flex flex-col items-center mt-[36px]">
           <div className="bg-[#BBA2FE] w-[80px] h-[80px] flex items-center justify-center rounded-full mb-[8px] relative">
             {user?.avatar ? (
-              <img
+              <Image
                 src={`${API_BASE_URL.replace(/\/$/, "")}${user.avatar}`}
                 alt={user.firstName || "User"}
                 className="w-full h-full rounded-full object-cover"
+                width={80}
+                height={80}
               />
             ) : (
               <BigUserIcon />

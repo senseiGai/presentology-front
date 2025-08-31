@@ -9,6 +9,7 @@ import { InputField } from "@/shared/ui/InputField";
 import { Button } from "@/shared/ui/Button";
 import { toast } from "sonner";
 import { X } from "lucide-react";
+import { API_BASE_URL } from "@/shared/api/config";
 import BigUserIcon from "../../../../public/icons/BigUserIcon";
 import CameraIcon from "../../../../public/icons/CameraIcon";
 import TrashIcon from "../../../../public/icons/TrashIcon";
@@ -211,7 +212,7 @@ export default function AccountSettingsPopup() {
           <div className="bg-[#BBA2FE] w-[80px] h-[80px] flex items-center justify-center rounded-full mb-[8px] relative">
             {user?.avatar ? (
               <img
-                src={`${process.env.NEXT_PUBLIC_API_URL}${user.avatar}`}
+                src={`${API_BASE_URL.replace(/\/$/, "")}${user.avatar}`}
                 alt={user.firstName || "User"}
                 className="w-full h-full rounded-full object-cover"
               />

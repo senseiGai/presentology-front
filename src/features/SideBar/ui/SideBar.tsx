@@ -3,6 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/shared/api/config";
 
 import MiniLogoIcon from "../../../../public/icons/MiniLogoIcon";
 import SideBarIcon from "../../../../public/icons/SideBarIcon";
@@ -93,8 +94,6 @@ export default function Sidebar() {
             </button>
           </>
         )}
-
-        {/* Email Block */}
         <div
           className={`mt-[24px] flex items-center ${
             isCollapsed ? "justify-center" : "justify-between"
@@ -110,7 +109,7 @@ export default function Sidebar() {
                 >
                   {user?.avatar ? (
                     <Image
-                      src={`${process.env.NEXT_PUBLIC_API_URL}${user.avatar}`}
+                      src={`${API_BASE_URL.replace(/\/$/, "")}${user.avatar}`}
                       alt={user.firstName || "User"}
                       width={40}
                       height={40}
@@ -142,7 +141,7 @@ export default function Sidebar() {
             >
               {user?.avatar ? (
                 <Image
-                  src={`${process.env.NEXT_PUBLIC_API_URL}${user.avatar}`}
+                  src={`${API_BASE_URL.replace(/\/$/, "")}${user.avatar}`}
                   alt={user.firstName || "User"}
                   width={40}
                   height={40}

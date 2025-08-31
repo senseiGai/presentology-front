@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { Toaster } from "sonner";
 
 export const MainLayout = ({
   children,
@@ -35,6 +36,25 @@ export const MainLayout = ({
           } z-10 w-full`}
         >
           {children}
+          <Toaster
+            position="bottom-left"
+            richColors
+            closeButton
+            duration={5000}
+            style={{
+              zIndex: 99999999,
+            }}
+            toastOptions={{
+              classNames: {
+                toast: "rounded-[20px] ml-6 !z-[99999999]",
+                title: "text-[#0B0911] font-semibold",
+                description: "text-[#8F8F92]",
+                actionButton:
+                  "rounded-[12px] border border-[#D9D9DE] px-4 py-2",
+                closeButton: "text-[#8F8F92]",
+              },
+            }}
+          />
         </div>
       </div>
     </div>

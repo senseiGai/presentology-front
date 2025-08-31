@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Onest } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "sonner";
 import QueryProvider from "@/shared/providers/QueryProvider";
 import AuthInitializer from "@/shared/components/AuthInitializer";
 import { AccountSettingsPopup } from "@/features/AccountSettingsPopup";
@@ -33,21 +32,6 @@ export default function RootLayout({
           <ChangeEmailPopup />
           <ChangePasswordPopup />
         </QueryProvider>
-        <Toaster
-          position="bottom-left"
-          richColors
-          closeButton
-          duration={5000}
-          toastOptions={{
-            classNames: {
-              toast: "rounded-[20px] ml-24 mb-8",
-              title: "text-[#0B0911] font-semibold",
-              description: "text-[#8F8F92]",
-              actionButton: "rounded-[12px] border border-[#D9D9DE] px-4 py-2",
-              closeButton: "text-[#8F8F92]",
-            },
-          }}
-        />
       </body>
     </html>
   );

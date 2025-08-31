@@ -37,6 +37,7 @@ export default function Sidebar() {
   const displayEmail = user?.email || "email@provider.com";
   const { openPopup } = useSubscriptionPopupStore();
   const { openPopup: openAccountSettings } = useAccountSettingsStore();
+  const { setActiveItem } = useSideBarStore();
 
   return (
     <aside
@@ -82,7 +83,7 @@ export default function Sidebar() {
         {!isCollapsed && (
           <>
             <button
-              onClick={openPopup}
+              onClick={() => setActiveItem("Приобрести подписку")}
               className="w-full cursor-pointer bg-gradient-to-r from-[#FDA345] to-[#BBA2FE] text-white text-[14px] font-medium h-[40px] rounded-[8px]"
             >
               Приобрести подписку

@@ -19,10 +19,17 @@ export type PricingCardProps = {
   onClick?: () => void; // button handler
   accent?: "lilac" | "orange" | "gray"; // color accent for dots/cta
   badge?: string; // small pill in header (e.g., "Ваш тариф")
+  badgeType?: "default" | "discount"; // тип бейджа для стилизации
   current?: boolean; // if true, renders a disabled state ("Уже ваш")
   disabled?: boolean; // disables CTA
   highlight?: boolean; // slightly emphasized card
   className?: string;
+  isSmall?: boolean; // for more compact cards (not used here)
+  isPremium?: boolean; // for premium badge (not used here)
+  cancelSubscription?: () => void; // for cancel subscription button (not used here)
+  isCancelSubscription?: boolean; // loading state for cancel button (not used here)
+  isActionButton?: boolean; // if true, shows action button (not used here)
+  customHeight?: string; // custom height for the card
 };
 
 export function PricingCard({
@@ -36,20 +43,25 @@ export function PricingCard({
   onClick,
   accent = "lilac",
   badge,
+  badgeType = "default",
   current,
-  disabled,
   highlight,
   className,
+  isSmall,
+  isPremium,
+  cancelSubscription,
+  isCancelSubscription,
+  isActionButton = true,
+  customHeight,
 }: PricingCardProps) {
-  const isDisabled = disabled || current;
-
   return (
     <div
       className={cn(
-        "group relative flex w-full max-w-[280px] h-[529px] flex-col justify-between rounded-[24px] transition-all hover:shadow-md",
+        "group relative flex w-full max-w-[280px] flex-col justify-between rounded-[24px] transition-all hover:shadow-md",
         highlight && "ring-2 ring-black/5",
         className,
-        current ? "bg-#E9E9E9 border-[1px] border-black/5" : "bg-[#F4F4F4]"
+        current ? "bg-#E9E9E9 border-[1px] border-black/5" : "bg-[#F4F4F4]",
+        customHeight ? customHeight : isSmall ? "h-[480px]" : "h-[529px]"
       )}
       role="region"
       aria-label={`Тариф ${title}`}
@@ -58,14 +70,33 @@ export function PricingCard({
         <div className="flex items-center justify-between">
           <h3 className="text-[14px] font-medium text-[#0B0911]">{title}</h3>
           {badge && (
-            <span className="rounded-[4px] bg-[#DDF3E4] px-2 py-1 text-[12px] font-medium text-[#18794E]">
+            <span
+              className={cn(
+                "rounded-[4px] px-2 py-1 text-[12px] font-medium",
+                badgeType === "discount"
+                  ? "bg-gradient-to-r from-[#FDA345] to-[#BBA2FE] text-white"
+                  : "bg-[#DDF3E4] text-[#18794E]"
+              )}
+            >
               {badge}
             </span>
+          )}
+          {isPremium && isCancelSubscription && (
+            <button
+              onClick={cancelSubscription}
+              className="text-[14px] font-medium text-[#8F8F92] cursor-pointer hover:text-[#6F6F72] transition-colors"
+            >
+              Отключить
+            </button>
           )}
         </div>
 
         {/* Price line */}
-        <div className="mt-[16px] flex items-end gap-2">
+        <div
+          className={`${
+            isSmall ? "mt-[12px]" : "mt-[16px]"
+          } flex items-end gap-2`}
+        >
           {originalPrice && (
             <span className="text-[24px] font-medium leading-none text-[#BEBEC0] line-through mr-1">
               {originalPrice}₽
@@ -85,7 +116,11 @@ export function PricingCard({
         )}
 
         {/* Feature list */}
-        <ul className="mt-[32px] space-y-[16px]">
+        <ul
+          className={`mt-[32px] ${
+            isSmall ? "space-y-[12px]" : "space-y-[16px]"
+          }`}
+        >
           {features.map((item, i) => (
             <li
               key={i}
@@ -105,34 +140,39 @@ export function PricingCard({
         </ul>
       </div>
 
-      {/* CTA */}
-      <div className="p-[16px]">
-        {current ? (
-          <button
-            disabled
-            className="w-full h-[52px] cursor-not-allowed rounded-[8px] bg-[#F4F4F4] text-[18px] font-normal text-[#BEBEC0]"
-          >
-            Уже ваш
-          </button>
-        ) : (
-          <button
-            onClick={onClick}
-            disabled={isDisabled}
-            className={cn(
-              "w-full h-[52px] cursor-pointer rounded-[8px] text-white text-[18px] font-normal transition-transform active:scale-[0.99]",
-              isDisabled
-                ? "cursor-not-allowed bg-gray-200 text-gray-500"
-                : accent === "orange"
-                ? "bg-gradient-to-r from-[#FDA345] to-[#BBA2FE]"
-                : accent === "gray"
-                ? "bg-gray-700"
-                : "bg-gradient-to-r from-violet-400 to-indigo-500"
-            )}
-          >
-            {ctaLabel}
-          </button>
-        )}
-      </div>
+      {isActionButton && (
+        <div className="px-[16px]">
+          {current ? (
+            <button
+              disabled={!isPremium}
+              className={`mb-[16px] w-full h-[52px] ${
+                !isPremium
+                  ? "cursor-not-allowed text-[#BEBEC0]"
+                  : "cursor-pointer"
+              } rounded-[8px] bg-[#F4F4F4] text-[18px] font-normal `}
+            >
+              {isPremium ? "Подключить" : "Уже ваш"}
+            </button>
+          ) : (
+            <button
+              onClick={onClick}
+              disabled={isPremium}
+              className={cn(
+                "w-full h-[52px] mb-[16px]  rounded-[8px] text-white text-[18px] font-normal transition-transform active:scale-[0.99]",
+                isPremium
+                  ? "cursor-not-allowed bg-gradient-to-r from-[#FDA345] to-[#BBA2FE] opacity-50"
+                  : accent === "orange"
+                  ? "bg-gradient-to-r from-[#FDA345] to-[#BBA2FE] cursor-pointer"
+                  : accent === "gray"
+                  ? "bg-gray-700"
+                  : "bg-gradient-to-r from-violet-400 to-indigo-500"
+              )}
+            >
+              {isPremium ? "Ваш тариф" : ctaLabel}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

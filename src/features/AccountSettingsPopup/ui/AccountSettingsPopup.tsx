@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useAccountSettingsStore } from "../model/use-account-settings-store";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { useChangeEmailStore } from "../../ChangeEmailPopup/model/use-change-email-store";
@@ -12,8 +12,11 @@ import { X } from "lucide-react";
 import BigUserIcon from "../../../../public/icons/BigUserIcon";
 import CameraIcon from "../../../../public/icons/CameraIcon";
 import TrashIcon from "../../../../public/icons/TrashIcon";
+import WarningIcon from "../../../../public/icons/WarningIcon";
 
 export default function AccountSettingsPopup() {
+  const [showErrorToast, setShowErrorToast] = useState(false);
+
   const {
     isOpen,
     isLoading,
@@ -67,6 +70,10 @@ export default function AccountSettingsPopup() {
         email: user.email,
       });
     }
+    // Очищаем тост при закрытии попапа
+    if (!isOpen) {
+      setShowErrorToast(false);
+    }
   }, [isOpen, user, initializeForm]);
 
   const handleSave = async () => {
@@ -81,6 +88,7 @@ export default function AccountSettingsPopup() {
 
   const handleCancel = useCallback(() => {
     resetForm();
+    setShowErrorToast(false); // Скрываем тост при закрытии
     closePopup();
   }, [resetForm, closePopup]);
 
@@ -131,6 +139,15 @@ export default function AccountSettingsPopup() {
     }
   };
 
+  const handleUploadPhoto = () => {
+    // Показываем локальный тост ошибки
+    setShowErrorToast(true);
+    // Автоматически скрываем через 5 секунд
+    setTimeout(() => {
+      setShowErrorToast(false);
+    }, 5000);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -170,7 +187,10 @@ export default function AccountSettingsPopup() {
               <BigUserIcon />
             )}
             <div className="flex items-center gap-1 absolute -bottom-2.5">
-              <button className="cursor-pointer w-[32px] h-[32px] bg-[#F4F4F4] rounded-[8px] flex items-center justify-center">
+              <button
+                onClick={handleUploadPhoto}
+                className="cursor-pointer w-[32px] h-[32px] bg-[#F4F4F4] rounded-[8px] flex items-center justify-center hover:bg-[#E9EAEE] transition-colors"
+              >
                 <CameraIcon />
               </button>
               <button className="cursor-pointer w-[32px] h-[32px] bg-[#F4F4F4] rounded-[8px] flex items-center justify-center">
@@ -259,6 +279,51 @@ export default function AccountSettingsPopup() {
           </Button>
         </div>
       </div>
+
+      {showErrorToast && (
+        <div className="absolute bottom-6 left-24 z-10">
+          <div className="relative max-w-[350px] h-[106px] rounded-[20px] bg-white shadow-lg p-4 border border-[#E5E5E5]">
+            <div className="flex items-start gap-3">
+              <WarningIcon />
+              <div className="flex-1">
+                <div className="text-[#0B0911] text-[16px] font-semibold">
+                  Загрузка не прошла
+                </div>
+                <div className="text-[#8F8F92] text-[14px] font-medium mt-[2px]">
+                  Изображение должно быть не больше 10 Мб
+                </div>
+              </div>
+              <button
+                onClick={() => setShowErrorToast(false)}
+                className="text-[#8F8F92] hover:text-[#6B6B6E] cursor-pointer transition"
+                aria-label="Закрыть"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Прогресс-бар */}
+            <div className="absolute left-0 right-0 bottom-2 h-[2px] overflow-hidden mx-4">
+              <div
+                className="h-full bg-[#FF4444] origin-left"
+                style={{
+                  animation: "errorToastCountdown 5000ms linear forwards",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      <style jsx>{`
+        @keyframes errorToastCountdown {
+          from {
+            transform: scaleX(1);
+          }
+          to {
+            transform: scaleX(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }

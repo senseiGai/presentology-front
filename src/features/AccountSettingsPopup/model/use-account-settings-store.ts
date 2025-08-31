@@ -62,6 +62,10 @@ interface AccountSettingsState {
 
   // Save changes
   saveChanges: () => Promise<boolean>;
+
+  // Avatar methods
+  uploadAvatar: (file: File) => Promise<boolean>;
+  deleteAvatar: () => Promise<boolean>;
 }
 
 // Validation functions
@@ -273,6 +277,62 @@ export const useAccountSettingsStore = create<AccountSettingsState>(
 
         set({ isLoading: false });
         throw new Error(errorMessage);
+      }
+    },
+
+    // Upload avatar
+    uploadAvatar: async (file: File) => {
+      set({ isLoading: true });
+
+      try {
+        // Validate file size (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          throw new Error("Изображение должно быть не больше 10 Мб");
+        }
+
+        // Validate file type
+        if (!file.type.match(/^image\/(jpeg|jpg|png|gif)$/)) {
+          throw new Error(
+            "Поддерживаются только изображения (jpg, jpeg, png, gif)"
+          );
+        }
+
+        const updatedUser = await AuthApi.uploadAvatar(file);
+
+        // Update the global auth store with new user data
+        const authStore = useAuthStore.getState();
+        authStore.updateUser(updatedUser);
+
+        set({ isLoading: false });
+        return true;
+      } catch (error: any) {
+        console.error("Error uploading avatar:", error);
+        set({ isLoading: false });
+        throw new Error(
+          error?.message || "Произошла ошибка при загрузке аватара"
+        );
+      }
+    },
+
+    // Delete avatar
+    deleteAvatar: async () => {
+      set({ isLoading: true });
+
+      try {
+        const updatedUser = await AuthApi.deleteAvatar();
+
+        // Update the global auth store with new user data
+        const authStore = useAuthStore.getState();
+        authStore.updateUser(updatedUser);
+
+        set({ isLoading: false });
+        return true;
+      } catch (error: any) {
+        console.error("Error deleting avatar:", error);
+        set({ isLoading: false });
+        throw new Error(
+          error?.message || "Произошла ошибка при удалении аватара"
+        );
       }
     },
   })

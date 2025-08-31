@@ -110,7 +110,7 @@ export default function Sidebar() {
                 >
                   {user?.avatar ? (
                     <Image
-                      src={user.avatar}
+                      src={`${process.env.NEXT_PUBLIC_API_URL}${user.avatar}`}
                       alt={user.firstName || "User"}
                       width={40}
                       height={40}
@@ -142,7 +142,7 @@ export default function Sidebar() {
             >
               {user?.avatar ? (
                 <Image
-                  src={user.avatar}
+                  src={`${process.env.NEXT_PUBLIC_API_URL}${user.avatar}`}
                   alt={user.firstName || "User"}
                   width={40}
                   height={40}

@@ -111,6 +111,29 @@ export class AuthApi {
     return response.data;
   }
 
+  // Загрузка аватара
+  static async uploadAvatar(file: File): Promise<User> {
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    const response = await apiClient.post(
+      API_ENDPOINTS.USERS.UPLOAD_AVATAR,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  }
+
+  // Удаление аватара
+  static async deleteAvatar(): Promise<User> {
+    const response = await apiClient.delete(API_ENDPOINTS.USERS.DELETE_AVATAR);
+    return response.data;
+  }
+
   // Google OAuth
   static async googleAuth(code: string): Promise<SocialAuthResponse> {
     const response = await apiClient.post(API_ENDPOINTS.AUTH.GOOGLE, { code });

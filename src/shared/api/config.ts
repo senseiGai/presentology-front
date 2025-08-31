@@ -93,6 +93,8 @@ export const API_ENDPOINTS = {
     CHANGE_PASSWORD: "/users/change-password",
     SEND_EMAIL_VERIFICATION: "/users/send-email-verification",
     VERIFY_EMAIL_CHANGE: "/users/verify-email-change",
+    UPLOAD_AVATAR: "/users/avatar",
+    DELETE_AVATAR: "/users/avatar",
   },
   PRESENTATIONS: {
     LIST: "/presentations",

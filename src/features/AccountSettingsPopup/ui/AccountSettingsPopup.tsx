@@ -16,6 +16,9 @@ import WarningIcon from "../../../../public/icons/WarningIcon";
 
 export default function AccountSettingsPopup() {
   const [showErrorToast, setShowErrorToast] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(
+    "Изображение должно быть не больше 10 Мб"
+  );
 
   const {
     isOpen,
@@ -42,6 +45,8 @@ export default function AccountSettingsPopup() {
     resetForm,
     validateEmail,
     validatePassword,
+    uploadAvatar,
+    deleteAvatar,
   } = useAccountSettingsStore();
 
   const { user } = useAuthStore();
@@ -143,12 +148,36 @@ export default function AccountSettingsPopup() {
   };
 
   const handleUploadPhoto = () => {
-    // Показываем локальный тост ошибки
-    setShowErrorToast(true);
-    // Автоматически скрываем через 5 секунд
-    setTimeout(() => {
-      setShowErrorToast(false);
-    }, 5000);
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/jpeg,image/jpg,image/png,image/gif";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        await uploadAvatar(file);
+        toast.success("Аватар успешно обновлён");
+      } catch (error: any) {
+        setErrorMessage(
+          error?.message || "Произошла ошибка при загрузке аватара"
+        );
+        setShowErrorToast(true);
+        setTimeout(() => {
+          setShowErrorToast(false);
+        }, 5000);
+      }
+    };
+    input.click();
+  };
+
+  const handleDeleteAvatar = async () => {
+    try {
+      await deleteAvatar();
+      toast.success("Аватар успешно удалён");
+    } catch (error: any) {
+      toast.error(error?.message || "Произошла ошибка при удалении аватара");
+    }
   };
 
   if (!isOpen) return null;
@@ -182,7 +211,7 @@ export default function AccountSettingsPopup() {
           <div className="bg-[#BBA2FE] w-[80px] h-[80px] flex items-center justify-center rounded-full mb-[8px] relative">
             {user?.avatar ? (
               <img
-                src={user.avatar}
+                src={`${process.env.NEXT_PUBLIC_API_URL}${user.avatar}`}
                 alt={user.firstName || "User"}
                 className="w-full h-full rounded-full object-cover"
               />
@@ -193,10 +222,17 @@ export default function AccountSettingsPopup() {
               <button
                 onClick={handleUploadPhoto}
                 className="cursor-pointer w-[32px] h-[32px] bg-[#F4F4F4] rounded-[8px] flex items-center justify-center hover:bg-[#E9EAEE] transition-colors"
+                title="Загрузить фото"
+                disabled={isLoading}
               >
                 <CameraIcon />
               </button>
-              <button className="cursor-pointer w-[32px] h-[32px] bg-[#F4F4F4] rounded-[8px] flex items-center justify-center">
+              <button
+                onClick={handleDeleteAvatar}
+                className="cursor-pointer w-[32px] h-[32px] bg-[#F4F4F4] rounded-[8px] flex items-center justify-center hover:bg-[#E9EAEE] transition-colors"
+                title="Удалить фото"
+                disabled={isLoading}
+              >
                 <TrashIcon />
               </button>
             </div>
@@ -293,7 +329,7 @@ export default function AccountSettingsPopup() {
                   Загрузка не прошла
                 </div>
                 <div className="text-[#8F8F92] text-[14px] font-medium mt-[2px]">
-                  Изображение должно быть не больше 10 Мб
+                  {errorMessage}
                 </div>
               </div>
               <button

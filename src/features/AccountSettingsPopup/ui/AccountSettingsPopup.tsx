@@ -238,7 +238,7 @@ export default function AccountSettingsPopup() {
               </button>
             </div>
           </div>
-          <h3 className="text-[#BBA2FE] text-[18px] font-medium mb-[21px]">
+          <h3 className="text-[#BBA2FE] text-[18px] mt-[16px] font-medium mb-[21px]">
             {user?.firstName} {user?.lastName}
           </h3>
           {!user?.firstName && !user?.lastName && <div className="h-[21px]" />}

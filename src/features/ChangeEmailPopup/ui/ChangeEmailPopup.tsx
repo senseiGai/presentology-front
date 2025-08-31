@@ -6,6 +6,7 @@ import { InputField } from "@/shared/ui/InputField";
 import { Button } from "@/shared/ui/Button";
 import { ArrowLeft, X } from "lucide-react";
 import { useAccountSettingsStore } from "@/features/AccountSettingsPopup";
+import { AuthApi } from "@/shared/api/auth.api";
 
 export default function ChangeEmailPopup() {
   const {
@@ -93,6 +94,22 @@ export default function ChangeEmailPopup() {
     resetForm();
     closePopup();
     openAccountSettings();
+  };
+
+  // Функция для получения кода из бэкенда (только для тестирования)
+  const getCodeFromBackend = async () => {
+    try {
+      const result = await AuthApi.getVerificationCode();
+      console.log("Verification code from backend:", result.code);
+      if (result.code) {
+        alert(`Код верификации: ${result.code}`);
+      } else {
+        alert("Код не найден. Сначала отправьте код.");
+      }
+    } catch (error) {
+      console.error("Error getting code:", error);
+      alert("Ошибка получения кода");
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -270,6 +287,16 @@ export default function ChangeEmailPopup() {
                     Отправить заново через {resendTimer} секунд
                   </span>
                 )}
+              </div>
+
+              {/* Test button to get code from backend */}
+              <div className="mt-4">
+                <button
+                  className="text-[#BBA2FE] text-[12px] font-[400] hover:text-[#A689FD] cursor-pointer underline"
+                  onClick={getCodeFromBackend}
+                >
+                  [TEST] Получить код из бэкенда
+                </button>
               </div>
             </div>
 

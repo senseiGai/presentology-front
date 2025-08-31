@@ -134,6 +134,12 @@ export class AuthApi {
     return response.data;
   }
 
+  // Получение кода верификации (только для тестирования)
+  static async getVerificationCode(): Promise<{ code: string | null }> {
+    const response = await apiClient.get("/users/verification-code");
+    return response.data;
+  }
+
   // Google OAuth
   static async googleAuth(code: string): Promise<SocialAuthResponse> {
     const response = await apiClient.post(API_ENDPOINTS.AUTH.GOOGLE, { code });

@@ -1,3 +1,5 @@
+"use client";
+
 import { create } from "zustand";
 import { AuthApi } from "@/shared/api/auth.api";
 import { useAuthStore } from "@/shared/stores";

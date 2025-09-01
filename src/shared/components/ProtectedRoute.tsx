@@ -2,7 +2,7 @@
 
 import { useEffect, ReactNode, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/shared/stores/auth-store";
+import { useAuthStore } from "@/shared/stores";
 
 interface ProtectedRouteProps {
   children: ReactNode;

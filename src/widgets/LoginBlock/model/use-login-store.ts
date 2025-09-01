@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { AuthApi } from "@/shared/api/auth.api";
-import { useAuthStore } from "@/shared/stores/auth-store";
+import { useAuthStore } from "@/shared/stores";
 import type { LoginRequest } from "@/shared/api/types";
 
 type LoginState = {

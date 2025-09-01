@@ -12,7 +12,7 @@ import { SideBarButton } from "./SideBarButton";
 import Image from "next/image";
 import LogoutIcon from "../../../../public/icons/LogOutIcon";
 import { useSideBarStore } from "../model/use-sidebar-store";
-import { useAuthStore } from "@/shared/stores/auth-store";
+import { useAuthStore } from "@/shared/stores";
 import { menuItems } from "../lib/menuItems";
 import { useAccountSettingsStore } from "../../AccountSettingsPopup/model/use-account-settings-store";
 

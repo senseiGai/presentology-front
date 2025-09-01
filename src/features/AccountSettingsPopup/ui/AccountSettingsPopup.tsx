@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { useAccountSettingsStore } from "../model/use-account-settings-store";
-import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { useAuthStore } from "@/shared/stores";
 import { useChangeEmailStore } from "../../ChangeEmailPopup/model/use-change-email-store";
 import { useChangePasswordStore } from "../../ChangePasswordPopup/model/use-change-password-store";
 import { InputField } from "@/shared/ui/InputField";

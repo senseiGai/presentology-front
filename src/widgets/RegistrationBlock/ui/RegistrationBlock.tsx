@@ -59,22 +59,7 @@ export const RegistrationBlock = () => {
 
       toast.success("Регистрация успешно завершена!");
 
-      // Проверяем статус опроса после успешной регистрации
-      try {
-        const surveyStatus = await refetchSurveyStatus();
-
-        if (surveyStatus.data?.hasCompletedSurvey) {
-          // Если опрос уже пройден, идем на главную
-          router.push("/home");
-        } else {
-          // Если опрос не пройден, идем на страницу опроса
-          router.push("/survey");
-        }
-      } catch (error) {
-        console.error("Error checking survey status:", error);
-        // В случае ошибки по умолчанию идем на опрос (для новых пользователей)
-        router.push("/survey");
-      }
+      router.push("/home");
     }
   };
 

@@ -178,21 +178,6 @@ export const HomeBlock = () => {
 
   return (
     <section className="flex flex-row gap-x-[24px] 2xl:gap-x-[20px] mt-[24px] relative">
-      {/* Отладочная панель статуса опроса */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="fixed top-4 right-4 bg-gray-800 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm">
-          <h3 className="text-sm font-bold mb-2">Survey Status Debug</h3>
-          <div className="text-xs">
-            <div>Loading: {surveyLoading ? "Yes" : "No"}</div>
-            <div>Error: {surveyError ? "Yes" : "No"}</div>
-            <div>
-              Completed: {surveyStatus?.hasCompletedSurvey ? "Yes" : "No"}
-            </div>
-            <div>Status: {JSON.stringify(surveyStatus, null, 2)}</div>
-          </div>
-        </div>
-      )}
-
       <Sidebar />
       <div>
         <div className="flex flex-row items-center">

@@ -131,7 +131,7 @@ export default function ChangePasswordPopup() {
         </div>
         {/* Content */}
         <>
-          <div className="space-y-4 mt-[32px] flex-1">
+          <div className="mt-[32px] flex-1">
             {/* Old Password */}
             <div className="w-full">
               <InputField
@@ -153,7 +153,7 @@ export default function ChangePasswordPopup() {
             </div>
 
             {/* New Password */}
-            <div className="w-full mt-6">
+            <div className="w-full mt-[32px]">
               <InputField
                 label="Новый пароль"
                 type="password"
@@ -173,7 +173,7 @@ export default function ChangePasswordPopup() {
             </div>
 
             {/* Confirm Password */}
-            <div className="w-full">
+            <div className="w-full mt-[16px]">
               <InputField
                 label="Повторите пароль"
                 type="password"

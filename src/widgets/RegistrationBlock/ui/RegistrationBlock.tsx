@@ -8,15 +8,13 @@ import LogoIcon from "../../../../public/icons/Logo";
 import Link from "next/link";
 import { passwordRules } from "../lib/passwordRules";
 import { useRegisterStore } from "../model/use-registration-store";
-import { useAuthStore } from "@/shared/stores/useAuthStore";
-import { useSurveyStatus } from "@/shared/hooks/useSurvey";
+import { useAuthStore } from "@/shared/stores";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export const RegistrationBlock = () => {
   const router = useRouter();
   const { setUser } = useAuthStore();
-  const { refetch: refetchSurveyStatus } = useSurveyStatus();
 
   const {
     email,

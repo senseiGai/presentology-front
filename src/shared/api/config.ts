@@ -1,6 +1,6 @@
 "use client";
 import axios from "axios";
-import { useAuthStore } from "@/shared/stores/auth-store";
+import { useAuthStore } from "@/shared/stores";
 
 export const API_BASE_URL =
   "https://presentology-back-production.up.railway.app/";

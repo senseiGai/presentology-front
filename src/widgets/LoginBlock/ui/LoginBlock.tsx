@@ -14,6 +14,7 @@ import LogoIcon from "../../../../public/icons/Logo";
 import { socials } from "../lib/socials";
 import Link from "next/link";
 import { ErrorCard } from "@/features/ErrorCard/ui/ErrorCard";
+import { SurveyApi } from "@/shared/api/survey.api";
 
 export const LoginBlock = () => {
   const router = useRouter();
@@ -38,24 +39,22 @@ export const LoginBlock = () => {
       if (success) {
         toast.success("Вы успешно вошли в систему!");
 
-        // Временно редиректим сразу на /home для тестирования
         console.log("Redirecting to /home");
         router.push("/home");
 
-        // Проверяем статус опроса после успешного входа
-        // try {
-        //   const surveyStatus = await SurveyApi.getSurveyStatus();
+        try {
+          const surveyStatus = await SurveyApi.getSurveyStatus();
 
-        //   if (surveyStatus.hasCompletedSurvey) {
-        //     router.push("/home");
-        //   } else {
-        //     router.push("/survey");
-        //   }
-        // } catch (error) {
-        //   console.error("Error checking survey status:", error);
-        //   // В случае ошибки проверки опроса идем на главную
-        //   router.push("/home");
-        // }
+          if (surveyStatus.hasCompletedSurvey) {
+            router.push("/home");
+          } else {
+            router.push("/survey");
+          }
+        } catch (error) {
+          console.error("Error checking survey status:", error);
+          // В случае ошибки проверки опроса идем на главную
+          router.push("/home");
+        }
       }
     }
   };

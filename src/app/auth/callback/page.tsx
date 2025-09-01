@@ -2,7 +2,7 @@
 
 import React, { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { useAuthStore } from "@/shared/stores";
 import { AuthApi } from "@/shared/api/auth.api";
 import { SurveyApi } from "@/shared/api/survey.api";
 import { toast } from "sonner";

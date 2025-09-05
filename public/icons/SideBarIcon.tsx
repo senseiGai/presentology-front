@@ -11,8 +11,9 @@ const SideBarIcon = (props: React.SVGProps<SVGSVGElement>) => (
   >
     <path
       d="M12.5.5h-11a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1m-11 1H4v9H1.5zm11 9H5v-9h7.5z"
-      fill="#BBA2FE"
+      fill={props.color ?? "#BBA2FE"}
     />
   </svg>
 );
+
 export default SideBarIcon;

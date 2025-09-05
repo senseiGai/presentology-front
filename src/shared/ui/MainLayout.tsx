@@ -7,9 +7,11 @@ import { Toaster } from "sonner";
 export const MainLayout = ({
   children,
   isBg,
+  fullWidth = false,
 }: {
   children: React.ReactNode;
   isBg?: boolean;
+  fullWidth?: boolean;
 }) => {
   return (
     <div className="relative overflow-x-hidden min-h-screen">
@@ -27,11 +29,19 @@ export const MainLayout = ({
       )}
 
       {/* Контент */}
-      <div className="max-w-[1280px] mx-auto relative min-h-screen">
+      <div
+        className={
+          fullWidth
+            ? "relative min-h-screen w-[1280px] mx-auto"
+            : "max-w-[1280px] mx-auto relative min-h-screen"
+        }
+      >
         <div
-          className={`absolute ${
+          className={`${fullWidth ? "relative" : "absolute"} ${
             isBg
               ? "top-1/2 -translate-y-1/2"
+              : fullWidth
+              ? "min-h-screen"
               : "grid place-items-center min-h-screen"
           } z-10 w-full`}
         >

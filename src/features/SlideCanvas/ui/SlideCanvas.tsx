@@ -1,18 +1,14 @@
 import React from "react";
+import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 
 interface SlideCanvasProps {
-  currentSlide: number;
-  generatedSlides: number[];
-  isGenerating: boolean;
   children: React.ReactNode;
 }
 
-export const SlideCanvas: React.FC<SlideCanvasProps> = ({
-  currentSlide,
-  generatedSlides,
-  isGenerating,
-  children,
-}) => {
+export const SlideCanvas: React.FC<SlideCanvasProps> = ({ children }) => {
+  const { currentSlide, generatedSlides, isGenerating } =
+    usePresentationStore();
+
   const isCurrentSlideGenerated = generatedSlides.includes(currentSlide);
   const isCurrentSlideGenerating =
     isGenerating && currentSlide === generatedSlides.length + 1;
@@ -42,9 +38,6 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
             </div>
           </div>
         );
-
-      case "generating":
-        return null;
 
       case "ready":
       default:

@@ -4,24 +4,21 @@ import {
   type ElementOption,
 } from "@/features/ElementSelector";
 import { Button } from "@/shared/ui/Button";
+import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 
 interface ToolsPanelProps {
-  isGenerating: boolean;
-  generatedSlides: number[];
-  totalSlides: number;
   elementOptions: ElementOption[];
-  selectedElement: string;
-  onElementSelect: (elementId: string) => void;
-  onFeedbackClick: () => void;
 }
 
-export const ToolsPanel: React.FC<ToolsPanelProps> = ({
-  isGenerating,
-  generatedSlides,
-  totalSlides,
-  elementOptions,
-  onElementSelect,
-}) => {
+export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
+  const {
+    isGenerating,
+    generatedSlides,
+    totalSlides,
+    selectedElement,
+    setSelectedElement,
+    setShowFeedback,
+  } = usePresentationStore();
   return (
     <div
       className="w-[274px] bg-white border-l-[1px] border-[#E9E9E9] p-4 flex-shrink-0 overflow-y-auto"
@@ -44,7 +41,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({
         <>
           <ElementSelector
             elements={elementOptions}
-            onElementSelect={onElementSelect}
+            onElementSelect={setSelectedElement}
           />
         </>
       )}

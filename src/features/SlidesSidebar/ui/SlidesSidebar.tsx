@@ -1,29 +1,26 @@
 import React from "react";
 import { SlidePreview } from "@/entities/Slide";
+import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import SideBarIcon from "../../../../public/icons/SideBarIcon";
 
 interface SlidesSidebarProps {
-  totalSlides: number;
-  currentSlide: number;
-  generatedSlides: number[];
-  isGenerating: boolean;
-  isCollapsed?: boolean;
-  onSlideClick: (slideNumber: number) => void;
-  onToggleCollapse?: () => void;
   renderSlideContent: (slideNumber: number) => React.ReactNode;
 }
 
 export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
-  totalSlides,
-  currentSlide,
-  generatedSlides,
-  isGenerating,
-  isCollapsed = false,
-  onSlideClick,
-  onToggleCollapse,
   renderSlideContent,
 }) => {
-  if (isCollapsed) {
+  const {
+    totalSlides,
+    currentSlide,
+    generatedSlides,
+    isGenerating,
+    isSidebarCollapsed,
+    setCurrentSlide,
+    toggleSidebar,
+  } = usePresentationStore();
+
+  if (isSidebarCollapsed) {
     return null;
   }
 
@@ -35,10 +32,10 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
         boxShadow: "4px 0px 4px 0px #BBA2FE1A",
       }}
     >
-      {onToggleCollapse && (
+      {!isGenerating && toggleSidebar && (
         <div className="px-2 pt-[16px] pb-4 flex justify-end flex-shrink-0">
           <button
-            onClick={onToggleCollapse}
+            onClick={toggleSidebar}
             className="w-[32px] h-[32px] flex items-center justify-center cursor-pointer rounded-[8px] bg-[#F4F4F4] hover:bg-[#E5E7EB] ease-in-out duration-300 transition-colors mr-2"
           >
             <SideBarIcon color={"#939396"} />
@@ -47,7 +44,11 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
       )}
 
       {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 pb-[24px]">
+      <div
+        className={`flex-1 overflow-y-auto overflow-x-hidden px-2 pb-[24px] ${
+          isGenerating && "pt-[24px]"
+        }`}
+      >
         <div className="space-y-[24px]">
           {Array.from({ length: totalSlides }, (_, index) => {
             const slideNumber = index + 1;
@@ -64,11 +65,11 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
               <SlidePreview
                 key={slideNumber}
                 slideNumber={slideNumber}
-                isActive={currentSlide === slideNumber}
+                isActive={!isGenerating && currentSlide === slideNumber}
                 isCompleted={isGenerated}
-                onClick={() => isGenerated && onSlideClick(slideNumber)}
-                className={
-                  isCurrentlyGenerating ? "animate-pulse border-[#927DCB]" : ""
+                isGenerating={isGenerating}
+                onClick={() =>
+                  !isGenerating && isGenerated && setCurrentSlide(slideNumber)
                 }
               >
                 {renderSlideContent(slideNumber)}

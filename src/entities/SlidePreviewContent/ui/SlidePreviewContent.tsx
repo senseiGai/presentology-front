@@ -1,4 +1,5 @@
 import React from "react";
+import PreviewGenerationLoaderIcon from "../../../../public/icons/PreviewGenerationLoaderIcon";
 
 interface SlidePreviewContentProps {
   slideNumber: number;
@@ -21,9 +22,9 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
 
   if (isCurrentlyGenerating) {
     return (
-      <div className="w-full h-full bg-gradient-to-br from-[#927DCB]/20 to-[#F59E0B]/20 rounded-[4px] flex items-center justify-center relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#927DCB] to-[#F59E0B] opacity-20 animate-pulse rounded-[4px]" />
-        <div className="w-4 h-4 bg-[#927DCB] rounded-full animate-pulse" />
+      <div className="w-full h-full bg-white rounded-[4px] flex items-center justify-center relative border-[1px] border-[#F4F4F4]">
+        <div className="absolute inset-0 bg-white rounded-[4px]" />
+        <PreviewGenerationLoaderIcon className="animate-spin" />
       </div>
     );
   }

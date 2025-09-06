@@ -32,7 +32,7 @@ export const MainLayout = ({
       <div
         className={
           fullWidth
-            ? "relative min-h-screen w-[1280px] mx-auto"
+            ? "relative w-[1280px] mx-auto"
             : "max-w-[1280px] mx-auto relative min-h-screen"
         }
       >

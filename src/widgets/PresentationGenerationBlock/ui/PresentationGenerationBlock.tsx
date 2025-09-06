@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { PresentationHeader } from "@/features/PresentationHeader";
 import { SlidesSidebar } from "@/features/SlidesSidebar";
 import { SlideCanvas } from "@/features/SlideCanvas";
@@ -8,6 +8,8 @@ import { ToolsPanel } from "@/features/ToolsPanel";
 import { SlideContent, getSlideType } from "@/entities/SlideContent";
 import { SlidePreviewContent } from "@/entities/SlidePreviewContent";
 import { type ElementOption } from "@/features/ElementSelector";
+import { usePresentationStore } from "@/shared/stores/usePresentationStore";
+import { useSlideGeneration } from "@/shared/hooks/useSlideGeneration";
 
 import SideBarIcon from "../../../../public/icons/SideBarIcon";
 import AlphabetIcon from "../../../../public/icons/AlphabetIcon";
@@ -17,36 +19,17 @@ import GraphIcon from "../../../../public/icons/GraphIcon";
 import Image from "next/image";
 
 export const PresentationGenerationBlock = () => {
-  const [currentSlide, setCurrentSlide] = useState(1);
-  const [totalSlides] = useState(15);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [selectedElement, setSelectedElement] = useState<string>("");
-  const [generatedSlides, setGeneratedSlides] = useState<number[]>([]);
-  const [isGenerating, setIsGenerating] = useState(true);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isToolsPanelCollapsed, setIsToolsPanelCollapsed] = useState(false);
+  const {
+    currentSlide,
+    generatedSlides,
+    isGenerating,
+    isSidebarCollapsed,
+    isToolsPanelCollapsed,
+    toggleSidebar,
+  } = usePresentationStore();
 
-  // Simulation of slide generation process
-  useEffect(() => {
-    if (isGenerating && generatedSlides.length < totalSlides) {
-      const timer = setTimeout(() => {
-        const nextSlide = generatedSlides.length + 1;
-        setGeneratedSlides((prev) => [...prev, nextSlide]);
-        // Автоматически переключаемся на только что сгенерированный слайд
-        setCurrentSlide(nextSlide);
-      }, 2000); // Generate each slide every 2 seconds
-
-      return () => clearTimeout(timer);
-    } else if (generatedSlides.length === totalSlides) {
-      if (isGenerating) {
-        // Показываем уведомление о завершении
-        setTimeout(() => {
-          setShowFeedback(true);
-        }, 1000);
-      }
-      setIsGenerating(false);
-    }
-  }, [generatedSlides, totalSlides, isGenerating]);
+  // Custom hook for slide generation logic
+  useSlideGeneration();
 
   const elementOptions: ElementOption[] = [
     {
@@ -87,8 +70,7 @@ export const PresentationGenerationBlock = () => {
   };
 
   const handleToggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-    setIsToolsPanelCollapsed(!isToolsPanelCollapsed);
+    toggleSidebar();
   };
 
   const handleChangeDesign = () => {
@@ -124,7 +106,7 @@ export const PresentationGenerationBlock = () => {
 
   return (
     <div className="h-screen bg-[#F8F9FA] flex overflow-hidden">
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex-col">
         <PresentationHeader
           onBack={handleBack}
           onDownload={handleDownload}
@@ -133,7 +115,6 @@ export const PresentationGenerationBlock = () => {
         />
 
         <div className="flex-1 flex relative min-h-0">
-          {/* Floating toggle button when sidebar is collapsed */}
           {isSidebarCollapsed && (
             <button
               onClick={handleToggleSidebar}
@@ -143,21 +124,8 @@ export const PresentationGenerationBlock = () => {
             </button>
           )}
 
-          <SlidesSidebar
-            totalSlides={totalSlides}
-            currentSlide={currentSlide}
-            generatedSlides={generatedSlides}
-            isGenerating={isGenerating}
-            isCollapsed={isSidebarCollapsed}
-            onSlideClick={setCurrentSlide}
-            onToggleCollapse={handleToggleSidebar}
-            renderSlideContent={renderSlideContent}
-          />
-          <SlideCanvas
-            currentSlide={currentSlide}
-            generatedSlides={generatedSlides}
-            isGenerating={isGenerating}
-          >
+          <SlidesSidebar renderSlideContent={renderSlideContent} />
+          <SlideCanvas>
             {isGenerating ? (
               <Image
                 src="/assets/presentation/pesentation_generation.png"
@@ -171,15 +139,7 @@ export const PresentationGenerationBlock = () => {
           </SlideCanvas>
 
           {!isToolsPanelCollapsed && (
-            <ToolsPanel
-              isGenerating={isGenerating}
-              generatedSlides={generatedSlides}
-              totalSlides={totalSlides}
-              elementOptions={elementOptions}
-              selectedElement={selectedElement}
-              onElementSelect={setSelectedElement}
-              onFeedbackClick={() => setShowFeedback(true)}
-            />
+            <ToolsPanel elementOptions={elementOptions} />
           )}
         </div>
       </div>

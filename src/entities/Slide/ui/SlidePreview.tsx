@@ -5,6 +5,7 @@ interface SlidePreviewProps {
   slideNumber: number;
   isActive?: boolean;
   isCompleted?: boolean;
+  isGenerating?: boolean;
   children?: React.ReactNode;
   onClick?: () => void;
   className?: string;
@@ -14,28 +15,39 @@ export const SlidePreview: React.FC<SlidePreviewProps> = ({
   slideNumber,
   isActive = false,
   isCompleted = false,
+  isGenerating = false,
   children,
   onClick,
   className,
 }) => {
+  const handleClick = () => {
+    if (!isGenerating && onClick) {
+      onClick();
+    }
+  };
+
   return (
     <div
       className={clsx(
         "w-[183px] h-[95px] rounded-[8px] border-[1px] p-2 transition-all duration-300 cursor-pointer relative overflow-hidden",
         isActive
-          ? "border-[#BBA2FE] bg-[#DDD1FF] shadow-md"
+          ? "border-[#BBA2FE] bg-[#DDD1FF] "
           : isCompleted
-          ? "border-none bg-white"
-          : "border-[#E5E7EB] bg-[#F9FAFB] cursor-not-allowed opacity-60",
+          ? "border-none bg-white cursor-pointer"
+          : "border-[#BBA2FE] bg-[#DDD1FF] cursor-not-allowed ",
         className
       )}
-      onClick={onClick}
+      onClick={handleClick}
     >
       <div className="absolute top-2 left-2 z-10">
         <span
           className={clsx(
             "text-[18px] font-semibold",
-            isActive ? "text-[#8A6CDC]" : "text-[#BEBEC0]"
+            !isCompleted
+              ? "text-[#8A6CDC]"
+              : isActive
+              ? "text-[#8A6CDC]"
+              : "text-[#BEBEC0]"
           )}
         >
           {slideNumber}

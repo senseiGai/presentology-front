@@ -19,6 +19,7 @@ interface PresentationHeaderProps {
   onSendEmail?: () => void;
   onChangeDesign?: (templateIndex: number, styleIndex: number) => void;
   onShare?: () => void;
+  isGenerating?: boolean;
 }
 
 export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
@@ -29,6 +30,7 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
   onSendEmail,
   onChangeDesign,
   onShare,
+  isGenerating = false,
 }) => {
   const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
   const [isDownloadPopupOpen, setIsDownloadPopupOpen] = useState(false);
@@ -52,16 +54,20 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
   };
 
   const handleShareClick = () => {
-    setIsSharePopupOpen(!isSharePopupOpen);
-    if (onShare) {
-      onShare();
+    if (!isGenerating) {
+      setIsSharePopupOpen(!isSharePopupOpen);
+      if (onShare) {
+        onShare();
+      }
     }
   };
 
   const handleDownloadClick = () => {
-    setIsDownloadPopupOpen(!isDownloadPopupOpen);
-    if (onDownload) {
-      onDownload();
+    if (!isGenerating) {
+      setIsDownloadPopupOpen(!isDownloadPopupOpen);
+      if (onDownload) {
+        onDownload();
+      }
     }
   };
 
@@ -87,11 +93,13 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
   };
 
   const handleDesignClick = () => {
-    setIsDesignPopupOpen(true);
+    if (!isGenerating) {
+      setIsDesignPopupOpen(true);
+    }
   };
 
   const handleDesignChange = (templateIndex: number, styleIndex: number) => {
-    if (onChangeDesign) {
+    if (onChangeDesign && !isGenerating) {
       onChangeDesign(templateIndex, styleIndex);
     }
     setIsDesignPopupOpen(false);
@@ -141,10 +149,19 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
       <div className="flex items-center gap-x-4">
         <button
           onClick={handleDesignClick}
-          className="gap-x-2 bg-[#F4F4F4] w-[218px] h-[40px] rounded-[8px] flex items-center justify-center hover:bg-[#E5E7EB] ease-in-out duration-300 transition-colors cursor-pointer"
+          disabled={isGenerating}
+          className={`gap-x-2 w-[218px] h-[40px] rounded-[8px] flex items-center justify-center ease-in-out duration-300 transition-colors ${
+            isGenerating
+              ? "bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed"
+              : "bg-[#F4F4F4] hover:bg-[#E5E7EB] cursor-pointer"
+          }`}
         >
           <PaintIcon />
-          <span className="text-[18px] text-[#0B0911] font-regular">
+          <span
+            className={`text-[18px] font-regular ${
+              isGenerating ? "text-[#9CA3AF]" : "text-[#0B0911]"
+            }`}
+          >
             Изменить дизайн
           </span>
         </button>
@@ -153,10 +170,20 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
           <button
             ref={shareButtonRef}
             onClick={handleShareClick}
-            className="gap-x-2 bg-[#F4F4F4] w-[172px] h-[40px] rounded-[8px] flex items-center justify-center hover:bg-[#E5E7EB] ease-in-out duration-300 transition-colors cursor-pointer"
+            disabled={isGenerating}
+            className={`gap-x-2 w-[172px] bg-[#F4F4F4] hover:bg-[#E5E7EB] cursor-pointer h-[40px] rounded-[8px] flex items-center justify-center ease-in-out duration-300 transition-colors ${
+              isGenerating ? " cursor-not-allowed" : "cursor-pointer"
+            }`}
           >
             <ShareIcon />
-            <span className="text-[18px] text-[#0B0911] font-regular">
+            <span
+              className={`text-[18px] font-regular ${
+                isGenerating
+                  ? "text-[#9CA3AF] cursor-not-allowed"
+                  : "text-[#0B0911] cursor-pointer"
+              }
+              }`}
+            >
               Поделиться
             </span>
           </button>
@@ -172,10 +199,13 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
         <div className="relative">
           <Button
             onClick={handleDownloadClick}
-            className="!w-[139px] !h-[40px] gap-x-2"
+            disabled={isGenerating}
+            className={`!w-[139px] !h-[40px] gap-x-2 ${
+              isGenerating ? "!cursor-not-allowed" : "cursor-pointer"
+            }`}
           >
             <DownloadIcon />
-            <span className="text-[18px]  font-regular">Скачать</span>
+            <span className={`text-[18px] font-regular`}>Скачать</span>
           </Button>
 
           <DownloadPopup

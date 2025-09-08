@@ -113,6 +113,7 @@ export const PresentationGenerationBlock = () => {
           onDownload={handleDownload}
           onChangeDesign={handleChangeDesign}
           onShare={handleShare}
+          isGenerating={isGenerating}
         />
 
         <div className="flex-1 flex relative min-h-0">

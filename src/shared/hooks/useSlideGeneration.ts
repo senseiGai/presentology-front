@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
+import { showPresentationFeedbackToast } from "@/shared/lib/toasts";
 
 export const useSlideGeneration = () => {
   const {
@@ -21,10 +22,7 @@ export const useSlideGeneration = () => {
       return () => clearTimeout(timer);
     } else if (generatedSlides.length === totalSlides) {
       if (isGenerating) {
-        // Показываем уведомление о завершении
-        setTimeout(() => {
-          setShowFeedback(true);
-        }, 1000);
+        showPresentationFeedbackToast();
       }
       setIsGenerating(false);
     }

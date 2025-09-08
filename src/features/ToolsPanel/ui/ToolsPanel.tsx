@@ -11,14 +11,8 @@ interface ToolsPanelProps {
 }
 
 export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
-  const {
-    isGenerating,
-    generatedSlides,
-    totalSlides,
-    selectedElement,
-    setSelectedElement,
-    setShowFeedback,
-  } = usePresentationStore();
+  const { isGenerating, generatedSlides, totalSlides, setSelectedElement } =
+    usePresentationStore();
   return (
     <div
       className="w-[274px] bg-white border-l-[1px] border-[#E9E9E9] p-4 flex-shrink-0 overflow-y-auto"

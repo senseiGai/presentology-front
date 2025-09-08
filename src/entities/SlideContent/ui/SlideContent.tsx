@@ -39,7 +39,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               <br />в две строки
             </div>
             <div className="grid grid-cols-2 gap-6">
-              {[1, 2, 3, 4].map((i) => (
+              {[1, 2].map((i) => (
                 <div
                   key={i}
                   className="aspect-square bg-[#F7FAFC] rounded-[12px] flex items-center justify-center border-2 border-[#E2E8F0]"

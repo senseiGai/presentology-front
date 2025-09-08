@@ -32,7 +32,7 @@ export interface PresentationState {
 
 const initialState = {
   currentSlide: 1,
-  totalSlides: 15,
+  totalSlides: 5,
   generatedSlides: [],
   isGenerating: true,
   showFeedback: false,

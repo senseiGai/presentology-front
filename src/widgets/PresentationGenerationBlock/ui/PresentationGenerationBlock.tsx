@@ -17,6 +17,7 @@ import PictureIcon from "../../../../public/icons/PictureIcon";
 import GrayTableIcon from "../../../../public/icons/GrayTableIcon";
 import GraphIcon from "../../../../public/icons/GraphIcon";
 import Image from "next/image";
+import { Mascot } from "@/shared/ui/Mascot";
 
 export const PresentationGenerationBlock = () => {
   const {
@@ -127,12 +128,18 @@ export const PresentationGenerationBlock = () => {
           <SlidesSidebar renderSlideContent={renderSlideContent} />
           <SlideCanvas>
             {isGenerating ? (
-              <Image
-                src="/assets/presentation/pesentation_generation.png"
-                width={759}
-                height={427}
-                alt="Presentation"
-              />
+              <div className="relative w-[759px] min-h-screen overflow-hidden">
+                <Image
+                  src="/assets/presentation/pesentation_generation.png"
+                  width={759}
+                  height={427}
+                  alt="Presentation"
+                  className="absolute w-full h-full"
+                />
+                <div className="relative">
+                  <Mascot className="!absolute w-[429px] h-[429px] bottom-[-585px] left-[380px] transform -translate-x-1/2 " />
+                </div>
+              </div>
             ) : (
               renderMainSlideContent()
             )}

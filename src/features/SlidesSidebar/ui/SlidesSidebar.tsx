@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { SlidePreview } from "@/entities/Slide";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import SideBarIcon from "../../../../public/icons/SideBarIcon";
+import MiniPlusIcon from "../../../../public/icons/MiniPlusIcon";
 
 interface SlidesSidebarProps {
   renderSlideContent: (slideNumber: number) => React.ReactNode;
@@ -10,6 +11,10 @@ interface SlidesSidebarProps {
 export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
   renderSlideContent,
 }) => {
+  const [hoveredInsertZone, setHoveredInsertZone] = useState<number | null>(
+    null
+  );
+
   const {
     totalSlides,
     currentSlide,
@@ -18,6 +23,7 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
     isSidebarCollapsed,
     setCurrentSlide,
     toggleSidebar,
+    insertSlideAfter,
   } = usePresentationStore();
 
   if (isSidebarCollapsed) {
@@ -62,18 +68,39 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
             }
 
             return (
-              <SlidePreview
-                key={slideNumber}
-                slideNumber={slideNumber}
-                isActive={!isGenerating && currentSlide === slideNumber}
-                isCompleted={isGenerated}
-                isGenerating={isGenerating}
-                onClick={() =>
-                  !isGenerating && isGenerated && setCurrentSlide(slideNumber)
-                }
-              >
-                {renderSlideContent(slideNumber)}
-              </SlidePreview>
+              <React.Fragment key={slideNumber}>
+                <SlidePreview
+                  slideNumber={slideNumber}
+                  isActive={!isGenerating && currentSlide === slideNumber}
+                  isCompleted={isGenerated}
+                  isGenerating={isGenerating}
+                  onClick={() =>
+                    !isGenerating && isGenerated && setCurrentSlide(slideNumber)
+                  }
+                >
+                  {renderSlideContent(slideNumber)}
+                </SlidePreview>
+
+                {isGenerated && !isGenerating && (
+                  <div
+                    className="w-full h-[3px] flex items-center justify-center relative cursor-pointer"
+                    onMouseEnter={() => setHoveredInsertZone(slideNumber)}
+                    onMouseLeave={() => setHoveredInsertZone(null)}
+                    onClick={() => insertSlideAfter(slideNumber)}
+                  >
+                    {hoveredInsertZone === slideNumber && (
+                      <div className="flex items-center justify-center relative z-[50] w-[24px] h-[24px] bg-[#BBA2FE] text-white rounded-full text-lg font-bold">
+                        <MiniPlusIcon />
+                      </div>
+                    )}
+                    <div
+                      className={`absolute inset-0 ${
+                        hoveredInsertZone === slideNumber ? "bg-[#BBA2FE]" : ""
+                      } rounded transition-colors`}
+                    />
+                  </div>
+                )}
+              </React.Fragment>
             );
           })}
         </div>

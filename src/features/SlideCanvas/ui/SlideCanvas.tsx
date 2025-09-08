@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { SlideContent, getSlideType } from "@/entities/SlideContent";
+import { DeleteConfirmationModal } from "@/shared/ui/DeleteConfirmationModal";
 
 import Image from "next/image";
 import { Mascot } from "@/shared/ui/Mascot";
@@ -11,12 +12,17 @@ interface SlideCanvasProps {
 }
 
 export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
+  const [deleteConfirmSlide, setDeleteConfirmSlide] = useState<{
+    slideNumber: number;
+    slideIndex: number;
+  } | null>(null);
+
   const {
-    currentSlide,
     generatedSlides,
     totalSlides,
     isGenerating,
     setCurrentSlide,
+    deleteSlideByIndex,
   } = usePresentationStore();
 
   // Во время генерации показываем только градиентный фон
@@ -74,30 +80,76 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
           const isGenerated = generatedSlides.includes(slideNumber);
 
           return (
-            <div key={slideNumber} className="flex flex-col items-center">
-              {/* Buttons above each slide */}
-              <div className="flex mr-auto gap-2 mb-4 ">
-                <button className="flex items-center justify-center gap-2 w-[250px] h-[40px] bg-white rounded-[8px] border border-[#E5E7EB] hover:bg-gray-50 cursor-pointer transition-colors">
-                  <SparksIcon className="w-5 h-5" />
-                  <span className="text-[#0B0911] text-[18px] font-normal">
-                    Изменить тип слайда
-                  </span>
-                </button>
-                <button className="flex items-center justify-center w-[40px] h-[40px] cursor-pointer bg-white rounded-[8px] border border-[#E5E7EB] hover:bg-gray-50 transition-colors">
-                  <GrayTrashIcon className="w-4 h-5" />
-                </button>
-              </div>
+            <React.Fragment key={`slide-${slideNumber}-${totalSlides}`}>
+              <div className="flex flex-col items-center">
+                {/* Show buttons for all slides but only enable delete for generated ones */}
+                <div className="flex mr-auto gap-2 mb-2">
+                  <button
+                    className={`flex items-center justify-center gap-2 w-[250px] h-[40px] bg-white rounded-[8px] border border-[#E5E7EB] transition-colors ${
+                      isGenerated
+                        ? "hover:bg-gray-50 cursor-pointer"
+                        : "opacity-50 cursor-not-allowed"
+                    }`}
+                    disabled={!isGenerated}
+                  >
+                    <SparksIcon className="w-5 h-5" />
+                    <span className="text-[#0B0911] text-[18px] font-normal">
+                      Изменить тип слайда
+                    </span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (isGenerated) {
+                        console.log(
+                          `Deleting slide ${slideNumber} from position ${
+                            index + 1
+                          }`
+                        );
+                        setDeleteConfirmSlide({
+                          slideNumber,
+                          slideIndex: index,
+                        });
+                      }
+                    }}
+                    className={`flex items-center justify-center w-[40px] h-[40px] bg-white rounded-[8px] border border-[#E5E7EB] transition-colors ${
+                      isGenerated
+                        ? "hover:bg-gray-50 cursor-pointer"
+                        : "opacity-50 cursor-not-allowed"
+                    }`}
+                    disabled={!isGenerated}
+                  >
+                    <GrayTrashIcon className="w-4 h-5" />
+                  </button>
+                </div>
 
-              <div
-                onClick={() => isGenerated && setCurrentSlide(slideNumber)}
-                className="cursor-pointer"
-              >
-                {renderSlide(slideNumber)}
+                <div
+                  onClick={() => isGenerated && setCurrentSlide(slideNumber)}
+                  className="cursor-pointer"
+                >
+                  {renderSlide(slideNumber)}
+                </div>
               </div>
-            </div>
+            </React.Fragment>
           );
         })}
       </div>
+
+      <DeleteConfirmationModal
+        isOpen={deleteConfirmSlide !== null}
+        slideNumber={deleteConfirmSlide?.slideNumber || 0}
+        onConfirm={() => {
+          if (deleteConfirmSlide) {
+            console.log(
+              `Confirming delete for slide: ${deleteConfirmSlide.slideNumber} at index: ${deleteConfirmSlide.slideIndex}`
+            );
+            deleteSlideByIndex(deleteConfirmSlide.slideIndex);
+            setDeleteConfirmSlide(null);
+          }
+        }}
+        onCancel={() => setDeleteConfirmSlide(null)}
+      />
     </div>
   );
 };

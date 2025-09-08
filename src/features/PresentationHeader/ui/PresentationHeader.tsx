@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { Button } from "@/shared/ui/Button";
 import { SharePopup } from "@/shared/ui/SharePopup";
 import { DownloadPopup } from "@/shared/ui/DownloadPopup";
+import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import HouseIcon from "../../../../public/icons/HouseIcon";
 import MinusIcon from "../../../../public/icons/MinusIcon";
 import PlusIcon from "../../../../public/icons/PlusIcon";
@@ -32,11 +33,11 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
   const [isDownloadPopupOpen, setIsDownloadPopupOpen] = useState(false);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
 
+  const { zoomLevel, zoomIn, zoomOut, resetZoom } = usePresentationStore();
+
   const handleCopyLink = () => {
-    // Copy current page URL to clipboard
     navigator.clipboard.writeText(window.location.href);
     setIsSharePopupOpen(false);
-    // You could add a toast notification here
   };
 
   const handleShareTelegram = () => {
@@ -98,15 +99,29 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
 
         {/* Zoom controls */}
         <div className="flex items-center gap-x-2">
-          <button className="flex w-[32px] h-[32px] items-center justify-center cursor-pointer">
+          <button
+            onClick={zoomOut}
+            className="flex w-[32px] h-[32px] items-center justify-center cursor-pointer hover:bg-[#F4F4F4] rounded-[4px] transition-colors"
+          >
             <MinusIcon />
           </button>
-          <span className="text-[#0B0911] text-[18px] font-normal text-center">
-            100%
+          <span className="text-[#0B0911] text-[18px] font-normal text-center min-w-[50px]">
+            {zoomLevel}%
           </span>
-          <button className="flex w-[32px] h-[32px] items-center justify-center cursor-pointer">
+          <button
+            onClick={zoomIn}
+            className="flex w-[32px] h-[32px] items-center justify-center cursor-pointer hover:bg-[#F4F4F4] rounded-[4px] transition-colors"
+          >
             <PlusIcon />
           </button>
+          {zoomLevel !== 100 && (
+            <button
+              onClick={resetZoom}
+              className="ml-2 w-[129px] h-[40px] text-[18px] font-normal text-[#0B0911] bg-[#FFFFFF] border-[#C0C0C1] border-[1px] rounded-[8px] transition-colors cursor-pointer"
+            >
+              Сбросить
+            </button>
+          )}
         </div>
       </div>
 

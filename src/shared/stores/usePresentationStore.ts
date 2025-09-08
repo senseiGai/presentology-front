@@ -13,6 +13,7 @@ export interface PresentationState {
   selectedElement: string;
   isSidebarCollapsed: boolean;
   isToolsPanelCollapsed: boolean;
+  zoomLevel: number;
 
   // Actions
   setCurrentSlide: (slide: number) => void;
@@ -27,6 +28,10 @@ export interface PresentationState {
   toggleSidebar: () => void;
   setIsSidebarCollapsed: (collapsed: boolean) => void;
   setIsToolsPanelCollapsed: (collapsed: boolean) => void;
+  setZoomLevel: (zoom: number) => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
 
   // Reset functions
   resetPresentation: () => void;
@@ -42,6 +47,7 @@ const initialState = {
   selectedElement: "",
   isSidebarCollapsed: false,
   isToolsPanelCollapsed: false,
+  zoomLevel: 100,
 };
 
 export const usePresentationStore = create<PresentationState>()(
@@ -219,6 +225,20 @@ export const usePresentationStore = create<PresentationState>()(
     setIsToolsPanelCollapsed: (collapsed: boolean) =>
       set({ isToolsPanelCollapsed: collapsed }),
 
+    setZoomLevel: (zoom: number) => set({ zoomLevel: zoom }),
+
+    zoomIn: () =>
+      set((state) => ({
+        zoomLevel: Math.min(state.zoomLevel + 10, 100), // Max zoom 100%
+      })),
+
+    zoomOut: () =>
+      set((state) => ({
+        zoomLevel: Math.max(state.zoomLevel - 10, 50), // Min zoom 50%
+      })),
+
+    resetZoom: () => set({ zoomLevel: 100 }),
+
     resetPresentation: () => set(initialState),
 
     startGeneration: () =>
@@ -248,6 +268,8 @@ export const useIsSidebarCollapsed = () =>
   usePresentationStore((state) => state.isSidebarCollapsed);
 export const useIsToolsPanelCollapsed = () =>
   usePresentationStore((state) => state.isToolsPanelCollapsed);
+export const useZoomLevel = () =>
+  usePresentationStore((state) => state.zoomLevel);
 
 // Составные селекторы
 export const useSlideState = () =>

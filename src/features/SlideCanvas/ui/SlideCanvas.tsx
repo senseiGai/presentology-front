@@ -23,6 +23,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
     isGenerating,
     setCurrentSlide,
     deleteSlideByIndex,
+    zoomLevel,
   } = usePresentationStore();
 
   // Во время генерации показываем только градиентный фон
@@ -63,7 +64,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
 
     const slideType = getSlideType(slideNumber);
     return (
-      <div className="">
+      <div>
         <SlideContent slideNumber={slideNumber} slideType={slideType} />
       </div>
     );
@@ -74,14 +75,26 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
       className="flex-1 bg-[#BBA2FE66] overflow-y-auto"
       style={{ height: "calc(100vh - 80px)" }}
     >
-      <div className="flex flex-col items-center mt-[116px] gap-8">
+      <div
+        className="flex flex-col items-center mt-[116px]"
+        style={{
+          gap: `${32 * (zoomLevel / 100)}px`, // Scale gap with zoom level to maintain visual density
+        }}
+      >
         {Array.from({ length: totalSlides }, (_, index) => {
           const slideNumber = index + 1;
           const isGenerated = generatedSlides.includes(slideNumber);
+          const scale = zoomLevel / 100;
 
           return (
             <React.Fragment key={`slide-${slideNumber}-${totalSlides}`}>
-              <div className="flex flex-col items-center">
+              <div
+                className="flex flex-col items-center"
+                style={{
+                  transform: `scale(${scale})`,
+                  transformOrigin: "center",
+                }}
+              >
                 {/* Show buttons for all slides but only enable delete for generated ones */}
                 <div className="flex mr-auto gap-2 mb-2">
                   <button

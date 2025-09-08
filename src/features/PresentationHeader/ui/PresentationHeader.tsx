@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { Button } from "@/shared/ui/Button";
 import { SharePopup } from "@/shared/ui/SharePopup";
 import { DownloadPopup } from "@/shared/ui/DownloadPopup";
+import { DesignChangePopup } from "@/shared/ui/DesignChangePopup";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import HouseIcon from "../../../../public/icons/HouseIcon";
 import MinusIcon from "../../../../public/icons/MinusIcon";
@@ -16,7 +17,7 @@ interface PresentationHeaderProps {
   onDownloadPPTX?: () => void;
   onDownloadPDF?: () => void;
   onSendEmail?: () => void;
-  onChangeDesign?: () => void;
+  onChangeDesign?: (templateIndex: number, styleIndex: number) => void;
   onShare?: () => void;
 }
 
@@ -31,6 +32,7 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
 }) => {
   const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
   const [isDownloadPopupOpen, setIsDownloadPopupOpen] = useState(false);
+  const [isDesignPopupOpen, setIsDesignPopupOpen] = useState(false);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
 
   const { zoomLevel, zoomIn, zoomOut, resetZoom } = usePresentationStore();
@@ -83,6 +85,17 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
     }
     setIsDownloadPopupOpen(false);
   };
+
+  const handleDesignClick = () => {
+    setIsDesignPopupOpen(true);
+  };
+
+  const handleDesignChange = (templateIndex: number, styleIndex: number) => {
+    if (onChangeDesign) {
+      onChangeDesign(templateIndex, styleIndex);
+    }
+    setIsDesignPopupOpen(false);
+  };
   return (
     <div
       className="bg-white border-b-[1px] border-[#E9E9E9] px-[24px] py-[20px] flex items-center justify-between"
@@ -127,7 +140,7 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
 
       <div className="flex items-center gap-x-4">
         <button
-          onClick={onChangeDesign}
+          onClick={handleDesignClick}
           className="gap-x-2 bg-[#F4F4F4] w-[218px] h-[40px] rounded-[8px] flex items-center justify-center hover:bg-[#E5E7EB] ease-in-out duration-300 transition-colors cursor-pointer"
         >
           <PaintIcon />
@@ -174,6 +187,12 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
           />
         </div>
       </div>
+
+      <DesignChangePopup
+        isOpen={isDesignPopupOpen}
+        onClose={() => setIsDesignPopupOpen(false)}
+        onConfirm={handleDesignChange}
+      />
     </div>
   );
 };

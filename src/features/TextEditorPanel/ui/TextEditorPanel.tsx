@@ -84,9 +84,7 @@ const colors = [
 export const TextEditorPanel: React.FC = () => {
   const {
     selectedTextElement,
-    textEditorContent,
     textPosition,
-    textStyle,
     setTextEditorContent,
     setTextPosition,
     setTextStyle,
@@ -121,6 +119,7 @@ export const TextEditorPanel: React.FC = () => {
     x: number;
     y: number;
   } | null>(null);
+  const [isTextareaFocused, setIsTextareaFocused] = useState(false);
 
   const fontDropdownRef = useRef<HTMLDivElement>(null);
   const colorDropdownRef = useRef<HTMLDivElement>(null);
@@ -343,12 +342,21 @@ export const TextEditorPanel: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="h-[112px] relative border border-[#E9E9E9] rounded-[8px] bg-white">
+
+          <div
+            className={`h-[112px] relative rounded-[8px] bg-white border transition-colors ${
+              isTextareaFocused
+                ? "border-[#BBA2FE] shadow-[0px_0px_5px_0px_#BBA2FE40]"
+                : "border-[#E9E9E9]"
+            }`}
+          >
             <textarea
               value={aiInput}
               onChange={handleAiInputChange}
-              placeholder="Пожелания к тексту"
-              className="w-full h-[73px] absolute top-3 left-4 pr-10 outline-none resize-none text-[14px] font-normal text-[#BEBEC0] tracking-[-0.42px] placeholder-[#BEBEC0]"
+              onFocus={() => setIsTextareaFocused(true)}
+              onBlur={() => setIsTextareaFocused(false)}
+              placeholder="Какое изображение сгенерировать?"
+              className="w-full h-[73px] absolute top-3 left-4 pr-10 outline-none resize-none text-[14px] font-normal text-[#0B0911] tracking-[-0.42px] placeholder-[#BEBEC0]"
               maxLength={500}
             />
             <div className="absolute right-[50px] bottom-2 text-[12px] text-[#BEBEC0] tracking-[-0.36px]">

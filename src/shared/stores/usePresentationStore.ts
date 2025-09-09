@@ -36,6 +36,9 @@ export interface PresentationState {
       | "humorous";
   };
 
+  // Image editing state
+  selectedImageElement: string | null;
+
   // Actions
   setCurrentSlide: (slide: number) => void;
   setTotalSlides: (total: number) => void;
@@ -65,6 +68,10 @@ export interface PresentationState {
   setTextStyle: (style: Partial<PresentationState["textStyle"]>) => void;
   clearTextSelection: () => void;
 
+  // Image editing actions
+  setSelectedImageElement: (elementId: string | null) => void;
+  clearImageSelection: () => void;
+
   // Reset functions
   resetPresentation: () => void;
   startGeneration: () => void;
@@ -92,6 +99,9 @@ const initialState = {
     color: "#000000",
     style: "normal" as const,
   },
+
+  // Image editing state
+  selectedImageElement: null,
 };
 
 export const usePresentationStore = create<PresentationState>()(
@@ -310,6 +320,15 @@ export const usePresentationStore = create<PresentationState>()(
         },
       }),
 
+    // Image editing actions
+    setSelectedImageElement: (elementId: string | null) =>
+      set({ selectedImageElement: elementId }),
+
+    clearImageSelection: () =>
+      set({
+        selectedImageElement: null,
+      }),
+
     resetPresentation: () => set(initialState),
 
     startGeneration: () =>
@@ -335,6 +354,8 @@ export const useShowFeedback = () =>
   usePresentationStore((state) => state.showFeedback);
 export const useSelectedElement = () =>
   usePresentationStore((state) => state.selectedElement);
+export const useSelectedImageElement = () =>
+  usePresentationStore((state) => state.selectedImageElement);
 export const useIsSidebarCollapsed = () =>
   usePresentationStore((state) => state.isSidebarCollapsed);
 export const useIsToolsPanelCollapsed = () =>

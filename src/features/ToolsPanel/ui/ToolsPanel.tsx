@@ -4,7 +4,7 @@ import {
   type ElementOption,
 } from "@/features/ElementSelector";
 import { TextEditorPanel } from "@/features/TextEditorPanel";
-import { Button } from "@/shared/ui/Button";
+import { ImagePanel } from "@/features/ImagePanel";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 
 interface ToolsPanelProps {
@@ -18,11 +18,35 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
     totalSlides,
     setSelectedElement,
     selectedTextElement,
+    selectedImageElement,
+    setSelectedTextElement,
+    setSelectedImageElement,
   } = usePresentationStore();
+  const handleElementSelect = (elementId: string) => {
+    setSelectedElement(elementId);
+
+    // Reset previous selections
+    if (selectedTextElement) {
+      setSelectedTextElement(null);
+    }
+    if (selectedImageElement) {
+      setSelectedImageElement(null);
+    }
+
+    // Set new selection based on element type
+    if (elementId === "text") {
+      setSelectedTextElement("text-element");
+    } else if (elementId === "image") {
+      setSelectedImageElement("image-element");
+    }
+  };
+
+  const isAnyElementSelected = selectedTextElement || selectedImageElement;
+
   return (
     <div
       className={`w-[274px] bg-white border-l-[1px] border-[#E9E9E9] ${
-        selectedTextElement ? "p-0" : "p-4"
+        isAnyElementSelected ? "p-0" : "p-4"
       } flex-shrink-0 flex flex-col`}
       style={{
         boxShadow: "-4px 0px 4px 0px #BBA2FE1A",
@@ -46,10 +70,12 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
         <div className="flex-1 overflow-y-auto">
           {selectedTextElement ? (
             <TextEditorPanel />
+          ) : selectedImageElement ? (
+            <ImagePanel />
           ) : (
             <ElementSelector
               elements={elementOptions}
-              onElementSelect={setSelectedElement}
+              onElementSelect={handleElementSelect}
             />
           )}
         </div>

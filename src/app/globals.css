@@ -62,3 +62,7 @@ h2 {
     transform: translateX(200%) skewX(-12deg);
   }
 }
+
+button {
+  cursor: pointer;
+}

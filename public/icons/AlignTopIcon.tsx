@@ -11,7 +11,7 @@ const AlignTopIcon = (props: React.SVGProps<SVGSVGElement>) => (
   >
     <path
       d="M12.836.5a.5.5 0 0 1-.5.5h-11a.5.5 0 1 1 0-1h11a.5.5 0 0 1 .5.5m-2 1.5h-2.5a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1m-5.5 0h-2.5a1 1 0 0 0-1 1v8.5a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1"
-      fill="#939396"
+      fill={props.fill}
     />
   </svg>
 );

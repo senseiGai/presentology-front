@@ -11,7 +11,7 @@ const TextAlignLeftIcon = (props: React.SVGProps<SVGSVGElement>) => (
   >
     <path
       d="M.836 1a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5m.5 3h8a.5.5 0 0 0 0-1h-8a.5.5 0 1 0 0 1m11 1.5h-11a.5.5 0 1 0 0 1h11a.5.5 0 0 0 0-1m-3 2.5h-8a.5.5 0 1 0 0 1h8a.5.5 0 0 0 0-1"
-      fill="#939396"
+      fill={props.fill}
     />
   </svg>
 );

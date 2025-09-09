@@ -39,6 +39,9 @@ export interface PresentationState {
   // Image editing state
   selectedImageElement: string | null;
 
+  // Table editing state
+  selectedTableElement: string | null;
+
   // Actions
   setCurrentSlide: (slide: number) => void;
   setTotalSlides: (total: number) => void;
@@ -72,6 +75,10 @@ export interface PresentationState {
   setSelectedImageElement: (elementId: string | null) => void;
   clearImageSelection: () => void;
 
+  // Table editing actions
+  setSelectedTableElement: (elementId: string | null) => void;
+  clearTableSelection: () => void;
+
   // Reset functions
   resetPresentation: () => void;
   startGeneration: () => void;
@@ -102,6 +109,9 @@ const initialState = {
 
   // Image editing state
   selectedImageElement: null,
+
+  // Table editing state
+  selectedTableElement: null,
 };
 
 export const usePresentationStore = create<PresentationState>()(
@@ -329,6 +339,15 @@ export const usePresentationStore = create<PresentationState>()(
         selectedImageElement: null,
       }),
 
+    // Table editing actions
+    setSelectedTableElement: (elementId: string | null) =>
+      set({ selectedTableElement: elementId }),
+
+    clearTableSelection: () =>
+      set({
+        selectedTableElement: null,
+      }),
+
     resetPresentation: () => set(initialState),
 
     startGeneration: () =>
@@ -356,6 +375,8 @@ export const useSelectedElement = () =>
   usePresentationStore((state) => state.selectedElement);
 export const useSelectedImageElement = () =>
   usePresentationStore((state) => state.selectedImageElement);
+export const useSelectedTableElement = () =>
+  usePresentationStore((state) => state.selectedTableElement);
 export const useIsSidebarCollapsed = () =>
   usePresentationStore((state) => state.isSidebarCollapsed);
 export const useIsToolsPanelCollapsed = () =>

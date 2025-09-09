@@ -323,7 +323,6 @@ export const ImagePanel: React.FC = () => {
               Файл
             </div>
 
-            {/* File Upload State */}
             {uploadedFiles.length > 0 ? (
               // Show uploaded file
               <div className="flex gap-2 items-center justify-start w-full">

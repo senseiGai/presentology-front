@@ -5,6 +5,7 @@ import {
 } from "@/features/ElementSelector";
 import { TextEditorPanel } from "@/features/TextEditorPanel";
 import { ImagePanel } from "@/features/ImagePanel";
+import { TablePanel } from "@/features/TablePanel";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 
 interface ToolsPanelProps {
@@ -19,8 +20,10 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
     setSelectedElement,
     selectedTextElement,
     selectedImageElement,
+    selectedTableElement,
     setSelectedTextElement,
     setSelectedImageElement,
+    setSelectedTableElement,
   } = usePresentationStore();
   const handleElementSelect = (elementId: string) => {
     setSelectedElement(elementId);
@@ -32,16 +35,22 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
     if (selectedImageElement) {
       setSelectedImageElement(null);
     }
+    if (selectedTableElement) {
+      setSelectedTableElement(null);
+    }
 
     // Set new selection based on element type
     if (elementId === "text") {
       setSelectedTextElement("text-element");
     } else if (elementId === "image") {
       setSelectedImageElement("image-element");
+    } else if (elementId === "table") {
+      setSelectedTableElement("table-element");
     }
   };
 
-  const isAnyElementSelected = selectedTextElement || selectedImageElement;
+  const isAnyElementSelected =
+    selectedTextElement || selectedImageElement || selectedTableElement;
 
   return (
     <div
@@ -72,6 +81,8 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
             <TextEditorPanel />
           ) : selectedImageElement ? (
             <ImagePanel />
+          ) : selectedTableElement ? (
+            <TablePanel />
           ) : (
             <ElementSelector
               elements={elementOptions}

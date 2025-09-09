@@ -15,6 +15,27 @@ export interface PresentationState {
   isToolsPanelCollapsed: boolean;
   zoomLevel: number;
 
+  // Text editing state
+  selectedTextElement: string | null;
+  textEditorContent: string;
+  textPosition: { x: number; y: number; rotation: number };
+  textStyle: {
+    fontSize: number;
+    fontWeight: string;
+    textAlign: "left" | "center" | "right";
+    color: string;
+    style:
+      | "normal"
+      | "scientific"
+      | "business"
+      | "conversational"
+      | "selling"
+      | "emotional"
+      | "friendly"
+      | "creative"
+      | "humorous";
+  };
+
   // Actions
   setCurrentSlide: (slide: number) => void;
   setTotalSlides: (total: number) => void;
@@ -33,6 +54,17 @@ export interface PresentationState {
   zoomOut: () => void;
   resetZoom: () => void;
 
+  // Text editing actions
+  setSelectedTextElement: (elementId: string | null) => void;
+  setTextEditorContent: (content: string) => void;
+  setTextPosition: (position: {
+    x: number;
+    y: number;
+    rotation: number;
+  }) => void;
+  setTextStyle: (style: Partial<PresentationState["textStyle"]>) => void;
+  clearTextSelection: () => void;
+
   // Reset functions
   resetPresentation: () => void;
   startGeneration: () => void;
@@ -48,6 +80,18 @@ const initialState = {
   isSidebarCollapsed: false,
   isToolsPanelCollapsed: false,
   zoomLevel: 100,
+
+  // Text editing state
+  selectedTextElement: null,
+  textEditorContent: "",
+  textPosition: { x: 20, y: 60, rotation: 0 },
+  textStyle: {
+    fontSize: 14,
+    fontWeight: "normal",
+    textAlign: "left" as const,
+    color: "#000000",
+    style: "normal" as const,
+  },
 };
 
 export const usePresentationStore = create<PresentationState>()(
@@ -238,6 +282,33 @@ export const usePresentationStore = create<PresentationState>()(
       })),
 
     resetZoom: () => set({ zoomLevel: 100 }),
+
+    // Text editing actions
+    setSelectedTextElement: (elementId: string | null) =>
+      set({ selectedTextElement: elementId }),
+
+    setTextEditorContent: (content: string) =>
+      set({ textEditorContent: content }),
+
+    setTextPosition: (position: { x: number; y: number; rotation: number }) =>
+      set({ textPosition: position }),
+
+    setTextStyle: (style: Partial<PresentationState["textStyle"]>) =>
+      set((state) => ({ textStyle: { ...state.textStyle, ...style } })),
+
+    clearTextSelection: () =>
+      set({
+        selectedTextElement: null,
+        textEditorContent: "",
+        textPosition: { x: 20, y: 60, rotation: 0 },
+        textStyle: {
+          fontSize: 14,
+          fontWeight: "normal",
+          textAlign: "left" as const,
+          color: "#000000",
+          style: "normal" as const,
+        },
+      }),
 
     resetPresentation: () => set(initialState),
 

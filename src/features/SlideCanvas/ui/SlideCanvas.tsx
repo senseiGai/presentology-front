@@ -24,7 +24,15 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
     setCurrentSlide,
     deleteSlideByIndex,
     zoomLevel,
+    clearTextSelection,
   } = usePresentationStore();
+
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    // Clear text selection if clicking on the canvas background
+    if (e.target === e.currentTarget) {
+      clearTextSelection();
+    }
+  };
 
   // Во время генерации показываем только градиентный фон
   if (isGenerating) {
@@ -74,6 +82,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
     <div
       className="flex-1 bg-[#BBA2FE66] overflow-y-auto"
       style={{ height: "calc(100vh - 80px)" }}
+      onClick={handleCanvasClick}
     >
       <div
         className="flex flex-col items-center mt-[116px]"
@@ -138,7 +147,10 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
                 </div>
 
                 <div
-                  onClick={() => isGenerated && setCurrentSlide(slideNumber)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isGenerated) setCurrentSlide(slideNumber);
+                  }}
                   className="cursor-pointer"
                 >
                   {renderSlide(slideNumber)}

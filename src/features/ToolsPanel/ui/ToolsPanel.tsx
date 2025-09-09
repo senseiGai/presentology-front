@@ -6,6 +6,7 @@ import {
 import { TextEditorPanel } from "@/features/TextEditorPanel";
 import { ImagePanel } from "@/features/ImagePanel";
 import { TablePanel } from "@/features/TablePanel";
+import { InfographicsPanel } from "@/features/InfographicsPanel";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 
 interface ToolsPanelProps {
@@ -21,9 +22,11 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
     selectedTextElement,
     selectedImageElement,
     selectedTableElement,
+    selectedInfographicsElement,
     setSelectedTextElement,
     setSelectedImageElement,
     setSelectedTableElement,
+    setSelectedInfographicsElement,
   } = usePresentationStore();
   const handleElementSelect = (elementId: string) => {
     setSelectedElement(elementId);
@@ -38,6 +41,9 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
     if (selectedTableElement) {
       setSelectedTableElement(null);
     }
+    if (selectedInfographicsElement) {
+      setSelectedInfographicsElement(null);
+    }
 
     // Set new selection based on element type
     if (elementId === "text") {
@@ -46,11 +52,16 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
       setSelectedImageElement("image-element");
     } else if (elementId === "table") {
       setSelectedTableElement("table-element");
+    } else if (elementId === "chart") {
+      setSelectedInfographicsElement("infographics-element");
     }
   };
 
   const isAnyElementSelected =
-    selectedTextElement || selectedImageElement || selectedTableElement;
+    selectedTextElement ||
+    selectedImageElement ||
+    selectedTableElement ||
+    selectedInfographicsElement;
 
   return (
     <div
@@ -83,6 +94,8 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
             <ImagePanel />
           ) : selectedTableElement ? (
             <TablePanel />
+          ) : selectedInfographicsElement ? (
+            <InfographicsPanel />
           ) : (
             <ElementSelector
               elements={elementOptions}

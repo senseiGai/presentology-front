@@ -42,6 +42,9 @@ export interface PresentationState {
   // Table editing state
   selectedTableElement: string | null;
 
+  // Infographics editing state
+  selectedInfographicsElement: string | null;
+
   // Actions
   setCurrentSlide: (slide: number) => void;
   setTotalSlides: (total: number) => void;
@@ -79,6 +82,10 @@ export interface PresentationState {
   setSelectedTableElement: (elementId: string | null) => void;
   clearTableSelection: () => void;
 
+  // Infographics editing actions
+  setSelectedInfographicsElement: (elementId: string | null) => void;
+  clearInfographicsSelection: () => void;
+
   // Reset functions
   resetPresentation: () => void;
   startGeneration: () => void;
@@ -112,6 +119,9 @@ const initialState = {
 
   // Table editing state
   selectedTableElement: null,
+
+  // Infographics editing state
+  selectedInfographicsElement: null,
 };
 
 export const usePresentationStore = create<PresentationState>()(
@@ -346,6 +356,15 @@ export const usePresentationStore = create<PresentationState>()(
     clearTableSelection: () =>
       set({
         selectedTableElement: null,
+      }),
+
+    // Infographics editing actions
+    setSelectedInfographicsElement: (elementId: string | null) =>
+      set({ selectedInfographicsElement: elementId }),
+
+    clearInfographicsSelection: () =>
+      set({
+        selectedInfographicsElement: null,
       }),
 
     resetPresentation: () => set(initialState),

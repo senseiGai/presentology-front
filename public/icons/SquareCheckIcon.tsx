@@ -36,7 +36,7 @@ const SquareCheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
           radius={1}
           operator="dilate"
           in="SourceAlpha"
-          result="effect1_dropShadow_2588_5501"
+          result="effect1_dropShadow_2877_11334"
         />
         <feOffset />
         <feGaussianBlur stdDeviation={3} />
@@ -44,11 +44,11 @@ const SquareCheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
         <feColorMatrix values="0 0 0 0 0.733333 0 0 0 0 0.635294 0 0 0 0 0.996078 0 0 0 0.3 0" />
         <feBlend
           in2="BackgroundImageFix"
-          result="effect1_dropShadow_2588_5501"
+          result="effect1_dropShadow_2877_11334"
         />
         <feBlend
           in="SourceGraphic"
-          in2="effect1_dropShadow_2588_5501"
+          in2="effect1_dropShadow_2877_11334"
           result="shape"
         />
       </filter>

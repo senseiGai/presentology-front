@@ -10,6 +10,7 @@ import PlusIcon from "../../../../public/icons/PlusIcon";
 import PaintIcon from "../../../../public/icons/PainIcon";
 import ShareIcon from "../../../../public/icons/ShareIcon";
 import DownloadIcon from "../../../../public/icons/DownloadIcon";
+import LogoIllustration from "../../../../public/icons/LogoIllustration";
 
 interface PresentationHeaderProps {
   onBack?: () => void;
@@ -110,6 +111,7 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
       style={{ boxShadow: "0px 4px 4px 0px #BBA2FE1A" }}
     >
       <div className="flex items-center gap-x-4">
+        <LogoIllustration />
         {/* Home icon */}
         <button
           onClick={onBack}

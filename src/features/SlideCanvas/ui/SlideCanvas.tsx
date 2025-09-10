@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { SlideContent, getSlideType } from "@/entities/SlideContent";
 import { DeleteConfirmationModal } from "@/shared/ui/DeleteConfirmationModal";
+import { SlideTypeChangePopup } from "@/shared/ui/SlideTypeChangePopup/SlideTypeChangePopup";
+import { useSlideTypeChangePopup } from "@/shared/hooks/useSlideTypeChangePopup";
 
 import Image from "next/image";
 import { Mascot } from "@/shared/ui/Mascot";
@@ -17,6 +19,10 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
     slideIndex: number;
   } | null>(null);
 
+  const [currentSlideForTypeChange, setCurrentSlideForTypeChange] = useState<
+    number | null
+  >(null);
+
   const {
     generatedSlides,
     totalSlides,
@@ -26,6 +32,19 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
     zoomLevel,
     clearTextSelection,
   } = usePresentationStore();
+
+  const { isOpen, openPopup, closePopup, handleConfirm } =
+    useSlideTypeChangePopup((textBlockCount, contentType, templateIndex) => {
+      console.log(`Changing slide ${currentSlideForTypeChange} type to:`, {
+        textBlockCount,
+        contentType,
+        templateIndex,
+      });
+      // Here you can implement the actual slide type change logic
+      // For example, updating the slide type in your store
+      closePopup();
+      setCurrentSlideForTypeChange(null);
+    });
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     // Clear text selection if clicking on the canvas background
@@ -107,6 +126,14 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
                 {/* Show buttons for all slides but only enable delete for generated ones */}
                 <div className="flex mr-auto gap-2 mb-2">
                   <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (isGenerated) {
+                        setCurrentSlideForTypeChange(slideNumber);
+                        openPopup();
+                      }
+                    }}
                     className={`flex items-center justify-center gap-2 w-[250px] h-[40px] bg-white rounded-[8px] border border-[#E5E7EB] transition-colors ${
                       isGenerated
                         ? "hover:bg-gray-50 cursor-pointer"
@@ -174,6 +201,15 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
           }
         }}
         onCancel={() => setDeleteConfirmSlide(null)}
+      />
+
+      <SlideTypeChangePopup
+        isOpen={isOpen}
+        onClose={() => {
+          closePopup();
+          setCurrentSlideForTypeChange(null);
+        }}
+        onConfirm={handleConfirm}
       />
     </div>
   );

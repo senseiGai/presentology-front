@@ -288,87 +288,102 @@ export function showUploadErrorToast() {
   );
 }
 
-export function showPresentationFeedbackToast() {
-  toast.custom(
-    (t) => (
-      <div className="relative ml-10 w-[350px] h-[157px] rounded-[12px] bg-white shadow-lg p-3 z-[99999999]">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#00CF1B] text-white text-sm">
-              ✓
-            </span>
-            <div className="text-[#0B0911] text-[18px] font-semibold">
-              Генерация завершена!
-            </div>
+// Компонент для toast с автозакрытием
+const PresentationFeedbackToastContent: React.FC<{
+  toastId: string | number;
+}> = ({ toastId }) => {
+  // Автоматически закрываем toast через 5 секунд
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      toast.dismiss(toastId);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [toastId]);
+
+  return (
+    <div className="relative ml-10 w-[350px] h-[157px] rounded-[12px] bg-white shadow-lg p-3 z-[99999999]">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#00CF1B] text-white text-sm">
+            ✓
+          </span>
+          <div className="text-[#0B0911] text-[18px] font-semibold">
+            Генерация завершена!
           </div>
-          <button
-            onClick={() => toast.dismiss(t)}
-            className="text-[#8F8F92] hover:text-[#6B6B6E] cursor-pointer transition"
-            aria-label="Закрыть"
-          >
-            <X size={24} />
-          </button>
         </div>
-
-        <span className="text-[#8F8F92] text-[14px] font-medium mb-4 block">
-          Пожалуйста, оцените качество презентации
-        </span>
-
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              console.log("Positive feedback");
-              toast.dismiss(t);
-            }}
-            className="flex-1 h-[40px] rounded-[12px] border-[1px] border-[#C0C0C1] cursor-pointer flex items-center justify-center bg-white hover:bg-[#F0FDF4]"
-          >
-            <SmileFaceIcon />
-          </button>
-          <button
-            onClick={() => {
-              console.log("Neutral feedback");
-              toast.dismiss(t);
-              showFeedbackFormToast();
-            }}
-            className="flex-1 h-[40px] rounded-[12px] border-[1px] border-[#C0C0C1] cursor-pointer flex items-center justify-center bg-white hover:bg-[#FFFBF0]"
-          >
-            <NormalFaceIcon />
-          </button>
-          <button
-            onClick={() => {
-              console.log("Negative feedback");
-              toast.dismiss(t);
-              showFeedbackFormToast();
-            }}
-            className="flex-1 h-[40px] rounded-[12px] border-[1px] border-[#C0C0C1] cursor-pointer  flex items-center justify-center bg-white hover:bg-[#FEF2F2]"
-          >
-            <SadFaceIcon />
-          </button>
-        </div>
-
-        <div className="absolute left-0 right-0 bottom-2 h-[2px] overflow-hidden ml-3">
-          <div
-            className="h-[70%] bg-[#00CF1B] origin-left mx-auto"
-            style={{
-              animation: `toastCountdown ${5000}ms linear forwards`,
-            }}
-          />
-        </div>
-
-        <style jsx>{`
-          @keyframes toastCountdown {
-            from {
-              transform: scaleX(1);
-            }
-            to {
-              transform: scaleX(0);
-            }
-          }
-        `}</style>
+        <button
+          onClick={() => toast.dismiss(toastId)}
+          className="text-[#8F8F92] hover:text-[#6B6B6E] cursor-pointer transition"
+          aria-label="Закрыть"
+        >
+          <X size={24} />
+        </button>
       </div>
-    ),
-    { duration: 5000 } // Very long duration for testing
+
+      <span className="text-[#8F8F92] text-[14px] font-medium mb-4 block">
+        Пожалуйста, оцените качество презентации
+      </span>
+
+      <div className="flex gap-2">
+        <button
+          onClick={() => {
+            console.log("Positive feedback");
+            toast.dismiss(toastId);
+          }}
+          className="flex-1 h-[40px] rounded-[12px] border-[1px] border-[#C0C0C1] cursor-pointer flex items-center justify-center bg-white hover:bg-[#F0FDF4]"
+        >
+          <SmileFaceIcon />
+        </button>
+        <button
+          onClick={() => {
+            console.log("Neutral feedback");
+            toast.dismiss(toastId);
+            showFeedbackFormToast();
+          }}
+          className="flex-1 h-[40px] rounded-[12px] border-[1px] border-[#C0C0C1] cursor-pointer flex items-center justify-center bg-white hover:bg-[#FFFBF0]"
+        >
+          <NormalFaceIcon />
+        </button>
+        <button
+          onClick={() => {
+            console.log("Negative feedback");
+            toast.dismiss(toastId);
+            showFeedbackFormToast();
+          }}
+          className="flex-1 h-[40px] rounded-[12px] border-[1px] border-[#C0C0C1] cursor-pointer  flex items-center justify-center bg-white hover:bg-[#FEF2F2]"
+        >
+          <SadFaceIcon />
+        </button>
+      </div>
+
+      <div className="absolute left-0 right-0 bottom-2 h-[2px] overflow-hidden ml-3">
+        <div
+          className="h-[70%] bg-[#00CF1B] origin-left mx-auto"
+          style={{
+            animation: `toastCountdown ${5000}ms linear forwards`,
+          }}
+        />
+      </div>
+
+      <style jsx>{`
+        @keyframes toastCountdown {
+          from {
+            transform: scaleX(1);
+          }
+          to {
+            transform: scaleX(0);
+          }
+        }
+      `}</style>
+    </div>
   );
+};
+
+export function showPresentationFeedbackToast() {
+  toast.custom((t) => <PresentationFeedbackToastContent toastId={t} />, {
+    duration: Infinity, // Отключаем встроенное автозакрытие, так как мы управляем им вручную
+  });
 }
 
 export function showFeedbackFormToast() {

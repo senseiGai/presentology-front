@@ -248,6 +248,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           transform: `rotate(${elementStyle.rotation || 0}deg)`,
           transformOrigin: "center",
           transition: "all 0.1s ease-out",
+          zIndex: elementStyle.zIndex || 1,
         }}
       >
         {children}
@@ -274,6 +275,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           overflowWrap: "break-word",
           overflow: "visible",
           transition: isDragging ? "none" : "all 0.1s ease-out",
+          zIndex: elementStyle.zIndex || 1,
         }}
       >
         {/* Toolbar positioned absolutely relative to the text element */}
@@ -293,7 +295,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           }}
         >
           <div
-            className="absolute"
+            className="absolute pointer-events-auto"
             style={{
               top: "-60px", // Position toolbar above the text element
               left: "0%",
@@ -302,6 +304,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           >
             <TextToolbar
               position={{ x: 0, y: 0 }} // Position is handled by the parent div
+              elementId={elementId}
               onMoveUp={onMoveUp}
               onMoveDown={onMoveDown}
               onCopy={onCopy}

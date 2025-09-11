@@ -107,6 +107,9 @@ export const EditableText: React.FC<EditableTextProps> = ({
     elementStyle.textDecoration,
     elementStyle.textAlign,
     elementStyle.color,
+    elementStyle.zIndex,
+    elementStyle.x,
+    elementStyle.y,
   ]);
 
   const handleClick = (e: React.MouseEvent) => {
@@ -131,6 +134,7 @@ export const EditableText: React.FC<EditableTextProps> = ({
     <div
       className={`cursor-pointer transition-all duration-200 ${className}`}
       onClick={handleClick}
+      data-text-element={elementId}
       style={{
         fontSize: `${elementStyle.fontSize}px`,
         fontWeight: elementStyle.fontWeight,

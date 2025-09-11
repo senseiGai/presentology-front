@@ -34,6 +34,7 @@ export interface PresentationState {
       x?: number;
       y?: number;
       rotation?: number;
+      zIndex?: number;
       style:
         | "normal"
         | "scientific"
@@ -113,10 +114,15 @@ export interface PresentationState {
     elementId: string,
     style: Partial<PresentationState["textStyle"]>
   ) => void;
-  getTextElementStyle: (elementId: string) => PresentationState["textStyle"];
+  getTextElementStyle: (
+    elementId: string
+  ) => PresentationState["textElementStyles"][string];
   setTextElementContent: (elementId: string, content: string) => void;
   getTextElementContent: (elementId: string) => string;
   deleteTextElement: (elementId: string) => void;
+  copyTextElement: (elementId: string) => string;
+  moveTextElementUp: (elementId: string) => void;
+  moveTextElementDown: (elementId: string) => void;
   clearTextSelection: () => void;
 
   // Image editing actions
@@ -454,7 +460,15 @@ export const usePresentationStore = create<PresentationState>()(
 
     getTextElementStyle: (elementId: string) => {
       const state = get();
-      return state.textElementStyles[elementId] || state.textStyle;
+      return (
+        state.textElementStyles[elementId] || {
+          ...state.textStyle,
+          x: 0,
+          y: 0,
+          rotation: 0,
+          zIndex: 1,
+        }
+      );
     },
 
     setTextElementContent: (elementId: string, content: string) =>
@@ -504,6 +518,107 @@ export const usePresentationStore = create<PresentationState>()(
           textEditorContent: newSelectedElement ? state.textEditorContent : "",
         };
       }),
+
+    copyTextElement: (elementId: string) => {
+      console.log("Store: copyTextElement called for:", elementId);
+      const state = get();
+      const originalElement = state.textElementStyles[elementId];
+      const originalPosition = state.textElementPositions[elementId];
+      const originalContent = state.textElementContents[elementId];
+
+      if (!originalElement) {
+        console.log("Store: No element found to copy:", elementId);
+        return elementId;
+      }
+
+      // Generate new unique ID
+      const newId = `text-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+
+      // Copy element with offset position
+      const newPosition = originalPosition
+        ? { x: originalPosition.x + 20, y: originalPosition.y + 20 }
+        : { x: 100, y: 100 };
+
+      console.log(
+        "Store: Copying element with new ID:",
+        newId,
+        "at position:",
+        newPosition
+      );
+
+      set((state) => ({
+        textElementStyles: {
+          ...state.textElementStyles,
+          [newId]: { ...originalElement }, // Copy exact style without color change
+        },
+        textElementPositions: {
+          ...state.textElementPositions,
+          [newId]: newPosition,
+        },
+        textElementContents: {
+          ...state.textElementContents,
+          [newId]: originalContent || "",
+        },
+      }));
+
+      return newId;
+    },
+
+    moveTextElementUp: (elementId: string) => {
+      console.log("Store: moveTextElementUp called for:", elementId);
+      const state = get();
+      const currentPosition = state.textElementPositions[elementId];
+
+      if (!currentPosition) {
+        console.log("Store: No position found for element:", elementId);
+        return;
+      }
+
+      // Move element up by 10 pixels
+      const newPosition = {
+        x: currentPosition.x,
+        y: currentPosition.y - 10,
+      };
+
+      console.log(
+        "Store: Moving element up from:",
+        currentPosition,
+        "to:",
+        newPosition
+      );
+
+      // Use the existing setTextElementPosition function
+      get().setTextElementPosition(elementId, newPosition);
+    },
+
+    moveTextElementDown: (elementId: string) => {
+      console.log("Store: moveTextElementDown called for:", elementId);
+      const state = get();
+      const currentPosition = state.textElementPositions[elementId];
+
+      if (!currentPosition) {
+        console.log("Store: No position found for element:", elementId);
+        return;
+      }
+
+      // Move element down by 10 pixels
+      const newPosition = {
+        x: currentPosition.x,
+        y: currentPosition.y + 10,
+      };
+
+      console.log(
+        "Store: Moving element down from:",
+        currentPosition,
+        "to:",
+        newPosition
+      );
+
+      // Use the existing setTextElementPosition function
+      get().setTextElementPosition(elementId, newPosition);
+    },
 
     resetPresentation: () => set(initialState),
 

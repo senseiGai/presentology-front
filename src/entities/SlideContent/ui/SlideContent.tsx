@@ -23,6 +23,13 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     textEditorContent,
     setTextElementContent,
     getTextElementContent,
+    deleteTextElement, // Добавляем deleteTextElement из store
+    copyTextElement,
+    moveTextElementUp,
+    moveTextElementDown,
+    textElementPositions,
+    textElementStyles,
+    textElementContents,
   } = usePresentationStore();
 
   // Initialize default positions for elements if they don't exist
@@ -107,29 +114,88 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   };
 
   const handleTextDelete = () => {
-    // In a real implementation, this would remove the text element from the slide
-    console.log("Delete text element:", selectedTextElement);
-    clearTextSelection();
+    if (selectedTextElement) {
+      console.log("Deleting text element:", selectedTextElement);
+      deleteTextElement(selectedTextElement);
+    }
   };
 
-  const handleTextCopy = () => {
-    // In a real implementation, this would copy the text element
-    console.log("Copy text element:", selectedTextElement);
+  const handleTextCopy = (elementId: string) => {
+    console.log("SlideContent: handleTextCopy called for:", elementId);
+    const newElementId = usePresentationStore
+      .getState()
+      .copyTextElement(elementId);
+    console.log(
+      "Text element copied:",
+      elementId,
+      "-> new element:",
+      newElementId
+    );
   };
 
-  const handleTextMoveUp = () => {
-    // In a real implementation, this would move the text element up in the z-index
-    console.log("Move text element up:", selectedTextElement);
+  const handleTextMoveUp = (elementId: string) => {
+    console.log("SlideContent: handleTextMoveUp called for:", elementId);
+    usePresentationStore.getState().moveTextElementUp(elementId);
+    console.log("Text element moved up:", elementId);
   };
 
-  const handleTextMoveDown = () => {
-    // In a real implementation, this would move the text element down in the z-index
-    console.log("Move text element down:", selectedTextElement);
+  const handleTextMoveDown = (elementId: string) => {
+    console.log("SlideContent: handleTextMoveDown called for:", elementId);
+    usePresentationStore.getState().moveTextElementDown(elementId);
+    console.log("Text element moved down:", elementId);
+  };
+
+  // Render dynamic text elements from store
+  const renderDynamicTextElements = () => {
+    const staticElementIds = [
+      "title-main",
+      "title-sub",
+      "content-main",
+      "content-sub",
+      `slide-${slideNumber}-text`,
+    ];
+
+    return Object.entries(textElementPositions)
+      .filter(([elementId]) => !staticElementIds.includes(elementId))
+      .map(([elementId, position]) => {
+        const content = textElementContents[elementId] || "New text element";
+
+        return (
+          <ResizableTextBox
+            key={elementId}
+            isSelected={selectedTextElement === elementId}
+            elementId={elementId}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(elementId)}
+            onMoveUp={() => handleTextMoveUp(elementId)}
+            onMoveDown={() => handleTextMoveDown(elementId)}
+          >
+            <EditableText
+              elementId={elementId}
+              initialText={content}
+              className="text-[16px] cursor-pointer transition-colors hover:bg-gray-100 rounded p-2"
+              onClick={(e) => {
+                handleTextClick(elementId, content, e);
+              }}
+            />
+          </ResizableTextBox>
+        );
+      });
   };
 
   const renderSlideByType = () => {
-    const handleSlideClick = () => {
-      clearTextSelection();
+    const handleSlideClick = (e: React.MouseEvent) => {
+      // Don't clear selection if clicking on toolbar or text elements
+      const target = e.target as HTMLElement;
+      const isToolbarClick =
+        target.closest('[role="toolbar"]') ||
+        target.closest(".bg-white.rounded-\\[8px\\]") ||
+        target.closest("button");
+      const isTextElement = target.closest("[data-text-element]");
+
+      if (!isToolbarClick && !isTextElement) {
+        clearTextSelection();
+      }
     };
 
     switch (slideType) {
@@ -144,9 +210,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               isSelected={selectedTextElement === "title-main"}
               elementId="title-main"
               onDelete={handleTextDelete}
-              onCopy={handleTextCopy}
-              onMoveUp={handleTextMoveUp}
-              onMoveDown={handleTextMoveDown}
+              onCopy={() => handleTextCopy("title-main")}
+              onMoveUp={() => handleTextMoveUp("title-main")}
+              onMoveDown={() => handleTextMoveDown("title-main")}
             >
               <EditableText
                 elementId="title-main"
@@ -166,9 +232,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               isSelected={selectedTextElement === "title-sub"}
               elementId="title-sub"
               onDelete={handleTextDelete}
-              onCopy={handleTextCopy}
-              onMoveUp={handleTextMoveUp}
-              onMoveDown={handleTextMoveDown}
+              onCopy={() => handleTextCopy("title-sub")}
+              onMoveUp={() => handleTextMoveUp("title-sub")}
+              onMoveDown={() => handleTextMoveDown("title-sub")}
             >
               <EditableText
                 elementId="title-sub"
@@ -183,6 +249,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
                 }}
               />
             </ResizableTextBox>
+
+            {/* Render dynamic text elements */}
+            {renderDynamicTextElements()}
           </div>
         );
 
@@ -197,9 +266,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               isSelected={selectedTextElement === "content-main"}
               elementId="content-main"
               onDelete={handleTextDelete}
-              onCopy={handleTextCopy}
-              onMoveUp={handleTextMoveUp}
-              onMoveDown={handleTextMoveDown}
+              onCopy={() => handleTextCopy("content-main")}
+              onMoveUp={() => handleTextMoveUp("content-main")}
+              onMoveDown={() => handleTextMoveDown("content-main")}
             >
               <EditableText
                 elementId="content-main"
@@ -219,9 +288,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               isSelected={selectedTextElement === "content-sub"}
               elementId="content-sub"
               onDelete={handleTextDelete}
-              onCopy={handleTextCopy}
-              onMoveUp={handleTextMoveUp}
-              onMoveDown={handleTextMoveDown}
+              onCopy={() => handleTextCopy("content-sub")}
+              onMoveUp={() => handleTextMoveUp("content-sub")}
+              onMoveDown={() => handleTextMoveDown("content-sub")}
             >
               <EditableText
                 elementId="content-sub"
@@ -248,9 +317,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
                   isSelected={selectedTextElement === `content-label-${i}`}
                   elementId={`content-label-${i}`}
                   onDelete={handleTextDelete}
-                  onCopy={handleTextCopy}
-                  onMoveUp={handleTextMoveUp}
-                  onMoveDown={handleTextMoveDown}
+                  onCopy={() => handleTextCopy(`content-label-${i}`)}
+                  onMoveUp={() => handleTextMoveUp(`content-label-${i}`)}
+                  onMoveDown={() => handleTextMoveDown(`content-label-${i}`)}
                 >
                   <EditableText
                     elementId={`content-label-${i}`}
@@ -270,9 +339,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
                   isSelected={selectedTextElement === `content-desc-${i}`}
                   elementId={`content-desc-${i}`}
                   onDelete={handleTextDelete}
-                  onCopy={handleTextCopy}
-                  onMoveUp={handleTextMoveUp}
-                  onMoveDown={handleTextMoveDown}
+                  onCopy={() => handleTextCopy(`content-desc-${i}`)}
+                  onMoveUp={() => handleTextMoveUp(`content-desc-${i}`)}
+                  onMoveDown={() => handleTextMoveDown(`content-desc-${i}`)}
                 >
                   <EditableText
                     elementId={`content-desc-${i}`}
@@ -289,6 +358,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
                 </ResizableTextBox>
               </React.Fragment>
             ))}
+
+            {/* Render dynamic text elements */}
+            {renderDynamicTextElements()}
           </div>
         );
 
@@ -303,9 +375,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               isSelected={selectedTextElement === `slide-${slideNumber}-text`}
               elementId={`slide-${slideNumber}-text`}
               onDelete={handleTextDelete}
-              onCopy={handleTextCopy}
-              onMoveUp={handleTextMoveUp}
-              onMoveDown={handleTextMoveDown}
+              onCopy={() => handleTextCopy(`slide-${slideNumber}-text`)}
+              onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-text`)}
+              onMoveDown={() => handleTextMoveDown(`slide-${slideNumber}-text`)}
             >
               <EditableText
                 elementId={`slide-${slideNumber}-text`}
@@ -324,6 +396,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
                 }}
               />
             </ResizableTextBox>
+
+            {/* Render dynamic text elements */}
+            {renderDynamicTextElements()}
           </div>
         );
     }

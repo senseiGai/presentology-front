@@ -63,7 +63,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
             width={759}
             height={427}
             alt="Presentation"
-            className="absolute w-full h-full"
+            className="absolute w-full h-full select-none"
           />
           <div className="relative">
             <Mascot className="!absolute w-[429px] h-[429px] bottom-[-585px] left-[380px] transform -translate-x-1/2 " />

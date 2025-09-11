@@ -1,9 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { TextToolbar } from "@/shared/ui/TextToolbar";
+import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 
 interface ResizableTextBoxProps {
   children: React.ReactNode;
   isSelected: boolean;
+  elementId: string; // Add elementId to identify the text element
   onResize?: (width: number, height: number) => void;
   onMove?: (x: number, y: number) => void;
   onDelete: () => void;
@@ -15,6 +17,7 @@ interface ResizableTextBoxProps {
 export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
   children,
   isSelected,
+  elementId,
   onResize,
   onMove,
   onDelete,
@@ -22,6 +25,12 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
   onMoveUp,
   onMoveDown,
 }) => {
+  const {
+    setTextElementPosition,
+    getTextElementPosition,
+    getTextElementStyle,
+    updateTextElementStyle,
+  } = usePresentationStore();
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState<string>("");
@@ -30,25 +39,35 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
     width: 0,
     height: 0,
   });
-  const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
   const boxRef = useRef<HTMLDivElement>(null);
 
-  const updateToolbarPosition = useCallback(() => {
-    if (boxRef.current && isSelected) {
-      const rect = boxRef.current.getBoundingClientRect();
+  // Get position from store instead of local state
+  const position = getTextElementPosition(elementId);
+  const elementStyle = getTextElementStyle(elementId);
 
-      // Простое позиционирование: точно над элементом, по центру
-      const x = rect.left + rect.width / 2;
-      const y = rect.top - 70; // 70px выше элемента
-
-      console.log("Toolbar position:", { x, y, rect });
-      setToolbarPosition({ x, y });
-    }
-  }, [isSelected]);
-
+  // Debug logging
+  React.useEffect(() => {
+    console.log(`ResizableTextBox ${elementId}:`, {
+      position,
+      elementStyle: {
+        x: elementStyle.x,
+        y: elementStyle.y,
+        rotation: elementStyle.rotation,
+      },
+    });
+  }, [
+    elementId,
+    position,
+    elementStyle.x,
+    elementStyle.y,
+    elementStyle.rotation,
+  ]);
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (!isSelected) return;
+
+      // Prevent text selection during drag
+      e.preventDefault();
 
       setIsDragging(true);
       setDragStart({
@@ -78,11 +97,35 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
       if (!boxRef.current) return;
 
       if (isDragging) {
-        // Handle element movement - in a real implementation, you would update the element's position
+        // Handle element movement - update the element style
         const deltaX = e.clientX - dragStart.x;
         const deltaY = e.clientY - dragStart.y;
+
+        const currentX = elementStyle.x || 0;
+        const currentY = elementStyle.y || 0;
+        const newX = currentX + deltaX;
+        const newY = currentY + deltaY;
+
+        // Simple boundary check with fixed slide dimensions
+        const slideWidth = 759;
+        const slideHeight = 427;
+
+        // Get current element dimensions
+        const boxRect = boxRef.current.getBoundingClientRect();
+
+        // Calculate boundaries to keep element within slide
+        const minX = 0;
+        const maxX = slideWidth - boxRect.width;
+        const minY = 0;
+        const maxY = slideHeight - boxRect.height;
+
+        // Apply boundaries
+        const boundedX = Math.max(minX, Math.min(maxX, newX));
+        const boundedY = Math.max(minY, Math.min(maxY, newY));
+
+        updateTextElementStyle(elementId, { x: boundedX, y: boundedY });
+        setDragStart({ x: e.clientX, y: e.clientY });
         onMove?.(deltaX, deltaY);
-        updateToolbarPosition();
       }
 
       if (isResizing) {
@@ -124,21 +167,17 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
             break;
         }
 
-        // Get slide container bounds to limit resizing within slide
-        const slideContainer = boxRef.current.closest(
-          '[class*="w-[759px]"], [class*="w-[640px]"]'
-        );
-        if (slideContainer) {
-          const slideRect = slideContainer.getBoundingClientRect();
-          const boxRect = boxRef.current.getBoundingClientRect();
-          const maxWidth =
-            slideRect.width - (boxRect.left - slideRect.left) - 20; // 20px margin
-          const maxHeight =
-            slideRect.height - (boxRect.top - slideRect.top) - 20; // 20px margin
+        // Simple resize bounds based on slide dimensions
+        const slideWidth = 759;
+        const slideHeight = 427;
 
-          newWidth = Math.min(newWidth, maxWidth);
-          newHeight = Math.min(newHeight, maxHeight);
-        }
+        // Get current position to calculate max dimensions
+        const currentPosition = getTextElementPosition(elementId);
+        const maxWidth = slideWidth - currentPosition.x;
+        const maxHeight = slideHeight - currentPosition.y;
+
+        newWidth = Math.min(newWidth, Math.max(50, maxWidth));
+        newHeight = Math.min(newHeight, Math.max(30, maxHeight));
 
         // Apply the new dimensions to the element and ensure text fits
         if (boxRef.current) {
@@ -162,7 +201,6 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
         }
 
         onResize?.(newWidth, newHeight);
-        updateToolbarPosition();
       }
     },
     [
@@ -173,7 +211,10 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
       resizeDirection,
       onMove,
       onResize,
-      updateToolbarPosition,
+      elementId,
+      updateTextElementStyle,
+      getTextElementPosition,
+      elementStyle,
     ]
   );
 
@@ -195,22 +236,23 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
     }
   }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
 
-  useEffect(() => {
-    updateToolbarPosition();
-
-    // Update toolbar position on scroll or resize
-    const handleUpdate = () => updateToolbarPosition();
-    window.addEventListener("scroll", handleUpdate);
-    window.addEventListener("resize", handleUpdate);
-
-    return () => {
-      window.removeEventListener("scroll", handleUpdate);
-      window.removeEventListener("resize", handleUpdate);
-    };
-  }, [isSelected, updateToolbarPosition]);
-
   if (!isSelected) {
-    return <div ref={boxRef}>{children}</div>;
+    return (
+      <div
+        ref={boxRef}
+        style={{
+          display: "inline-block",
+          position: "absolute",
+          left: `${elementStyle.x || 0}px`,
+          top: `${elementStyle.y || 0}px`,
+          transform: `rotate(${elementStyle.rotation || 0}deg)`,
+          transformOrigin: "center",
+          transition: "all 0.1s ease-out",
+        }}
+      >
+        {children}
+      </div>
+    );
   }
 
   return (
@@ -222,104 +264,73 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
         style={{
           cursor: isDragging ? "grabbing" : "grab",
           display: "inline-block",
-          position: "relative",
+          position: "absolute",
+          left: `${elementStyle.x || 0}px`,
+          top: `${elementStyle.y || 0}px`,
+          transform: `rotate(${elementStyle.rotation || 0}deg)`,
+          transformOrigin: "center",
           maxWidth: "100%",
           wordWrap: "break-word",
           overflowWrap: "break-word",
-          overflow: "visible", // Изменено с hidden на visible для видимости рамки
+          overflow: "visible",
+          transition: isDragging ? "none" : "all 0.1s ease-out",
         }}
       >
+        {/* Toolbar positioned absolutely relative to the text element */}
+
         {children}
 
-        {/* Selection border and handles */}
+        {/* Selection border and handles - matching Figma design exactly */}
         <div
-          className="absolute pointer-events-none"
+          className="absolute border border-[#bba2fe] border-solid pointer-events-none"
           style={{
-            top: "-4px",
-            left: "-4px",
-            right: "-4px",
-            bottom: "-4px",
-            border: "3px solid #BBA2FE !important",
-            borderRadius: "6px",
-            backgroundColor: "transparent",
+            top: "0px",
+            left: "0px",
+            right: "0px",
+            bottom: "0px",
             zIndex: 999,
             boxSizing: "border-box",
           }}
         >
-          {/* Corner resize handles */}
           <div
-            className="absolute w-[10px] h-[10px] bg-[#BBA2FE] rounded-sm cursor-nw-resize pointer-events-auto"
-            style={{ top: "-5px", left: "-5px", zIndex: 1000 }}
+            className="absolute"
+            style={{
+              top: "-60px", // Position toolbar above the text element
+              left: "0%",
+              zIndex: 9999999,
+            }}
+          >
+            <TextToolbar
+              position={{ x: 0, y: 0 }} // Position is handled by the parent div
+              onMoveUp={onMoveUp}
+              onMoveDown={onMoveDown}
+              onCopy={onCopy}
+              onDelete={onDelete}
+            />
+          </div>
+          {/* Corner resize handles - only 4 corner handles as shown in Figma */}
+          <div
+            className="absolute bg-[#bba2fe] size-2 cursor-nw-resize pointer-events-auto"
+            style={{ top: "-4px", left: "-4px", zIndex: 1000 }}
             onMouseDown={(e) => handleResizeMouseDown(e, "nw")}
           />
           <div
-            className="absolute w-[10px] h-[10px] bg-[#BBA2FE] rounded-sm cursor-ne-resize pointer-events-auto"
-            style={{ top: "-5px", right: "-5px", zIndex: 1000 }}
+            className="absolute bg-[#bba2fe] size-2 cursor-ne-resize pointer-events-auto"
+            style={{ top: "-4px", right: "-4px", zIndex: 1000 }}
             onMouseDown={(e) => handleResizeMouseDown(e, "ne")}
           />
           <div
-            className="absolute w-[10px] h-[10px] bg-[#BBA2FE] rounded-sm cursor-sw-resize pointer-events-auto"
-            style={{ bottom: "-5px", left: "-5px", zIndex: 1000 }}
+            className="absolute bg-[#bba2fe] size-2 cursor-sw-resize pointer-events-auto"
+            style={{ bottom: "-4px", left: "-4px", zIndex: 1000 }}
             onMouseDown={(e) => handleResizeMouseDown(e, "sw")}
           />
           <div
-            className="absolute w-[10px] h-[10px] bg-[#BBA2FE] rounded-sm cursor-se-resize pointer-events-auto"
-            style={{ bottom: "-5px", right: "-5px", zIndex: 1000 }}
+            className="absolute bg-[#bba2fe] size-2 cursor-se-resize pointer-events-auto"
+            style={{ bottom: "-4px", right: "-4px", zIndex: 1000 }}
             onMouseDown={(e) => handleResizeMouseDown(e, "se")}
-          />
-
-          {/* Side resize handles */}
-          <div
-            className="absolute w-[10px] h-[10px] bg-[#BBA2FE] rounded-sm cursor-w-resize pointer-events-auto"
-            style={{
-              top: "50%",
-              left: "-5px",
-              transform: "translateY(-50%)",
-              zIndex: 1000,
-            }}
-            onMouseDown={(e) => handleResizeMouseDown(e, "w")}
-          />
-          <div
-            className="absolute w-[10px] h-[10px] bg-[#BBA2FE] rounded-sm cursor-e-resize pointer-events-auto"
-            style={{
-              top: "50%",
-              right: "-5px",
-              transform: "translateY(-50%)",
-              zIndex: 1000,
-            }}
-            onMouseDown={(e) => handleResizeMouseDown(e, "e")}
-          />
-          <div
-            className="absolute w-[10px] h-[10px] bg-[#BBA2FE] rounded-sm cursor-n-resize pointer-events-auto"
-            style={{
-              top: "-5px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              zIndex: 1000,
-            }}
-            onMouseDown={(e) => handleResizeMouseDown(e, "n")}
-          />
-          <div
-            className="absolute w-[10px] h-[10px] bg-[#BBA2FE] rounded-sm cursor-s-resize pointer-events-auto"
-            style={{
-              bottom: "-5px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              zIndex: 1000,
-            }}
-            onMouseDown={(e) => handleResizeMouseDown(e, "s")}
           />
         </div>
       </div>
-
-      {/* Toolbar */}
-      <TextToolbar
-        position={toolbarPosition}
-        onMoveUp={onMoveUp}
-        onMoveDown={onMoveDown}
-        onCopy={onCopy}
-        onDelete={onDelete}
-      />
     </>
   );
 };

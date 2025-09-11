@@ -19,11 +19,43 @@ export interface PresentationState {
   selectedTextElement: string | null;
   textEditorContent: string;
   textPosition: { x: number; y: number; rotation: number };
+  textElementPositions: Record<string, { x: number; y: number }>; // Store positions for all text elements
+  textElementContents: Record<string, string>; // Store text content for all text elements
+  deletedTextElements: Set<string>; // Track deleted elements
+  textElementStyles: Record<
+    string,
+    {
+      fontSize: number;
+      fontWeight: string;
+      fontStyle?: string;
+      textDecoration?: string;
+      textAlign: "left" | "center" | "right";
+      color: string;
+      x?: number;
+      y?: number;
+      rotation?: number;
+      style:
+        | "normal"
+        | "scientific"
+        | "business"
+        | "conversational"
+        | "selling"
+        | "emotional"
+        | "friendly"
+        | "creative"
+        | "humorous";
+    }
+  >; // Store styles for each text element
   textStyle: {
     fontSize: number;
     fontWeight: string;
+    fontStyle?: string;
+    textDecoration?: string;
     textAlign: "left" | "center" | "right";
     color: string;
+    x?: number;
+    y?: number;
+    rotation?: number;
     style:
       | "normal"
       | "scientific"
@@ -71,7 +103,20 @@ export interface PresentationState {
     y: number;
     rotation: number;
   }) => void;
+  setTextElementPosition: (
+    elementId: string,
+    position: { x: number; y: number }
+  ) => void;
+  getTextElementPosition: (elementId: string) => { x: number; y: number };
   setTextStyle: (style: Partial<PresentationState["textStyle"]>) => void;
+  updateTextElementStyle: (
+    elementId: string,
+    style: Partial<PresentationState["textStyle"]>
+  ) => void;
+  getTextElementStyle: (elementId: string) => PresentationState["textStyle"];
+  setTextElementContent: (elementId: string, content: string) => void;
+  getTextElementContent: (elementId: string) => string;
+  deleteTextElement: (elementId: string) => void;
   clearTextSelection: () => void;
 
   // Image editing actions
@@ -106,11 +151,18 @@ const initialState = {
   selectedTextElement: null,
   textEditorContent: "",
   textPosition: { x: 20, y: 60, rotation: 0 },
+  textElementPositions: {}, // Initialize empty positions object
+  textElementContents: {}, // Initialize empty contents object
+  deletedTextElements: new Set<string>(), // Initialize empty set for deleted elements
+  textElementStyles: {}, // Initialize empty styles object
   textStyle: {
     fontSize: 14,
     fontWeight: "normal",
     textAlign: "left" as const,
     color: "#000000",
+    x: 0,
+    y: 0,
+    rotation: 0,
     style: "normal" as const,
   },
 
@@ -323,6 +375,22 @@ export const usePresentationStore = create<PresentationState>()(
     setTextPosition: (position: { x: number; y: number; rotation: number }) =>
       set({ textPosition: position }),
 
+    setTextElementPosition: (
+      elementId: string,
+      position: { x: number; y: number }
+    ) =>
+      set((state) => ({
+        textElementPositions: {
+          ...state.textElementPositions,
+          [elementId]: position,
+        },
+      })),
+
+    getTextElementPosition: (elementId: string) => {
+      const state = get();
+      return state.textElementPositions[elementId] || { x: 0, y: 0 };
+    },
+
     setTextStyle: (style: Partial<PresentationState["textStyle"]>) =>
       set((state) => ({ textStyle: { ...state.textStyle, ...style } })),
 
@@ -365,6 +433,76 @@ export const usePresentationStore = create<PresentationState>()(
     clearInfographicsSelection: () =>
       set({
         selectedInfographicsElement: null,
+      }),
+
+    // Text element style management
+    updateTextElementStyle: (
+      elementId: string,
+      style: Partial<PresentationState["textStyle"]>
+    ) =>
+      set((state) => {
+        const currentStyle = state.textElementStyles[elementId] || {
+          ...state.textStyle,
+        };
+        return {
+          textElementStyles: {
+            ...state.textElementStyles,
+            [elementId]: { ...currentStyle, ...style },
+          },
+        };
+      }),
+
+    getTextElementStyle: (elementId: string) => {
+      const state = get();
+      return state.textElementStyles[elementId] || state.textStyle;
+    },
+
+    setTextElementContent: (elementId: string, content: string) =>
+      set((state) => ({
+        textElementContents: {
+          ...state.textElementContents,
+          [elementId]: content,
+        },
+      })),
+
+    getTextElementContent: (elementId: string) => {
+      const state = get();
+      return state.textElementContents[elementId] || "";
+    },
+
+    deleteTextElement: (elementId: string) =>
+      set((state) => {
+        console.log("Store: Deleting element", elementId);
+        console.log("Current deleted elements:", state.deletedTextElements);
+
+        // Add element to deleted set
+        const newDeletedElements = new Set(state.deletedTextElements);
+        newDeletedElements.add(elementId);
+
+        console.log("New deleted elements:", newDeletedElements);
+
+        // Remove element styles, positions, and contents
+        const { [elementId]: removedStyles, ...remainingStyles } =
+          state.textElementStyles;
+        const { [elementId]: removedPosition, ...remainingPositions } =
+          state.textElementPositions;
+        const { [elementId]: removedContent, ...remainingContents } =
+          state.textElementContents;
+
+        // Clear selection if this element was selected
+        const newSelectedElement =
+          state.selectedTextElement === elementId
+            ? null
+            : state.selectedTextElement;
+
+        return {
+          deletedTextElements: newDeletedElements,
+          textElementStyles: remainingStyles,
+          textElementPositions: remainingPositions,
+          textElementContents: remainingContents,
+          selectedTextElement: newSelectedElement,
+          textEditorContent: newSelectedElement ? state.textEditorContent : "",
+        };
       }),
 
     resetPresentation: () => set(initialState),

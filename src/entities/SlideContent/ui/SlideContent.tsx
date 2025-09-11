@@ -1,6 +1,7 @@
 import React from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { ResizableTextBox } from "@/shared/ui/ResizableTextBox";
+import { EditableText } from "@/shared/ui/EditableText";
 
 interface SlideContentProps {
   slideNumber: number;
@@ -17,11 +18,92 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     setTextEditorContent,
     selectedTextElement,
     clearTextSelection,
+    updateTextElementStyle,
+    getTextElementStyle,
+    textEditorContent,
+    setTextElementContent,
+    getTextElementContent,
   } = usePresentationStore();
 
-  const handleTextClick = (elementId: string, currentText: string) => {
+  // Initialize default positions for elements if they don't exist
+  React.useEffect(() => {
+    const initializeElementPosition = (
+      elementId: string,
+      defaultX: number,
+      defaultY: number
+    ) => {
+      const currentStyle = getTextElementStyle(elementId);
+      console.log(`Checking element ${elementId}:`, currentStyle);
+      if (currentStyle.x === undefined || currentStyle.y === undefined) {
+        console.log(
+          `Initializing position for ${elementId} to (${defaultX}, ${defaultY})`
+        );
+        updateTextElementStyle(elementId, {
+          x: defaultX,
+          y: defaultY,
+          rotation: 0,
+        });
+      } else {
+        console.log(`Element ${elementId} already has position:`, {
+          x: currentStyle.x,
+          y: currentStyle.y,
+        });
+      }
+    };
+
+    console.log(
+      `Initializing positions for slideType: ${slideType}, slideNumber: ${slideNumber}`
+    );
+    switch (slideType) {
+      case "title":
+        initializeElementPosition("title-main", 48, 48);
+        initializeElementPosition("title-sub", 48, 160);
+        break;
+      case "content":
+        initializeElementPosition("content-main", 48, 48);
+        initializeElementPosition("content-sub", 48, 160);
+        // Initialize positions for grid elements
+        for (let i = 1; i <= 2; i++) {
+          initializeElementPosition(
+            `content-label-${i}`,
+            150 + (i - 1) * 300,
+            270
+          );
+          initializeElementPosition(
+            `content-desc-${i}`,
+            150 + (i - 1) * 300,
+            300
+          );
+        }
+        break;
+      default:
+        initializeElementPosition(`slide-${slideNumber}-text`, 280, 200);
+        break;
+    }
+  }, [slideType, slideNumber, getTextElementStyle, updateTextElementStyle]);
+
+  const handleTextClick = (
+    elementId: string,
+    currentText: string,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation();
+
+    // Always select the element
     setSelectedTextElement(elementId);
-    setTextEditorContent(currentText);
+
+    // Get the saved content for this element, or use current text as fallback
+    const savedContent = getTextElementContent(elementId);
+    const contentToUse = savedContent || currentText;
+
+    // Only update text editor content if:
+    // 1. This is a new element selection (different from current), OR
+    // 2. The current textEditorContent is empty or only whitespace
+    if (selectedTextElement !== elementId || !textEditorContent?.trim()) {
+      setTextEditorContent(contentToUse);
+    }
+    // If it's the same element and textEditorContent has content,
+    // we preserve the current textEditorContent (which may have list formatting)
   };
 
   const handleTextDelete = () => {
@@ -45,9 +127,6 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     console.log("Move text element down:", selectedTextElement);
   };
 
-  const preventPropagation = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
   const renderSlideByType = () => {
     const handleSlideClick = () => {
       clearTextSelection();
@@ -59,54 +138,51 @@ export const SlideContent: React.FC<SlideContentProps> = ({
           <div
             className="slide-container mx-auto w-[759px] h-[427px] bg-gradient-to-br from-[#2D3748] to-[#1A202C] rounded-[12px] p-12 text-white relative"
             onClick={handleSlideClick}
+            style={{ position: "relative" }}
           >
             <ResizableTextBox
               isSelected={selectedTextElement === "title-main"}
+              elementId="title-main"
               onDelete={handleTextDelete}
               onCopy={handleTextCopy}
               onMoveUp={handleTextMoveUp}
               onMoveDown={handleTextMoveDown}
             >
-              <div
-                className={`text-[48px] font-bold leading-tight mb-4 cursor-pointer transition-colors ${
+              <EditableText
+                elementId="title-main"
+                initialText="ЗАГОЛОВОК\nВ ДВЕ СТРОКИ"
+                className={`text-[48px] font-bold leading-tight cursor-pointer transition-colors ${
                   selectedTextElement === "title-main"
                     ? ""
                     : "hover:bg-white/10 rounded p-2"
                 }`}
                 onClick={(e) => {
-                  preventPropagation(e);
-                  handleTextClick("title-main", "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ");
+                  handleTextClick("title-main", "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ", e);
                 }}
-              >
-                ЗАГОЛОВОК
-                <br />В ДВЕ СТРОКИ
-              </div>
+              />
             </ResizableTextBox>
 
             <ResizableTextBox
               isSelected={selectedTextElement === "title-sub"}
+              elementId="title-sub"
               onDelete={handleTextDelete}
               onCopy={handleTextCopy}
               onMoveUp={handleTextMoveUp}
               onMoveDown={handleTextMoveDown}
             >
-              <div
+              <EditableText
+                elementId="title-sub"
+                initialText="Подзаголовок\nв две строки"
                 className={`text-[20px] font-light cursor-pointer transition-colors ${
                   selectedTextElement === "title-sub"
                     ? ""
                     : "hover:bg-white/10 rounded p-2"
                 }`}
                 onClick={(e) => {
-                  preventPropagation(e);
-                  handleTextClick("title-sub", "Подзаголовок\nв две строки");
+                  handleTextClick("title-sub", "Подзаголовок\nв две строки", e);
                 }}
-              >
-                Подзаголовок
-                <br />в две строки
-              </div>
+              />
             </ResizableTextBox>
-
-            <div className="absolute bottom-12 right-12 w-48 h-32 bg-gradient-to-br from-[#4FD1C7] to-[#10B981] rounded-[12px]" />
           </div>
         );
 
@@ -115,162 +191,138 @@ export const SlideContent: React.FC<SlideContentProps> = ({
           <div
             className="slide-container mx-auto w-[759px] h-[427px] p-12"
             onClick={handleSlideClick}
+            style={{ position: "relative" }}
           >
             <ResizableTextBox
               isSelected={selectedTextElement === "content-main"}
+              elementId="content-main"
               onDelete={handleTextDelete}
               onCopy={handleTextCopy}
               onMoveUp={handleTextMoveUp}
               onMoveDown={handleTextMoveDown}
             >
-              <div
-                className={`text-[48px] font-bold text-[#2D3748] leading-tight mb-4 cursor-pointer transition-colors ${
+              <EditableText
+                elementId="content-main"
+                initialText="ЗАГОЛОВОК\nВ ДВЕ СТРОКИ"
+                className={`text-[48px] font-bold text-[#2D3748] leading-tight cursor-pointer transition-colors ${
                   selectedTextElement === "content-main"
                     ? ""
                     : "hover:bg-gray-100 rounded p-2"
                 }`}
                 onClick={(e) => {
-                  preventPropagation(e);
-                  handleTextClick("content-main", "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ");
+                  handleTextClick("content-main", "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ", e);
                 }}
-              >
-                ЗАГОЛОВОК
-                <br />В ДВЕ СТРОКИ
-              </div>
+              />
             </ResizableTextBox>
 
             <ResizableTextBox
               isSelected={selectedTextElement === "content-sub"}
+              elementId="content-sub"
               onDelete={handleTextDelete}
               onCopy={handleTextCopy}
               onMoveUp={handleTextMoveUp}
               onMoveDown={handleTextMoveDown}
             >
-              <div
-                className={`text-[20px] text-[#4A5568] mb-8 cursor-pointer transition-colors ${
+              <EditableText
+                elementId="content-sub"
+                initialText="Подзаголовок\nв две строки"
+                className={`text-[20px] text-[#4A5568] cursor-pointer transition-colors ${
                   selectedTextElement === "content-sub"
                     ? ""
                     : "hover:bg-gray-100 rounded p-2"
                 }`}
                 onClick={(e) => {
-                  preventPropagation(e);
-                  handleTextClick("content-sub", "Подзаголовок\nв две строки");
+                  handleTextClick(
+                    "content-sub",
+                    "Подзаголовок\nв две строки",
+                    e
+                  );
                 }}
-              >
-                Подзаголовок
-                <br />в две строки
-              </div>
+              />
             </ResizableTextBox>
 
-            <div className="grid grid-cols-2 gap-6">
-              {[1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="aspect-square bg-[#F7FAFC] rounded-[12px] flex items-center justify-center border-2 border-[#E2E8F0]"
+            {/* Render text elements with absolute positioning */}
+            {[1, 2].map((i) => (
+              <React.Fragment key={i}>
+                <ResizableTextBox
+                  isSelected={selectedTextElement === `content-label-${i}`}
+                  elementId={`content-label-${i}`}
+                  onDelete={handleTextDelete}
+                  onCopy={handleTextCopy}
+                  onMoveUp={handleTextMoveUp}
+                  onMoveDown={handleTextMoveDown}
                 >
-                  <div className="w-16 h-16 bg-[#4FD1C7] rounded-full flex items-center justify-center">
-                    <ResizableTextBox
-                      isSelected={selectedTextElement === `content-text-${i}`}
-                      onDelete={handleTextDelete}
-                      onCopy={handleTextCopy}
-                      onMoveUp={handleTextMoveUp}
-                      onMoveDown={handleTextMoveDown}
-                    >
-                      <div
-                        className={`text-white font-bold text-[20px] cursor-pointer transition-colors ${
-                          selectedTextElement === `content-text-${i}`
-                            ? ""
-                            : "hover:bg-black/10 rounded p-1"
-                        }`}
-                        onClick={(e) => {
-                          preventPropagation(e);
-                          handleTextClick(`content-text-${i}`, `Текст ${i}`);
-                        }}
-                      >
-                        Текст {i}
-                      </div>
-                    </ResizableTextBox>
-                  </div>
-                  <div className="ml-4">
-                    <ResizableTextBox
-                      isSelected={selectedTextElement === `content-label-${i}`}
-                      onDelete={handleTextDelete}
-                      onCopy={handleTextCopy}
-                      onMoveUp={handleTextMoveUp}
-                      onMoveDown={handleTextMoveDown}
-                    >
-                      <div
-                        className={`text-[14px] font-medium text-[#2D3748] cursor-pointer transition-colors ${
-                          selectedTextElement === `content-label-${i}`
-                            ? ""
-                            : "hover:bg-gray-100 rounded p-1"
-                        }`}
-                        onClick={(e) => {
-                          preventPropagation(e);
-                          handleTextClick(`content-label-${i}`, `Текст ${i}`);
-                        }}
-                      >
-                        Текст {i}
-                      </div>
-                    </ResizableTextBox>
+                  <EditableText
+                    elementId={`content-label-${i}`}
+                    initialText={`Текст ${i}`}
+                    className={`text-[14px] font-medium text-[#2D3748] cursor-pointer transition-colors ${
+                      selectedTextElement === `content-label-${i}`
+                        ? ""
+                        : "hover:bg-gray-100 rounded p-1"
+                    }`}
+                    onClick={(e) => {
+                      handleTextClick(`content-label-${i}`, `Текст ${i}`, e);
+                    }}
+                  />
+                </ResizableTextBox>
 
-                    <ResizableTextBox
-                      isSelected={selectedTextElement === `content-desc-${i}`}
-                      onDelete={handleTextDelete}
-                      onCopy={handleTextCopy}
-                      onMoveUp={handleTextMoveUp}
-                      onMoveDown={handleTextMoveDown}
-                    >
-                      <div
-                        className={`text-[12px] text-[#4A5568] cursor-pointer transition-colors ${
-                          selectedTextElement === `content-desc-${i}`
-                            ? ""
-                            : "hover:bg-gray-100 rounded p-1"
-                        }`}
-                        onClick={(e) => {
-                          preventPropagation(e);
-                          handleTextClick(`content-desc-${i}`, "Текст 2");
-                        }}
-                      >
-                        Текст 2
-                      </div>
-                    </ResizableTextBox>
-                  </div>
-                </div>
-              ))}
-            </div>
+                <ResizableTextBox
+                  isSelected={selectedTextElement === `content-desc-${i}`}
+                  elementId={`content-desc-${i}`}
+                  onDelete={handleTextDelete}
+                  onCopy={handleTextCopy}
+                  onMoveUp={handleTextMoveUp}
+                  onMoveDown={handleTextMoveDown}
+                >
+                  <EditableText
+                    elementId={`content-desc-${i}`}
+                    initialText="Текст 2"
+                    className={`text-[12px] text-[#4A5568] cursor-pointer transition-colors ${
+                      selectedTextElement === `content-desc-${i}`
+                        ? ""
+                        : "hover:bg-gray-100 rounded p-1"
+                    }`}
+                    onClick={(e) => {
+                      handleTextClick(`content-desc-${i}`, "Текст 2", e);
+                    }}
+                  />
+                </ResizableTextBox>
+              </React.Fragment>
+            ))}
           </div>
         );
 
       default:
         return (
           <div
-            className="slide-container mx-auto w-[759px] h-[427px] bg-[#F7FAFC] rounded-[12px] flex items-center justify-center"
+            className="slide-container mx-auto w-[759px] h-[427px] bg-[#F7FAFC] rounded-[12px]"
             onClick={handleSlideClick}
+            style={{ position: "relative" }}
           >
             <ResizableTextBox
               isSelected={selectedTextElement === `slide-${slideNumber}-text`}
+              elementId={`slide-${slideNumber}-text`}
               onDelete={handleTextDelete}
               onCopy={handleTextCopy}
               onMoveUp={handleTextMoveUp}
               onMoveDown={handleTextMoveDown}
             >
-              <div
+              <EditableText
+                elementId={`slide-${slideNumber}-text`}
+                initialText={`Слайд ${slideNumber}`}
                 className={`text-[#6B7280] text-[18px] cursor-pointer transition-colors ${
                   selectedTextElement === `slide-${slideNumber}-text`
                     ? ""
                     : "hover:bg-gray-200 rounded p-2"
                 }`}
                 onClick={(e) => {
-                  preventPropagation(e);
                   handleTextClick(
                     `slide-${slideNumber}-text`,
-                    `Слайд ${slideNumber}`
+                    `Слайд ${slideNumber}`,
+                    e
                   );
                 }}
-              >
-                Слайд {slideNumber}
-              </div>
+              />
             </ResizableTextBox>
           </div>
         );

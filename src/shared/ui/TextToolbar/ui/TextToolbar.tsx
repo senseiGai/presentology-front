@@ -23,38 +23,35 @@ export const TextToolbar: React.FC<TextToolbarProps> = ({
 
   return (
     <div
-      className="fixed bg-white rounded-[12px] shadow-lg border border-[#E5E7EB] flex items-center gap-0 p-1"
+      className="bg-white rounded-[8px] border border-[#e9e9e9] border-solid flex items-start gap-1 p-[8px]"
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        transform: "translateX(-50%)",
-        zIndex: 9999,
+        boxShadow: "0px 4px 10px 0px rgba(0,0,0,0.08)",
       }}
     >
       <button
         onClick={onMoveUp}
-        className="w-[40px] h-[40px] flex items-center justify-center hover:bg-[#F3F4F6] rounded-[8px] transition-colors"
+        className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"
         title="Переместить вверх"
       >
         <MoveUpIcon />
       </button>
       <button
         onClick={onMoveDown}
-        className="w-[40px] h-[40px] flex items-center justify-center hover:bg-[#F3F4F6] rounded-[8px] transition-colors"
+        className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"
         title="Переместить вниз"
       >
         <MoveDownIcon />
       </button>
       <button
         onClick={onCopy}
-        className="w-[40px] h-[40px] flex items-center justify-center hover:bg-[#F3F4F6] rounded-[8px] transition-colors"
+        className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"
         title="Копировать"
       >
         <GrayClipboardIcon />
       </button>
       <button
         onClick={onDelete}
-        className="w-[40px] h-[40px] flex items-center justify-center hover:bg-[#FEE2E2] rounded-[8px] transition-colors"
+        className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#FEE2E2] rounded-[8px] transition-colors p-[8px]"
         title="Удалить"
       >
         <TrashIcon />

@@ -15,15 +15,13 @@ export const SlideContent: React.FC<SlideContentProps> = ({
 }) => {
   const {
     setSelectedTextElement,
-    setTextEditorContent,
     selectedTextElement,
     clearTextSelection,
     updateTextElementStyle,
     getTextElementStyle,
-    textEditorContent,
     setTextElementContent,
     getTextElementContent,
-    deleteTextElement, // Добавляем deleteTextElement из store
+    deleteTextElement,
     copyTextElement,
     moveTextElementUp,
     moveTextElementDown,
@@ -32,6 +30,18 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     textElementContents,
   } = usePresentationStore();
 
+  // Debug effect to track state changes
+  React.useEffect(() => {
+    console.log(
+      "SlideContent render - slideNumber:",
+      slideNumber,
+      "slideType:",
+      slideType
+    );
+    console.log("Current textElementStyles:", textElementStyles);
+    console.log("selectedTextElement:", selectedTextElement);
+  }, [slideNumber, slideType, textElementStyles, selectedTextElement]);
+
   // Initialize default positions for elements if they don't exist
   React.useEffect(() => {
     const initializeElementPosition = (
@@ -39,9 +49,10 @@ export const SlideContent: React.FC<SlideContentProps> = ({
       defaultX: number,
       defaultY: number
     ) => {
-      const currentStyle = getTextElementStyle(elementId);
-      console.log(`Checking element ${elementId}:`, currentStyle);
-      if (currentStyle.x === undefined || currentStyle.y === undefined) {
+      // Check if element exists in textElementStyles (not just getting default values)
+      const elementExists = textElementStyles[elementId];
+
+      if (!elementExists) {
         console.log(
           `Initializing position for ${elementId} to (${defaultX}, ${defaultY})`
         );
@@ -52,8 +63,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
         });
       } else {
         console.log(`Element ${elementId} already has position:`, {
-          x: currentStyle.x,
-          y: currentStyle.y,
+          x: elementExists.x,
+          y: elementExists.y,
         });
       }
     };
@@ -61,6 +72,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     console.log(
       `Initializing positions for slideType: ${slideType}, slideNumber: ${slideNumber}`
     );
+    console.log("Current textElementStyles:", textElementStyles);
+
     switch (slideType) {
       case "title":
         initializeElementPosition("title-main", 48, 48);
@@ -84,10 +97,33 @@ export const SlideContent: React.FC<SlideContentProps> = ({
         }
         break;
       default:
-        initializeElementPosition(`slide-${slideNumber}-text`, 280, 200);
+        // Center the text in the slide (759x427)
+        // Approximate center position accounting for text size
+        initializeElementPosition(`slide-${slideNumber}-text`, 350, 200);
         break;
     }
-  }, [slideType, slideNumber, getTextElementStyle, updateTextElementStyle]);
+  }, [slideType, slideNumber, textElementStyles, updateTextElementStyle]);
+
+  // Re-initialize positions when slide changes
+  React.useEffect(() => {
+    console.log(`Slide changed to: ${slideNumber}, checking positions...`);
+
+    // Force re-check positions for current slide elements
+    const slideElementIds = [];
+    switch (slideType) {
+      case "title":
+        slideElementIds.push("title-main", "title-sub");
+        break;
+      default:
+        slideElementIds.push(`slide-${slideNumber}-text`);
+        break;
+    }
+
+    slideElementIds.forEach((elementId) => {
+      const elementExists = textElementStyles[elementId];
+      console.log(`Element ${elementId} position:`, elementExists);
+    });
+  }, [slideNumber, slideType, textElementStyles]);
 
   const handleTextClick = (
     elementId: string,
@@ -98,19 +134,6 @@ export const SlideContent: React.FC<SlideContentProps> = ({
 
     // Always select the element
     setSelectedTextElement(elementId);
-
-    // Get the saved content for this element, or use current text as fallback
-    const savedContent = getTextElementContent(elementId);
-    const contentToUse = savedContent || currentText;
-
-    // Only update text editor content if:
-    // 1. This is a new element selection (different from current), OR
-    // 2. The current textEditorContent is empty or only whitespace
-    if (selectedTextElement !== elementId || !textEditorContent?.trim()) {
-      setTextEditorContent(contentToUse);
-    }
-    // If it's the same element and textEditorContent has content,
-    // we preserve the current textEditorContent (which may have list formatting)
   };
 
   const handleTextDelete = () => {
@@ -183,9 +206,73 @@ export const SlideContent: React.FC<SlideContentProps> = ({
       });
   };
 
+  // Render static alignment guides when text element is selected
+  const renderAlignmentGuides = () => {
+    if (!selectedTextElement) return null;
+
+    // Static center lines - always at the center of the slide
+    const slideWidth = 759; // Slide width
+    const slideHeight = 427; // Slide height
+    const centerX = slideWidth / 2;
+    const centerY = slideHeight / 2;
+
+    return (
+      <>
+        {/* Vertical guide line - center of slide */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: `24px`,
+            top: "0px",
+            width: "1px",
+            height: "100%",
+            background:
+              "repeating-linear-gradient(to bottom, #bba2fe 0px, #bba2fe 4px, transparent 4px, transparent 8px)",
+            zIndex: 998,
+          }}
+        />
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: `24px`,
+            left: "0px",
+            height: "1px",
+            width: "100%",
+            background:
+              "repeating-linear-gradient(to right, #bba2fe 0px, #bba2fe 4px, transparent 4px, transparent 8px)",
+            zIndex: 998,
+          }}
+        />
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            bottom: `24px`,
+            left: "0px",
+            height: "1px",
+            width: "100%",
+            background:
+              "repeating-linear-gradient(to right, #bba2fe 0px, #bba2fe 4px, transparent 4px, transparent 8px)",
+            zIndex: 998,
+          }}
+        />
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            right: `24px`,
+            top: "0px",
+            width: "1px",
+            height: "100%",
+            background:
+              "repeating-linear-gradient(to bottom, #bba2fe 0px, #bba2fe 4px, transparent 4px, transparent 8px)",
+            zIndex: 998,
+          }}
+        />
+      </>
+    );
+  };
+
   const renderSlideByType = () => {
     const handleSlideClick = (e: React.MouseEvent) => {
-      // Don't clear selection if clicking on toolbar or text elements
       const target = e.target as HTMLElement;
       const isToolbarClick =
         target.closest('[role="toolbar"]') ||
@@ -250,117 +337,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               />
             </ResizableTextBox>
 
-            {/* Render dynamic text elements */}
             {renderDynamicTextElements()}
-          </div>
-        );
 
-      case "content":
-        return (
-          <div
-            className="slide-container mx-auto w-[759px] h-[427px] p-12"
-            onClick={handleSlideClick}
-            style={{ position: "relative" }}
-          >
-            <ResizableTextBox
-              isSelected={selectedTextElement === "content-main"}
-              elementId="content-main"
-              onDelete={handleTextDelete}
-              onCopy={() => handleTextCopy("content-main")}
-              onMoveUp={() => handleTextMoveUp("content-main")}
-              onMoveDown={() => handleTextMoveDown("content-main")}
-            >
-              <EditableText
-                elementId="content-main"
-                initialText="ЗАГОЛОВОК\nВ ДВЕ СТРОКИ"
-                className={`text-[48px] font-bold text-[#2D3748] leading-tight cursor-pointer transition-colors ${
-                  selectedTextElement === "content-main"
-                    ? ""
-                    : "hover:bg-gray-100 rounded p-2"
-                }`}
-                onClick={(e) => {
-                  handleTextClick("content-main", "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ", e);
-                }}
-              />
-            </ResizableTextBox>
-
-            <ResizableTextBox
-              isSelected={selectedTextElement === "content-sub"}
-              elementId="content-sub"
-              onDelete={handleTextDelete}
-              onCopy={() => handleTextCopy("content-sub")}
-              onMoveUp={() => handleTextMoveUp("content-sub")}
-              onMoveDown={() => handleTextMoveDown("content-sub")}
-            >
-              <EditableText
-                elementId="content-sub"
-                initialText="Подзаголовок\nв две строки"
-                className={`text-[20px] text-[#4A5568] cursor-pointer transition-colors ${
-                  selectedTextElement === "content-sub"
-                    ? ""
-                    : "hover:bg-gray-100 rounded p-2"
-                }`}
-                onClick={(e) => {
-                  handleTextClick(
-                    "content-sub",
-                    "Подзаголовок\nв две строки",
-                    e
-                  );
-                }}
-              />
-            </ResizableTextBox>
-
-            {/* Render text elements with absolute positioning */}
-            {[1, 2].map((i) => (
-              <React.Fragment key={i}>
-                <ResizableTextBox
-                  isSelected={selectedTextElement === `content-label-${i}`}
-                  elementId={`content-label-${i}`}
-                  onDelete={handleTextDelete}
-                  onCopy={() => handleTextCopy(`content-label-${i}`)}
-                  onMoveUp={() => handleTextMoveUp(`content-label-${i}`)}
-                  onMoveDown={() => handleTextMoveDown(`content-label-${i}`)}
-                >
-                  <EditableText
-                    elementId={`content-label-${i}`}
-                    initialText={`Текст ${i}`}
-                    className={`text-[14px] font-medium text-[#2D3748] cursor-pointer transition-colors ${
-                      selectedTextElement === `content-label-${i}`
-                        ? ""
-                        : "hover:bg-gray-100 rounded p-1"
-                    }`}
-                    onClick={(e) => {
-                      handleTextClick(`content-label-${i}`, `Текст ${i}`, e);
-                    }}
-                  />
-                </ResizableTextBox>
-
-                <ResizableTextBox
-                  isSelected={selectedTextElement === `content-desc-${i}`}
-                  elementId={`content-desc-${i}`}
-                  onDelete={handleTextDelete}
-                  onCopy={() => handleTextCopy(`content-desc-${i}`)}
-                  onMoveUp={() => handleTextMoveUp(`content-desc-${i}`)}
-                  onMoveDown={() => handleTextMoveDown(`content-desc-${i}`)}
-                >
-                  <EditableText
-                    elementId={`content-desc-${i}`}
-                    initialText="Текст 2"
-                    className={`text-[12px] text-[#4A5568] cursor-pointer transition-colors ${
-                      selectedTextElement === `content-desc-${i}`
-                        ? ""
-                        : "hover:bg-gray-100 rounded p-1"
-                    }`}
-                    onClick={(e) => {
-                      handleTextClick(`content-desc-${i}`, "Текст 2", e);
-                    }}
-                  />
-                </ResizableTextBox>
-              </React.Fragment>
-            ))}
-
-            {/* Render dynamic text elements */}
-            {renderDynamicTextElements()}
+            {renderAlignmentGuides()}
           </div>
         );
 
@@ -382,7 +361,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               <EditableText
                 elementId={`slide-${slideNumber}-text`}
                 initialText={`Слайд ${slideNumber}`}
-                className={`text-[#6B7280] text-[18px] cursor-pointer transition-colors ${
+                className={`text-[#6B7280] text-[18px] cursor-pointer transition-colors text-center ${
                   selectedTextElement === `slide-${slideNumber}-text`
                     ? ""
                     : "hover:bg-gray-200 rounded p-2"
@@ -397,8 +376,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               />
             </ResizableTextBox>
 
-            {/* Render dynamic text elements */}
             {renderDynamicTextElements()}
+
+            {renderAlignmentGuides()}
           </div>
         );
     }
@@ -407,11 +387,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   return renderSlideByType();
 };
 
-// Функция для определения типа слайда на основе его номера
-export const getSlideType = (
-  slideNumber: number
-): "title" | "content" | "default" => {
+export const getSlideType = (slideNumber: number): "title" | "default" => {
   if (slideNumber === 1) return "title";
-  if (slideNumber === 5) return "content";
   return "default";
 };

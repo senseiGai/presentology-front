@@ -104,7 +104,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
       onClick={handleCanvasClick}
     >
       <div
-        className="flex flex-col items-center mt-[116px]"
+        className="flex flex-col items-center mt-[116px] mb-[32px]"
         style={{
           gap: `${32 * (zoomLevel / 100)}px`, // Scale gap with zoom level to maintain visual density
         }}

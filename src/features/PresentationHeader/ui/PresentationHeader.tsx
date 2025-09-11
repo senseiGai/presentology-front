@@ -11,6 +11,8 @@ import PaintIcon from "../../../../public/icons/PainIcon";
 import ShareIcon from "../../../../public/icons/ShareIcon";
 import DownloadIcon from "../../../../public/icons/DownloadIcon";
 import LogoIllustration from "../../../../public/icons/LogoIllustration";
+import RevertPast from "../../../../public/icons/RevertPast";
+import RevertNext from "../../../../public/icons/RevertNext";
 
 interface PresentationHeaderProps {
   onBack?: () => void;
@@ -38,7 +40,16 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
   const [isDesignPopupOpen, setIsDesignPopupOpen] = useState(false);
   const shareButtonRef = useRef<HTMLButtonElement>(null);
 
-  const { zoomLevel, zoomIn, zoomOut, resetZoom } = usePresentationStore();
+  const {
+    zoomLevel,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = usePresentationStore();
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -124,18 +135,24 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
         <div className="flex items-center gap-x-2">
           <button
             onClick={zoomOut}
-            className="flex w-[32px] h-[32px] items-center justify-center cursor-pointer hover:bg-[#F4F4F4] rounded-[4px] transition-colors"
+            disabled={isGenerating}
+            className={`flex w-[32px] h-[32px] items-center justify-center hover:bg-[#F4F4F4] rounded-[4px] transition-colors ${
+              isGenerating ? "cursor-not-allowed" : "cursor-pointer"
+            }`}
           >
-            <MinusIcon />
+            <MinusIcon fill={isGenerating ? "#9CA3AF" : "#939396"} />
           </button>
           <span className="text-[#0B0911] text-[18px] font-normal text-center min-w-[50px]">
             {zoomLevel}%
           </span>
           <button
             onClick={zoomIn}
-            className="flex w-[32px] h-[32px] items-center justify-center cursor-pointer hover:bg-[#F4F4F4] rounded-[4px] transition-colors"
+            disabled={isGenerating}
+            className={`flex w-[32px] h-[32px] items-center justify-center hover:bg-[#F4F4F4] rounded-[4px] transition-colors ${
+              isGenerating ? "cursor-not-allowed" : "cursor-pointer"
+            }`}
           >
-            <PlusIcon />
+            <PlusIcon fill={isGenerating ? "#9CA3AF" : "#939396"} />
           </button>
           {zoomLevel !== 100 && (
             <button
@@ -146,23 +163,56 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
             </button>
           )}
         </div>
+
+        {/* Undo/Redo controls */}
       </div>
 
       <div className="flex items-center gap-x-4">
+        <div className="flex items-center gap-x-2">
+          <button
+            onClick={undo}
+            disabled={isGenerating || !canUndo()}
+            className={`flex w-[32px] h-[32px] items-center justify-center hover:bg-[#F4F4F4] rounded-[4px] transition-colors ${
+              isGenerating || !canUndo()
+                ? "cursor-not-allowed"
+                : "cursor-pointer"
+            }`}
+            title="Отменить"
+          >
+            <RevertPast
+              fill={isGenerating || !canUndo() ? "#9CA3AF" : "#939396"}
+            />
+          </button>
+          <button
+            onClick={redo}
+            disabled={isGenerating || !canRedo()}
+            className={`flex w-[32px] h-[32px] items-center justify-center hover:bg-[#F4F4F4] rounded-[4px] transition-colors ${
+              isGenerating || !canRedo()
+                ? "cursor-not-allowed"
+                : "cursor-pointer"
+            }`}
+            title="Повторить"
+          >
+            <RevertNext
+              fill={isGenerating || !canRedo() ? "#9CA3AF" : "#939396"}
+            />
+          </button>
+        </div>
         <button
           onClick={handleDesignClick}
           disabled={isGenerating}
-          className={`gap-x-2 w-[218px] h-[40px] rounded-[8px] flex items-center justify-center ease-in-out duration-300 transition-colors ${
-            isGenerating
-              ? "bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed"
-              : "bg-[#F4F4F4] hover:bg-[#E5E7EB] cursor-pointer"
+          className={`gap-x-2 w-[218px] bg-[#F4F4F4] hover:bg-[#E5E7EB] cursor-pointer h-[40px] rounded-[8px] flex items-center justify-center ease-in-out duration-300 transition-colors ${
+            isGenerating ? " cursor-not-allowed" : "cursor-pointer"
           }`}
         >
           <PaintIcon />
           <span
             className={`text-[18px] font-regular ${
-              isGenerating ? "text-[#9CA3AF]" : "text-[#0B0911]"
-            }`}
+              isGenerating
+                ? "text-[#9CA3AF] cursor-not-allowed"
+                : "text-[#0B0911] cursor-pointer"
+            }
+              }`}
           >
             Изменить дизайн
           </span>

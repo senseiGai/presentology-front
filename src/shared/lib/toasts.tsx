@@ -302,7 +302,7 @@ const PresentationFeedbackToastContent: React.FC<{
   }, [toastId]);
 
   return (
-    <div className="relative ml-10 w-[350px] h-[157px] rounded-[12px] bg-white shadow-lg p-3 z-[99999999]">
+    <div className="relative w-[350px] h-[157px] rounded-[12px] bg-white shadow-lg p-3 z-[99999999]">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#00CF1B] text-white text-sm">
@@ -389,7 +389,7 @@ export function showPresentationFeedbackToast() {
 export function showFeedbackFormToast() {
   toast.custom(
     (t) => (
-      <div className="relative ml-10 w-[350px] h-[230px] rounded-[12px] bg-white shadow-lg p-3 z-[99999999]">
+      <div className="relative w-[350px] h-[230px] rounded-[12px] bg-white shadow-lg p-3 z-[99999999]">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#00CF1B] text-white text-sm">

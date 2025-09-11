@@ -1,6 +1,20 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
+// History state for undo/redo functionality
+interface HistoryAction {
+  type:
+    | "text_content"
+    | "text_style"
+    | "text_position"
+    | "text_delete"
+    | "text_create";
+  elementId: string;
+  previousValue: any;
+  newValue: any;
+  timestamp: number;
+}
+
 export interface PresentationState {
   // Slide management
   currentSlide: number;
@@ -78,6 +92,11 @@ export interface PresentationState {
   // Infographics editing state
   selectedInfographicsElement: string | null;
 
+  // History for undo/redo
+  history: HistoryAction[];
+  historyIndex: number;
+  maxHistorySize: number;
+
   // Actions
   setCurrentSlide: (slide: number) => void;
   setTotalSlides: (total: number) => void;
@@ -105,6 +124,10 @@ export interface PresentationState {
     rotation: number;
   }) => void;
   setTextElementPosition: (
+    elementId: string,
+    position: { x: number; y: number }
+  ) => void;
+  finalizeTextElementPosition: (
     elementId: string,
     position: { x: number; y: number }
   ) => void;
@@ -140,6 +163,14 @@ export interface PresentationState {
   // Reset functions
   resetPresentation: () => void;
   startGeneration: () => void;
+
+  // Undo/Redo actions
+  undo: () => void;
+  redo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+  saveToHistory: () => void;
+  addToHistory: (action: HistoryAction) => void;
 }
 
 const initialState = {
@@ -180,6 +211,11 @@ const initialState = {
 
   // Infographics editing state
   selectedInfographicsElement: null,
+
+  // History for undo/redo
+  history: [],
+  historyIndex: -1,
+  maxHistorySize: 50,
 };
 
 export const usePresentationStore = create<PresentationState>()(
@@ -385,12 +421,42 @@ export const usePresentationStore = create<PresentationState>()(
       elementId: string,
       position: { x: number; y: number }
     ) =>
-      set((state) => ({
-        textElementPositions: {
-          ...state.textElementPositions,
-          [elementId]: position,
-        },
-      })),
+      set((state) => {
+        // Don't save history during drag - only when drag ends
+        return {
+          textElementPositions: {
+            ...state.textElementPositions,
+            [elementId]: position,
+          },
+        };
+      }),
+
+    finalizeTextElementPosition: (
+      elementId: string,
+      position: { x: number; y: number }
+    ) =>
+      set((state) => {
+        // Record position change in history
+        const previousPosition = state.textElementPositions[elementId] || {
+          x: 0,
+          y: 0,
+        };
+
+        get().addToHistory({
+          type: "text_position",
+          elementId,
+          previousValue: previousPosition,
+          newValue: position,
+          timestamp: Date.now(),
+        });
+
+        return {
+          textElementPositions: {
+            ...state.textElementPositions,
+            [elementId]: position,
+          },
+        };
+      }),
 
     getTextElementPosition: (elementId: string) => {
       const state = get();
@@ -447,9 +513,31 @@ export const usePresentationStore = create<PresentationState>()(
       style: Partial<PresentationState["textStyle"]>
     ) =>
       set((state) => {
+        // Record style changes in history
         const currentStyle = state.textElementStyles[elementId] || {
           ...state.textStyle,
         };
+        const hasSignificantChange = Object.keys(style).some(
+          (key) => key !== "x" && key !== "y" && key !== "zIndex"
+        );
+
+        if (hasSignificantChange) {
+          // Record only the changed properties
+          const previousValues: any = {};
+          Object.keys(style).forEach((key) => {
+            previousValues[key] =
+              currentStyle[key as keyof typeof currentStyle];
+          });
+
+          get().addToHistory({
+            type: "text_style",
+            elementId,
+            previousValue: previousValues,
+            newValue: style,
+            timestamp: Date.now(),
+          });
+        }
+
         return {
           textElementStyles: {
             ...state.textElementStyles,
@@ -472,12 +560,27 @@ export const usePresentationStore = create<PresentationState>()(
     },
 
     setTextElementContent: (elementId: string, content: string) =>
-      set((state) => ({
-        textElementContents: {
-          ...state.textElementContents,
-          [elementId]: content,
-        },
-      })),
+      set((state) => {
+        // Record the change in history
+        const previousContent = state.textElementContents[elementId] || "";
+
+        if (previousContent !== content) {
+          get().addToHistory({
+            type: "text_content",
+            elementId,
+            previousValue: previousContent,
+            newValue: content,
+            timestamp: Date.now(),
+          });
+        }
+
+        return {
+          textElementContents: {
+            ...state.textElementContents,
+            [elementId]: content,
+          },
+        };
+      }),
 
     getTextElementContent: (elementId: string) => {
       const state = get();
@@ -486,6 +589,9 @@ export const usePresentationStore = create<PresentationState>()(
 
     deleteTextElement: (elementId: string) =>
       set((state) => {
+        // Save current state to history before making changes
+        get().saveToHistory();
+
         console.log("Store: Deleting element", elementId);
         console.log("Current deleted elements:", state.deletedTextElements);
 
@@ -520,6 +626,9 @@ export const usePresentationStore = create<PresentationState>()(
       }),
 
     copyTextElement: (elementId: string) => {
+      // Save current state to history before making changes
+      get().saveToHistory();
+
       console.log("Store: copyTextElement called for:", elementId);
       const state = get();
       const originalElement = state.textElementStyles[elementId];
@@ -629,6 +738,170 @@ export const usePresentationStore = create<PresentationState>()(
         currentSlide: 1,
         showFeedback: false,
       }),
+
+    // Undo/Redo functions
+    addToHistory: (action: HistoryAction) => {
+      const state = get();
+
+      console.log("Adding to history:", action);
+
+      // Remove any history after current index (for when we're not at the end)
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+
+      // Add new action
+      newHistory.push(action);
+
+      console.log(
+        "New history length:",
+        newHistory.length,
+        "Index:",
+        state.historyIndex + 1
+      );
+
+      // Limit history size
+      if (newHistory.length > state.maxHistorySize) {
+        newHistory.shift();
+      } else {
+        set({ historyIndex: state.historyIndex + 1 });
+      }
+
+      set({ history: newHistory });
+    },
+
+    saveToHistory: () => {
+      // This is now deprecated - use addToHistory directly
+      console.log(
+        "saveToHistory called - this should be replaced with specific actions"
+      );
+    },
+
+    undo: () => {
+      const state = get();
+      console.log(
+        "Undo called - current index:",
+        state.historyIndex,
+        "history length:",
+        state.history.length
+      );
+
+      if (state.historyIndex >= 0) {
+        const actionToUndo = state.history[state.historyIndex];
+        console.log("Undoing action:", actionToUndo);
+
+        // Apply the reverse of the action
+        switch (actionToUndo.type) {
+          case "text_content":
+            // If previousValue is empty or matches initial text,
+            // we should remove from store to restore initial state
+            if (!actionToUndo.previousValue) {
+              set((state) => {
+                const {
+                  [actionToUndo.elementId]: removed,
+                  ...remainingContents
+                } = state.textElementContents;
+                return { textElementContents: remainingContents };
+              });
+            } else {
+              set((state) => ({
+                textElementContents: {
+                  ...state.textElementContents,
+                  [actionToUndo.elementId]: actionToUndo.previousValue,
+                },
+              }));
+            }
+            break;
+
+          case "text_style":
+            set((state) => ({
+              textElementStyles: {
+                ...state.textElementStyles,
+                [actionToUndo.elementId]: {
+                  ...state.textElementStyles[actionToUndo.elementId],
+                  ...actionToUndo.previousValue,
+                },
+              },
+            }));
+            break;
+
+          case "text_position":
+            set((state) => ({
+              textElementPositions: {
+                ...state.textElementPositions,
+                [actionToUndo.elementId]: actionToUndo.previousValue,
+              },
+            }));
+            break;
+        }
+
+        set({ historyIndex: state.historyIndex - 1 });
+        console.log("Undo completed - new index:", state.historyIndex - 1);
+      } else {
+        console.log("Cannot undo - at beginning of history");
+      }
+    },
+
+    redo: () => {
+      const state = get();
+      console.log(
+        "Redo called - current index:",
+        state.historyIndex,
+        "history length:",
+        state.history.length
+      );
+
+      if (state.historyIndex < state.history.length - 1) {
+        const actionToRedo = state.history[state.historyIndex + 1];
+        console.log("Redoing action:", actionToRedo);
+
+        // Apply the action again
+        switch (actionToRedo.type) {
+          case "text_content":
+            set((state) => ({
+              textElementContents: {
+                ...state.textElementContents,
+                [actionToRedo.elementId]: actionToRedo.newValue,
+              },
+            }));
+            break;
+
+          case "text_style":
+            set((state) => ({
+              textElementStyles: {
+                ...state.textElementStyles,
+                [actionToRedo.elementId]: {
+                  ...state.textElementStyles[actionToRedo.elementId],
+                  ...actionToRedo.newValue,
+                },
+              },
+            }));
+            break;
+
+          case "text_position":
+            set((state) => ({
+              textElementPositions: {
+                ...state.textElementPositions,
+                [actionToRedo.elementId]: actionToRedo.newValue,
+              },
+            }));
+            break;
+        }
+
+        set({ historyIndex: state.historyIndex + 1 });
+        console.log("Redo completed - new index:", state.historyIndex + 1);
+      } else {
+        console.log("Cannot redo - at end of history");
+      }
+    },
+
+    canUndo: () => {
+      const state = get();
+      return state.historyIndex >= 0;
+    },
+
+    canRedo: () => {
+      const state = get();
+      return state.historyIndex < state.history.length - 1;
+    },
   }))
 );
 

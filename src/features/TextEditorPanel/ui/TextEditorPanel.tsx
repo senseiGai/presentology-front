@@ -83,9 +83,6 @@ const colors = [
 export const TextEditorPanel: React.FC = () => {
   const {
     selectedTextElement,
-    textPosition,
-    textEditorContent,
-    setTextEditorContent,
     setTextPosition,
     updateTextElementStyle,
     getTextElementStyle,
@@ -124,10 +121,24 @@ export const TextEditorPanel: React.FC = () => {
     y: number;
   } | null>(null);
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
-  const [isTextContentFocused, setIsTextContentFocused] = useState(false);
 
   const fontDropdownRef = useRef<HTMLDivElement>(null);
   const colorDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Helper function to detect list type from text content
+  const detectListType = (text: string): "bulletList" | "numberList" | null => {
+    if (!text) return null;
+    const lines = text.split("\n");
+    const firstLine = lines[0]?.trim();
+
+    if (firstLine?.match(/^(•\s*|-\s*|\*\s*)/)) {
+      return "bulletList";
+    }
+    if (firstLine?.match(/^\d+\.\s*/)) {
+      return "numberList";
+    }
+    return null;
+  };
 
   // Click outside handlers
   useEffect(() => {
@@ -167,41 +178,12 @@ export const TextEditorPanel: React.FC = () => {
       const formats = new Set<TextFormat>();
       if (elementStyle.fontWeight === "bold") formats.add("bold");
       if (elementStyle.fontStyle === "italic") formats.add("italic");
-      if (elementStyle.textDecoration === "underline") formats.add("underline");
-      setTextFormats(formats);
 
-      // Detect list type from text content
-      const detectListType = (
-        text: string
-      ): "bulletList" | "numberList" | null => {
-        const lines = text.split("\n").filter((line) => line.trim() !== "");
-        if (lines.length === 0) return null;
-
-        const bulletPattern = /^(•\s*|-\s*|\*\s*)/;
-        const numberPattern = /^\d+\.\s*/;
-
-        const hasBullets = lines.some((line) =>
-          bulletPattern.test(line.trim())
-        );
-        const hasNumbers = lines.some((line) =>
-          numberPattern.test(line.trim())
-        );
-
-        if (hasNumbers) return "numberList";
-        if (hasBullets) return "bulletList";
-        return null;
-      };
-
-      setSelectedListType(detectListType(textEditorContent));
+      // Detect list type from saved content
+      const savedContent = getTextElementContent(selectedTextElement);
+      setSelectedListType(detectListType(savedContent || ""));
     }
-  }, [selectedTextElement, getTextElementStyle, textEditorContent]);
-
-  // Auto-save text content changes
-  useEffect(() => {
-    if (selectedTextElement && textEditorContent) {
-      setTextElementContent(selectedTextElement, textEditorContent);
-    }
-  }, [selectedTextElement, textEditorContent, setTextElementContent]);
+  }, [selectedTextElement, getTextElementStyle, getTextElementContent]);
 
   // Early return after all hooks
   if (!selectedTextElement) {
@@ -211,55 +193,6 @@ export const TextEditorPanel: React.FC = () => {
   // Handle AI input changes
   const handleAiInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setAiInput(e.target.value);
-  };
-
-  // Handle text content changes
-  const handleTextContentChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement>
-  ) => {
-    setTextEditorContent(e.target.value);
-  };
-
-  // Handle keydown in text content textarea for list functionality
-  const handleTextContentKeyDown = (
-    e: React.KeyboardEvent<HTMLTextAreaElement>
-  ) => {
-    if (e.key === "Enter" && selectedListType) {
-      e.preventDefault();
-
-      const textarea = e.target as HTMLTextAreaElement;
-      const currentValue = textarea.value;
-      const cursorPosition = textarea.selectionStart;
-
-      // Find the current line
-      const beforeCursor = currentValue.substring(0, cursorPosition);
-      const afterCursor = currentValue.substring(cursorPosition);
-      const currentLineStart = beforeCursor.lastIndexOf("\n") + 1;
-      const currentLineEnd = afterCursor.indexOf("\n");
-      const currentLine = beforeCursor.substring(currentLineStart);
-
-      let newListItem = "";
-      if (selectedListType === "bulletList") {
-        newListItem = "\n• ";
-      } else if (selectedListType === "numberList") {
-        // Count existing numbered items to determine next number
-        const lines = currentValue.split("\n");
-        const numberedLines = lines.filter((line) =>
-          /^\d+\.\s/.test(line.trim())
-        );
-        const nextNumber = numberedLines.length + 1;
-        newListItem = `\n${nextNumber}. `;
-      }
-
-      const newValue = beforeCursor + newListItem + afterCursor;
-      setTextEditorContent(newValue);
-
-      // Set cursor position after the new list marker
-      setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd =
-          cursorPosition + newListItem.length;
-      }, 0);
-    }
   };
 
   // Handle element deletion
@@ -278,18 +211,18 @@ export const TextEditorPanel: React.FC = () => {
 
     setIsGenerating(true);
     try {
-      // Simulate AI text generation
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setTextEditorContent(aiInput + " (enhanced by AI)");
+      // TODO: Implement actual AI text generation
+      // For now, just use the input as-is
+      if (selectedTextElement) {
+        setTextElementContent(selectedTextElement, aiInput);
+      }
       setAiInput("");
     } catch (error) {
       console.error("AI generation failed:", error);
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  // Handle style selection (max 3)
+  }; // Handle style selection (max 3)
   const handleStyleSelect = (style: TextStyle) => {
     setSelectedStyles((prev) => {
       const newStyles = prev.includes(style)
@@ -374,58 +307,47 @@ export const TextEditorPanel: React.FC = () => {
 
     // Apply list formatting to the current text content
     if (selectedTextElement) {
-      let currentText = textEditorContent || "";
+      const currentContent = getTextElementContent(selectedTextElement) || "";
+      let newContent = currentContent;
 
-      // If text is empty or only whitespace, create a starting list item
-      if (!currentText.trim()) {
+      if (currentListType) {
+        const lines = currentContent
+          .split("\n")
+          .filter((line: string) => line.trim() !== "");
+
         if (currentListType === "bulletList") {
-          currentText = "• ";
+          newContent = lines
+            .map((line: string) => {
+              const trimmed = line.trim();
+              if (!trimmed.match(/^(•\s*|-\s*|\*\s*)/)) {
+                return `• ${trimmed}`;
+              }
+              return line;
+            })
+            .join("\n");
         } else if (currentListType === "numberList") {
-          currentText = "1. ";
+          newContent = lines
+            .map((line: string, index: number) => {
+              const trimmed = line.trim();
+              if (!trimmed.match(/^\d+\.\s*/)) {
+                return `${index + 1}. ${trimmed}`;
+              }
+              return line;
+            })
+            .join("\n");
         }
       } else {
-        // Process existing text
-        const lines = currentText
+        // Remove list formatting
+        newContent = currentContent
           .split("\n")
-          .filter((line) => line.trim() !== "");
-        let formattedText = "";
-
-        if (currentListType === "bulletList") {
-          formattedText = lines
-            .map((line) => {
-              // Remove existing list formatting
-              const cleanLine = line
-                .replace(/^(\d+\.\s*|•\s*|-\s*|\*\s*)/, "")
-                .trim();
-              return cleanLine ? `• ${cleanLine}` : "• ";
-            })
-            .join("\n");
-        } else if (currentListType === "numberList") {
-          formattedText = lines
-            .map((line, index) => {
-              // Remove existing list formatting
-              const cleanLine = line
-                .replace(/^(\d+\.\s*|•\s*|-\s*|\*\s*)/, "")
-                .trim();
-              return cleanLine
-                ? `${index + 1}. ${cleanLine}`
-                : `${index + 1}. `;
-            })
-            .join("\n");
-        } else {
-          // Remove list formatting
-          formattedText = lines
-            .map((line) => {
-              return line.replace(/^(\d+\.\s*|•\s*|-\s*|\*\s*)/, "").trim();
-            })
-            .filter((line) => line)
-            .join("\n");
-        }
-
-        currentText = formattedText;
+          .map((line: string) => {
+            return line.replace(/^(•\s*|-\s*|\*\s*|\d+\.\s*)/, "").trim();
+          })
+          .filter((line: string) => line)
+          .join("\n");
       }
 
-      setTextEditorContent(currentText);
+      setTextElementContent(selectedTextElement, newContent);
     }
   };
 
@@ -487,8 +409,9 @@ export const TextEditorPanel: React.FC = () => {
     if (field === "rotation") setRotation(value);
 
     setTextPosition({
-      ...textPosition,
-      [field]: value,
+      x: value,
+      y: field === "y" ? value : yPosition,
+      rotation: field === "rotation" ? value : rotation,
     });
 
     // Update element style with position changes
@@ -624,46 +547,6 @@ export const TextEditorPanel: React.FC = () => {
             >
               <MiniRightArrowIcon />
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="w-full h-0 relative">
-        <div className="absolute top-[-1px] left-0 right-0 border-t border-[#E9E9E9]" />
-      </div>
-
-      {/* Text Content Section */}
-      <div className="p-4">
-        <div className="flex flex-col gap-2 w-[242px]">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex gap-2 items-center">
-              <div className="text-[14px] font-normal text-[#8F8F92] tracking-[-0.42px]">
-                Содержимое текста
-              </div>
-            </div>
-          </div>
-
-          <div
-            className={`h-[112px] relative rounded-[8px] bg-white border transition-colors ${
-              isTextContentFocused
-                ? "border-[#BBA2FE] shadow-[0px_0px_5px_0px_#BBA2FE40]"
-                : "border-[#E9E9E9]"
-            }`}
-          >
-            <textarea
-              value={textEditorContent}
-              onChange={handleTextContentChange}
-              onKeyDown={handleTextContentKeyDown}
-              onFocus={() => setIsTextContentFocused(true)}
-              onBlur={() => setIsTextContentFocused(false)}
-              placeholder="Введите текст для редактирования..."
-              className="w-full h-full absolute top-3 left-4 pr-10 pb-6 outline-none resize-none text-[14px] font-normal text-[#0B0911] tracking-[-0.42px] placeholder-[#BEBEC0]"
-              maxLength={1000}
-            />
-            <div className="absolute right-4 bottom-2 text-[12px] text-[#BEBEC0] tracking-[-0.36px]">
-              {textEditorContent.length} / 1000 символов
-            </div>
           </div>
         </div>
       </div>

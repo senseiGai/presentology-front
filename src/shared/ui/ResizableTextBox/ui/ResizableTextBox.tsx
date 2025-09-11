@@ -64,16 +64,25 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
   ]);
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (!isSelected) return;
+      console.log("ResizableTextBox handleMouseDown triggered");
 
-      // Prevent text selection during drag
+      // Only handle drag if this is actually selected
+      if (!isSelected) {
+        console.log("Element not selected, ignoring drag");
+        return;
+      }
+
+      // Prevent default behavior to avoid text selection during drag
       e.preventDefault();
+      e.stopPropagation();
 
       setIsDragging(true);
       setDragStart({
         x: e.clientX,
         y: e.clientY,
       });
+
+      console.log("Started dragging");
     },
     [isSelected]
   );
@@ -138,32 +147,32 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
         // Calculate new dimensions based on resize direction
         switch (resizeDirection) {
           case "se": // bottom-right
-            newWidth = Math.max(50, initialDimensions.width + deltaX);
-            newHeight = Math.max(30, initialDimensions.height + deltaY);
+            newWidth = Math.max(100, initialDimensions.width + deltaX); // Increased minimum
+            newHeight = Math.max(50, initialDimensions.height + deltaY); // Increased minimum
             break;
           case "sw": // bottom-left
-            newWidth = Math.max(50, initialDimensions.width - deltaX);
-            newHeight = Math.max(30, initialDimensions.height + deltaY);
+            newWidth = Math.max(100, initialDimensions.width - deltaX);
+            newHeight = Math.max(50, initialDimensions.height + deltaY);
             break;
           case "ne": // top-right
-            newWidth = Math.max(50, initialDimensions.width + deltaX);
-            newHeight = Math.max(30, initialDimensions.height - deltaY);
+            newWidth = Math.max(100, initialDimensions.width + deltaX);
+            newHeight = Math.max(50, initialDimensions.height - deltaY);
             break;
           case "nw": // top-left
-            newWidth = Math.max(50, initialDimensions.width - deltaX);
-            newHeight = Math.max(30, initialDimensions.height - deltaY);
+            newWidth = Math.max(100, initialDimensions.width - deltaX);
+            newHeight = Math.max(50, initialDimensions.height - deltaY);
             break;
           case "e": // right
-            newWidth = Math.max(50, initialDimensions.width + deltaX);
+            newWidth = Math.max(100, initialDimensions.width + deltaX);
             break;
           case "w": // left
-            newWidth = Math.max(50, initialDimensions.width - deltaX);
+            newWidth = Math.max(100, initialDimensions.width - deltaX);
             break;
           case "n": // top
-            newHeight = Math.max(30, initialDimensions.height - deltaY);
+            newHeight = Math.max(50, initialDimensions.height - deltaY);
             break;
           case "s": // bottom
-            newHeight = Math.max(30, initialDimensions.height + deltaY);
+            newHeight = Math.max(50, initialDimensions.height + deltaY);
             break;
         }
 
@@ -176,8 +185,8 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
         const maxWidth = slideWidth - currentPosition.x;
         const maxHeight = slideHeight - currentPosition.y;
 
-        newWidth = Math.min(newWidth, Math.max(50, maxWidth));
-        newHeight = Math.min(newHeight, Math.max(30, maxHeight));
+        newWidth = Math.min(newWidth, Math.max(100, maxWidth)); // Updated minimum
+        newHeight = Math.min(newHeight, Math.max(50, maxHeight)); // Updated minimum
 
         // Apply the new dimensions to the element and ensure text fits
         if (boxRef.current) {
@@ -188,6 +197,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           boxRef.current.style.overflow = "hidden";
           boxRef.current.style.wordWrap = "break-word";
           boxRef.current.style.overflowWrap = "break-word";
+          boxRef.current.style.boxSizing = "border-box"; // Include padding and borders
 
           // Apply styles to child text elements
           const textElements = boxRef.current.querySelectorAll("div");
@@ -249,9 +259,23 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           transformOrigin: "center",
           transition: "all 0.1s ease-out",
           zIndex: elementStyle.zIndex || 1,
+          minWidth: "100px", // Same minimum sizes
+          minHeight: "50px",
+          maxWidth: "100%",
+          overflow: "hidden", // Prevent overflow in non-selected state too
+          boxSizing: "border-box",
         }}
       >
-        {children}
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            overflow: "hidden",
+            boxSizing: "border-box",
+          }}
+        >
+          {children}
+        </div>
       </div>
     );
   }
@@ -261,78 +285,154 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
       <div
         ref={boxRef}
         className="relative"
-        onMouseDown={handleMouseDown}
         style={{
-          cursor: isDragging ? "grabbing" : "grab",
           display: "inline-block",
           position: "absolute",
           left: `${elementStyle.x || 0}px`,
           top: `${elementStyle.y || 0}px`,
           transform: `rotate(${elementStyle.rotation || 0}deg)`,
           transformOrigin: "center",
+          minWidth: "100px", // Minimum width for the box
+          minHeight: "50px", // Minimum height for the box
           maxWidth: "100%",
           wordWrap: "break-word",
           overflowWrap: "break-word",
           overflow: "visible",
           transition: isDragging ? "none" : "all 0.1s ease-out",
           zIndex: elementStyle.zIndex || 1,
+          boxSizing: "border-box",
         }}
       >
-        {/* Toolbar positioned absolutely relative to the text element */}
-
-        {children}
-
-        {/* Selection border and handles - matching Figma design exactly */}
+        {/* Text content - completely independent */}
         <div
-          className="absolute border border-[#bba2fe] border-solid pointer-events-none"
           style={{
-            top: "0px",
-            left: "0px",
-            right: "0px",
-            bottom: "0px",
-            zIndex: 999,
+            pointerEvents: "auto",
+            position: "relative",
+            zIndex: 10,
+            width: "100%", // Fill the ResizableTextBox width
+            height: "100%", // Fill the ResizableTextBox height
+            minWidth: "50px",
+            minHeight: "30px",
+            overflow: "hidden", // Prevent content from spilling out
             boxSizing: "border-box",
           }}
         >
+          {children}
+        </div>
+
+        {/* Selection border and handles - only visible when selected */}
+        {isSelected && (
           <div
-            className="absolute pointer-events-auto"
+            className="absolute border border-[#bba2fe] border-solid"
             style={{
-              top: "-60px", // Position toolbar above the text element
-              left: "0%",
-              zIndex: 9999999,
+              top: "0px",
+              left: "0px",
+              right: "0px",
+              bottom: "0px",
+              zIndex: 1,
+              boxSizing: "border-box",
+              pointerEvents: "none",
             }}
           >
-            <TextToolbar
-              position={{ x: 0, y: 0 }} // Position is handled by the parent div
-              elementId={elementId}
-              onMoveUp={onMoveUp}
-              onMoveDown={onMoveDown}
-              onCopy={onCopy}
-              onDelete={onDelete}
+            {/* Draggable areas - only on the borders, not over text */}
+            {/* Top border */}
+            <div
+              className="absolute pointer-events-auto"
+              onMouseDown={handleMouseDown}
+              style={{
+                top: "-2px",
+                left: "-2px",
+                right: "-2px",
+                height: "4px",
+                background: "transparent",
+                cursor: isDragging ? "grabbing" : "grab",
+                zIndex: 2,
+              }}
+            />
+            {/* Bottom border */}
+            <div
+              className="absolute pointer-events-auto"
+              onMouseDown={handleMouseDown}
+              style={{
+                bottom: "-2px",
+                left: "-2px",
+                right: "-2px",
+                height: "4px",
+                background: "transparent",
+                cursor: isDragging ? "grabbing" : "grab",
+                zIndex: 2,
+              }}
+            />
+            {/* Left border */}
+            <div
+              className="absolute pointer-events-auto"
+              onMouseDown={handleMouseDown}
+              style={{
+                top: "2px",
+                bottom: "2px",
+                left: "-2px",
+                width: "4px",
+                background: "transparent",
+                cursor: isDragging ? "grabbing" : "grab",
+                zIndex: 2,
+              }}
+            />
+            {/* Right border */}
+            <div
+              className="absolute pointer-events-auto"
+              onMouseDown={handleMouseDown}
+              style={{
+                top: "2px",
+                bottom: "2px",
+                right: "-2px",
+                width: "4px",
+                background: "transparent",
+                cursor: isDragging ? "grabbing" : "grab",
+                zIndex: 2,
+              }}
+            />
+
+            <div
+              className="absolute pointer-events-auto"
+              style={{
+                top: "-60px",
+                left: "0%",
+                zIndex: 9999999,
+              }}
+            >
+              <TextToolbar
+                position={{ x: 0, y: 0 }}
+                elementId={elementId}
+                onMoveUp={onMoveUp}
+                onMoveDown={onMoveDown}
+                onCopy={onCopy}
+                onDelete={onDelete}
+              />
+            </div>
+
+            {/* Resize handles */}
+            <div
+              className="absolute bg-[#bba2fe] size-2 cursor-nw-resize pointer-events-auto"
+              style={{ top: "-4px", left: "-4px", zIndex: 1000 }}
+              onMouseDown={(e) => handleResizeMouseDown(e, "nw")}
+            />
+            <div
+              className="absolute bg-[#bba2fe] size-2 cursor-ne-resize pointer-events-auto"
+              style={{ top: "-4px", right: "-4px", zIndex: 1000 }}
+              onMouseDown={(e) => handleResizeMouseDown(e, "ne")}
+            />
+            <div
+              className="absolute bg-[#bba2fe] size-2 cursor-sw-resize pointer-events-auto"
+              style={{ bottom: "-4px", left: "-4px", zIndex: 1000 }}
+              onMouseDown={(e) => handleResizeMouseDown(e, "sw")}
+            />
+            <div
+              className="absolute bg-[#bba2fe] size-2 cursor-se-resize pointer-events-auto"
+              style={{ bottom: "-4px", right: "-4px", zIndex: 1000 }}
+              onMouseDown={(e) => handleResizeMouseDown(e, "se")}
             />
           </div>
-          {/* Corner resize handles - only 4 corner handles as shown in Figma */}
-          <div
-            className="absolute bg-[#bba2fe] size-2 cursor-nw-resize pointer-events-auto"
-            style={{ top: "-4px", left: "-4px", zIndex: 1000 }}
-            onMouseDown={(e) => handleResizeMouseDown(e, "nw")}
-          />
-          <div
-            className="absolute bg-[#bba2fe] size-2 cursor-ne-resize pointer-events-auto"
-            style={{ top: "-4px", right: "-4px", zIndex: 1000 }}
-            onMouseDown={(e) => handleResizeMouseDown(e, "ne")}
-          />
-          <div
-            className="absolute bg-[#bba2fe] size-2 cursor-sw-resize pointer-events-auto"
-            style={{ bottom: "-4px", left: "-4px", zIndex: 1000 }}
-            onMouseDown={(e) => handleResizeMouseDown(e, "sw")}
-          />
-          <div
-            className="absolute bg-[#bba2fe] size-2 cursor-se-resize pointer-events-auto"
-            style={{ bottom: "-4px", right: "-4px", zIndex: 1000 }}
-            onMouseDown={(e) => handleResizeMouseDown(e, "se")}
-          />
-        </div>
+        )}
       </div>
     </>
   );

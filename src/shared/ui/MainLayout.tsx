@@ -46,26 +46,35 @@ export const MainLayout = ({
           } z-10 w-full`}
         >
           {children}
-          <Toaster
-            position="bottom-left"
-            richColors
-            closeButton
-            duration={5000}
-            style={{
-              zIndex: 99999999,
-            }}
-            toastOptions={{
-              classNames: {
-                toast: "rounded-[20px] ml-6 !z-[99999999]",
-                title: "text-[#0B0911] font-semibold",
-                description: "text-[#8F8F92]",
-                actionButton:
-                  "rounded-[12px] border border-[#D9D9DE] px-4 py-2",
-                closeButton: "text-[#8F8F92]",
-              },
-            }}
-          />
         </div>
+
+        {/* Тостер позиционируется относительно контейнера с max-width */}
+        <Toaster
+          position="bottom-left"
+          richColors
+          closeButton
+          duration={5000}
+          style={{
+            zIndex: 99999999,
+          }}
+          toastOptions={{
+            style: {
+              left: fullWidth ? "24px" : "24px", // 24px = ml-6
+              bottom: "24px",
+              position: "fixed",
+              transform: fullWidth
+                ? "translateX(calc((100vw - 1280px) / 2))"
+                : "none",
+            },
+            classNames: {
+              toast: "rounded-[20px] !ml-0 !z-[99999999]",
+              title: "text-[#0B0911] font-semibold",
+              description: "text-[#8F8F92]",
+              actionButton: "rounded-[12px] border border-[#D9D9DE] px-4 py-2",
+              closeButton: "text-[#8F8F92]",
+            },
+          }}
+        />
       </div>
     </div>
   );

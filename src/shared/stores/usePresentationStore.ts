@@ -85,6 +85,17 @@ export interface PresentationState {
 
   // Image editing state
   selectedImageElement: string | null;
+  isImageAreaSelectionMode: boolean;
+  imageAreaSelections: Record<
+    number,
+    {
+      startX: number;
+      startY: number;
+      endX: number;
+      endY: number;
+      isSelecting: boolean;
+    }
+  >;
 
   // Table editing state
   selectedTableElement: string | null;
@@ -151,6 +162,14 @@ export interface PresentationState {
   // Image editing actions
   setSelectedImageElement: (elementId: string | null) => void;
   clearImageSelection: () => void;
+  setImageAreaSelectionMode: (enabled: boolean) => void;
+  startImageAreaSelection: (slideNumber: number, x: number, y: number) => void;
+  updateImageAreaSelection: (slideNumber: number, x: number, y: number) => void;
+  finishImageAreaSelection: (slideNumber: number) => void;
+  clearImageAreaSelection: (slideNumber?: number) => void;
+  getImageAreaSelection: (
+    slideNumber: number
+  ) => PresentationState["imageAreaSelections"][number] | null;
 
   // Table editing actions
   setSelectedTableElement: (elementId: string | null) => void;
@@ -205,6 +224,8 @@ const initialState = {
 
   // Image editing state
   selectedImageElement: null,
+  isImageAreaSelectionMode: false,
+  imageAreaSelections: {},
 
   // Table editing state
   selectedTableElement: null,
@@ -487,7 +508,77 @@ export const usePresentationStore = create<PresentationState>()(
     clearImageSelection: () =>
       set({
         selectedImageElement: null,
+        isImageAreaSelectionMode: false,
       }),
+
+    setImageAreaSelectionMode: (enabled: boolean) =>
+      set({ isImageAreaSelectionMode: enabled }),
+
+    startImageAreaSelection: (slideNumber: number, x: number, y: number) =>
+      set((state) => ({
+        imageAreaSelections: {
+          ...state.imageAreaSelections,
+          [slideNumber]: {
+            startX: x,
+            startY: y,
+            endX: x,
+            endY: y,
+            isSelecting: true,
+          },
+        },
+      })),
+
+    updateImageAreaSelection: (slideNumber: number, x: number, y: number) =>
+      set((state) => ({
+        imageAreaSelections: {
+          ...state.imageAreaSelections,
+          [slideNumber]: state.imageAreaSelections[slideNumber]
+            ? {
+                ...state.imageAreaSelections[slideNumber],
+                endX: x,
+                endY: y,
+              }
+            : {
+                startX: x,
+                startY: y,
+                endX: x,
+                endY: y,
+                isSelecting: true,
+              },
+        },
+      })),
+
+    finishImageAreaSelection: (slideNumber: number) =>
+      set((state) => ({
+        imageAreaSelections: {
+          ...state.imageAreaSelections,
+          [slideNumber]: state.imageAreaSelections[slideNumber]
+            ? {
+                ...state.imageAreaSelections[slideNumber],
+                isSelecting: false,
+              }
+            : state.imageAreaSelections[slideNumber],
+        },
+      })),
+
+    clearImageAreaSelection: (slideNumber?: number) =>
+      set((state) => {
+        if (slideNumber !== undefined) {
+          const { [slideNumber]: removed, ...rest } = state.imageAreaSelections;
+          return {
+            imageAreaSelections: rest,
+          };
+        }
+        return {
+          imageAreaSelections: {},
+          isImageAreaSelectionMode: false,
+        };
+      }),
+
+    getImageAreaSelection: (slideNumber: number) => {
+      const state = get();
+      return state.imageAreaSelections[slideNumber] || null;
+    },
 
     // Table editing actions
     setSelectedTableElement: (elementId: string | null) =>

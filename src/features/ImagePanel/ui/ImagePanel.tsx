@@ -32,7 +32,17 @@ const generationModels: GenerationModel[] = [
 ];
 
 export const ImagePanel: React.FC = () => {
-  const { clearImageSelection } = usePresentationStore();
+  const {
+    clearImageSelection,
+    setImageAreaSelectionMode,
+    isImageAreaSelectionMode,
+    clearImageAreaSelection,
+    currentSlide,
+    getImageAreaSelection,
+  } = usePresentationStore();
+
+  // Get image area selection for current slide
+  const imageAreaSelection = getImageAreaSelection(currentSlide);
 
   const [selectedStyle, setSelectedStyle] = useState<ImageStyle["type"]>();
   const [selectedModel, setSelectedModel] = useState<GenerationModel["type"]>();
@@ -50,6 +60,16 @@ export const ImagePanel: React.FC = () => {
   const [urlError, setUrlError] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Автоматически активируем режим выделения области при открытии панели
+  React.useEffect(() => {
+    setImageAreaSelectionMode(true);
+
+    // Очищаем режим при размонтировании компонента (но не очищаем выделения)
+    return () => {
+      setImageAreaSelectionMode(false);
+    };
+  }, [setImageAreaSelectionMode]);
 
   const handleStyleSelect = (style: ImageStyle["type"]) => {
     setSelectedStyle(style);
@@ -198,6 +218,7 @@ export const ImagePanel: React.FC = () => {
 
   const handleDelete = () => {
     clearImageSelection();
+    // Не очищаем выделение области, оставляем режим активным
   };
 
   return (

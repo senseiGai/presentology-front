@@ -13,6 +13,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   slideNumber,
   slideType = "default",
 }) => {
+  const [isDragging, setIsDragging] = React.useState(false);
+
   const {
     setSelectedTextElement,
     selectedTextElement,
@@ -28,7 +30,16 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     textElementPositions,
     textElementStyles,
     textElementContents,
+    isImageAreaSelectionMode,
+    startImageAreaSelection,
+    updateImageAreaSelection,
+    finishImageAreaSelection,
+    clearImageAreaSelection,
+    getImageAreaSelection,
   } = usePresentationStore();
+
+  // Get image area selection for current slide
+  const imageAreaSelection = getImageAreaSelection(slideNumber);
 
   // Debug effect to track state changes
   React.useEffect(() => {
@@ -125,6 +136,18 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     });
   }, [slideNumber, slideType, textElementStyles]);
 
+  // Handle keyboard shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isImageAreaSelectionMode) {
+        clearImageAreaSelection(slideNumber);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isImageAreaSelectionMode, clearImageAreaSelection, slideNumber]);
+
   const handleTextClick = (
     elementId: string,
     currentText: string,
@@ -166,6 +189,59 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     console.log("SlideContent: handleTextMoveDown called for:", elementId);
     usePresentationStore.getState().moveTextElementDown(elementId);
     console.log("Text element moved down:", elementId);
+  };
+
+  // Image area selection handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isImageAreaSelectionMode) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setIsDragging(true);
+    startImageAreaSelection(slideNumber, x, y);
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (
+      !isImageAreaSelectionMode ||
+      !isDragging ||
+      !imageAreaSelection?.isSelecting
+    )
+      return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    updateImageAreaSelection(slideNumber, x, y);
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!isImageAreaSelectionMode || !isDragging) return;
+
+    setIsDragging(false);
+    finishImageAreaSelection(slideNumber);
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleMouseLeave = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      finishImageAreaSelection(slideNumber);
+    }
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (isImageAreaSelectionMode && imageAreaSelection) {
+      e.preventDefault();
+      e.stopPropagation();
+      clearImageAreaSelection(slideNumber);
+    }
   };
 
   // Render dynamic text elements from store
@@ -271,8 +347,83 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     );
   };
 
+  // Render image area selection
+  const renderImageAreaSelection = () => {
+    if (!isImageAreaSelectionMode || !imageAreaSelection) return null;
+
+    const { startX, startY, endX, endY } = imageAreaSelection;
+    const width = Math.abs(endX - startX);
+    const height = Math.abs(endY - startY);
+    const left = Math.min(startX, endX);
+    const top = Math.min(startY, endY);
+
+    // Минимальный размер для показа выделения
+    if (width < 5 || height < 5) return null;
+
+    return (
+      <div
+        className="absolute pointer-events-none z-[999]"
+        style={{
+          left: `${left}px`,
+          top: `${top}px`,
+          width: `${width}px`,
+          height: `${height}px`,
+        }}
+      >
+        {/* Полупрозрачный фон */}
+        <div className="absolute inset-0 bg-[#BBA2FE] opacity-10" />
+
+        {/* Основная рамка */}
+        <div
+          className="absolute inset-0 border-2 border-[#BBA2FE]"
+          style={{
+            borderStyle: "solid",
+          }}
+        />
+
+        <div
+          className="absolute w-2 h-2 bg-[#BBA2FE] "
+          style={{
+            left: "-4px",
+            top: "-4px",
+          }}
+        />
+
+        {/* Верхний правый */}
+        <div
+          className="absolute w-2 h-2 bg-[#BBA2FE] "
+          style={{
+            right: "-4px",
+            top: "-4px",
+          }}
+        />
+
+        {/* Нижний левый */}
+        <div
+          className="absolute w-2 h-2 bg-[#BBA2FE] "
+          style={{
+            left: "-4px",
+            bottom: "-4px",
+          }}
+        />
+
+        {/* Нижний правый */}
+        <div
+          className="absolute w-2 h-2 bg-[#BBA2FE] "
+          style={{
+            right: "-4px",
+            bottom: "-4px",
+          }}
+        />
+      </div>
+    );
+  };
+
   const renderSlideByType = () => {
     const handleSlideClick = (e: React.MouseEvent) => {
+      // Don't clear text selection if we're in image area selection mode
+      if (isImageAreaSelectionMode) return;
+
       const target = e.target as HTMLElement;
       const isToolbarClick =
         target.closest('[role="toolbar"]') ||
@@ -289,8 +440,15 @@ export const SlideContent: React.FC<SlideContentProps> = ({
       case "title":
         return (
           <div
-            className="slide-container mx-auto w-[759px] h-[427px] bg-gradient-to-br from-[#2D3748] to-[#1A202C] rounded-[12px] p-12 text-white relative"
+            className={`slide-container mx-auto w-[759px] h-[427px] bg-gradient-to-br from-[#2D3748] to-[#1A202C] rounded-[12px] p-12 text-white relative ${
+              isImageAreaSelectionMode ? "cursor-crosshair" : ""
+            }`}
             onClick={handleSlideClick}
+            onDoubleClick={handleDoubleClick}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
             style={{ position: "relative" }}
           >
             <ResizableTextBox
@@ -340,14 +498,23 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             {renderDynamicTextElements()}
 
             {renderAlignmentGuides()}
+
+            {renderImageAreaSelection()}
           </div>
         );
 
       default:
         return (
           <div
-            className="slide-container mx-auto w-[759px] h-[427px] bg-[#F7FAFC] rounded-[12px]"
+            className={`slide-container mx-auto w-[759px] h-[427px] bg-[#F7FAFC] rounded-[12px] ${
+              isImageAreaSelectionMode ? "cursor-crosshair" : ""
+            }`}
             onClick={handleSlideClick}
+            onDoubleClick={handleDoubleClick}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
             style={{ position: "relative" }}
           >
             <ResizableTextBox
@@ -379,6 +546,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             {renderDynamicTextElements()}
 
             {renderAlignmentGuides()}
+
+            {renderImageAreaSelection()}
           </div>
         );
     }

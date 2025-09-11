@@ -27,6 +27,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
     setSelectedImageElement,
     setSelectedTableElement,
     setSelectedInfographicsElement,
+    clearImageAreaSelection,
   } = usePresentationStore();
   const handleElementSelect = (elementId: string) => {
     setSelectedElement(elementId);
@@ -43,6 +44,11 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
     }
     if (selectedInfographicsElement) {
       setSelectedInfographicsElement(null);
+    }
+
+    // Clear image area selection only when switching away from image panel
+    if (elementId !== "image") {
+      clearImageAreaSelection(); // Clear all selections when not using image panel
     }
 
     // Set new selection based on element type

@@ -2,6 +2,8 @@ import React from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { ResizableTextBox } from "@/shared/ui/ResizableTextBox";
 import { EditableText } from "@/shared/ui/EditableText";
+import { ResizableTable } from "@/shared/ui/ResizableTable";
+import { EditableTable } from "@/features/TablePanel/ui/EditableTable";
 
 interface SlideContentProps {
   slideNumber: number;
@@ -14,6 +16,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   slideType = "default",
 }) => {
   const [isDragging, setIsDragging] = React.useState(false);
+  const [editingTableElement, setEditingTableElement] = React.useState<
+    string | null
+  >(null);
 
   const {
     setSelectedTextElement,
@@ -36,6 +41,12 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     finishImageAreaSelection,
     clearImageAreaSelection,
     getImageAreaSelection,
+    // Table state
+    tableElements,
+    selectedTableElement,
+    setSelectedTableElement,
+    updateTableElement,
+    deleteTableElement,
   } = usePresentationStore();
 
   // Get image area selection for current slide
@@ -282,15 +293,56 @@ export const SlideContent: React.FC<SlideContentProps> = ({
       });
   };
 
+  // Render table elements from store
+  const renderTableElements = () => {
+    const currentSlideElements = tableElements[slideNumber] || {};
+    return Object.entries(currentSlideElements).map(
+      ([elementId, tableData]) => {
+        return (
+          <ResizableTable
+            key={elementId}
+            elementId={elementId}
+            isSelected={selectedTableElement === elementId}
+            isEditing={editingTableElement === elementId}
+            onDelete={() => {
+              deleteTableElement(elementId);
+              setSelectedTableElement(null);
+              setEditingTableElement(null);
+            }}
+            onCopy={() => {
+              // TODO: Implement table copy functionality
+              console.log("Copy table:", elementId);
+            }}
+            onMoveUp={() => {
+              // TODO: Implement table layer movement
+              console.log("Move table up:", elementId);
+            }}
+            onMoveDown={() => {
+              // TODO: Implement table layer movement
+              console.log("Move table down:", elementId);
+            }}
+          >
+            <EditableTable
+              initialData={tableData}
+              onTableChange={(newData) => {
+                updateTableElement(elementId, newData);
+              }}
+              onEditingChange={(isEditing) => {
+                setEditingTableElement(isEditing ? elementId : null);
+              }}
+              onTableSelect={() => {
+                setSelectedTableElement(elementId);
+              }}
+            />
+          </ResizableTable>
+        );
+      }
+    );
+  };
+
   // Render static alignment guides when text element is selected
   const renderAlignmentGuides = () => {
     if (!selectedTextElement) return null;
-
-    // Static center lines - always at the center of the slide
-    const slideWidth = 759; // Slide width
-    const slideHeight = 427; // Slide height
-    const centerX = slideWidth / 2;
-    const centerY = slideHeight / 2;
 
     return (
       <>
@@ -430,9 +482,12 @@ export const SlideContent: React.FC<SlideContentProps> = ({
         target.closest(".bg-white.rounded-\\[8px\\]") ||
         target.closest("button");
       const isTextElement = target.closest("[data-text-element]");
+      const isTableElement = target.closest("[data-table-element]");
 
-      if (!isToolbarClick && !isTextElement) {
+      if (!isToolbarClick && !isTextElement && !isTableElement) {
         clearTextSelection();
+        setSelectedTableElement(null);
+        setEditingTableElement(null); // Also clear editing state
       }
     };
 
@@ -497,6 +552,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
 
             {renderDynamicTextElements()}
 
+            {renderTableElements()}
+
             {renderAlignmentGuides()}
 
             {renderImageAreaSelection()}
@@ -544,6 +601,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             </ResizableTextBox>
 
             {renderDynamicTextElements()}
+
+            {renderTableElements()}
 
             {renderAlignmentGuides()}
 

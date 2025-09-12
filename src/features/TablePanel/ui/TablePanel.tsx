@@ -60,7 +60,14 @@ const borderThickness = [1, 2, 3, 4, 5];
 const fontSizes: FontSize[] = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32];
 
 export const TablePanel: React.FC = () => {
-  const { clearTableSelection } = usePresentationStore();
+  const {
+    clearTableSelection,
+    addTableElement,
+    selectedTableElement,
+    getTableElement,
+    updateTableElement,
+    deleteTableElement,
+  } = usePresentationStore();
 
   // State for form data
   const [taskDescription, setTaskDescription] = useState<string>("");
@@ -74,7 +81,7 @@ export const TablePanel: React.FC = () => {
 
   // State for styling options
   const [selectedBorderThickness, setSelectedBorderThickness] = useState(1);
-  const [selectedBorderColor, setSelectedBorderColor] = useState("#181818");
+  const [selectedBorderColor, setSelectedBorderColor] = useState("#BBA2FE");
   const [selectedTextColor, setSelectedTextColor] = useState("#181818");
   const [fontSize, setFontSize] = useState<FontSize>(14);
   const [textAlign, setTextAlign] = useState<TextAlign>("left");
@@ -112,6 +119,22 @@ export const TablePanel: React.FC = () => {
   // Track initial values to detect changes
   const [initialTaskDescription] = useState(taskDescription);
   const [initialFile] = useState<File | null>(null);
+
+  // Load selected table properties
+  useEffect(() => {
+    if (selectedTableElement) {
+      const tableElement = getTableElement(selectedTableElement);
+      if (tableElement && tableElement.style) {
+        const style = tableElement.style;
+        setSelectedBorderThickness(style.borderThickness || 1);
+        setSelectedBorderColor(style.borderColor || "#BBA2FE");
+        setSelectedTextColor(style.textColor || "#181818");
+        setFontSize(style.fontSize || 14);
+        setTextAlign(style.textAlign || "left");
+        setTextFormats(new Set(style.textFormats || []));
+      }
+    }
+  }, [selectedTableElement, getTableElement]);
 
   // Click outside handlers
   useEffect(() => {
@@ -233,33 +256,91 @@ export const TablePanel: React.FC = () => {
       listType: selectedListType,
     });
 
+    // Create table data based on form inputs
+    const rows = 4; // Default to 4x3 table to match Figma design
+    const cols = 3;
+
+    // Create cells array
+    const cells: any[][] = [];
+    for (let row = 0; row < rows; row++) {
+      cells[row] = [];
+      for (let col = 0; col < cols; col++) {
+        cells[row][col] = {
+          id: `cell-${row}-${col}`,
+          content: "",
+          rowIndex: row,
+          colIndex: col,
+        };
+      }
+    }
+
+    const tableData = {
+      rows,
+      cols,
+      cells,
+      style: {
+        borderThickness: selectedBorderThickness,
+        borderColor: selectedBorderColor,
+        textColor: selectedTextColor,
+        fontSize,
+        textAlign,
+        textFormats: Array.from(textFormats),
+      },
+    };
+
+    // Add table to slide at center position
+    const tableId = addTableElement(tableData, { x: 200, y: 150 });
+    console.log("Table created with ID:", tableId);
+
     setIsGenerated(true);
     setIsDescriptionChanged(false);
     setIsFileChanged(false);
   };
 
+  // Helper function to update selected table
+  const updateSelectedTable = (styleUpdates: any) => {
+    if (selectedTableElement) {
+      const currentTable = getTableElement(selectedTableElement);
+      if (currentTable) {
+        const updatedTable = {
+          ...currentTable,
+          style: {
+            ...currentTable.style,
+            ...styleUpdates,
+          },
+        };
+        updateTableElement(selectedTableElement, updatedTable);
+      }
+    }
+  };
+
   const handleBorderThicknessSelect = (thickness: number) => {
     setSelectedBorderThickness(thickness);
     setShowThicknessDropdown(false);
+    updateSelectedTable({ borderThickness: thickness });
   };
 
   const handleColorSelect = (color: string, type: "border" | "text") => {
     if (type === "border") {
       setSelectedBorderColor(color);
       setShowBorderColorDropdown(false);
+      updateSelectedTable({ borderColor: color });
     } else {
       setSelectedTextColor(color);
       setShowTextColorDropdown(false);
+      updateSelectedTable({ textColor: color });
     }
   };
 
   const handleFontSizeSelect = (size: FontSize) => {
     setFontSize(size);
     setShowFontDropdown(false);
+    updateSelectedTable({ fontSize: size });
   };
 
   const handleTextAlignChange = (align: TextAlign) => {
     setTextAlign(align);
+    updateSelectedTable({ textAlign: align });
   };
 
   const handleFormatToggle = (format: TextFormat) => {
@@ -270,6 +351,8 @@ export const TablePanel: React.FC = () => {
       } else {
         newFormats.add(format);
       }
+      const formatsArray = Array.from(newFormats);
+      updateSelectedTable({ textFormats: formatsArray });
       return newFormats;
     });
   };
@@ -279,6 +362,9 @@ export const TablePanel: React.FC = () => {
   };
 
   const handleDelete = () => {
+    if (selectedTableElement) {
+      deleteTableElement(selectedTableElement);
+    }
     clearTableSelection();
   };
 
@@ -322,6 +408,7 @@ export const TablePanel: React.FC = () => {
     const hexColor = hslToHex(customBorderHue, saturation, lightness);
 
     setSelectedBorderColor(hexColor);
+    updateSelectedTable({ borderColor: hexColor });
   };
 
   // Handle hue slider click for border
@@ -339,6 +426,7 @@ export const TablePanel: React.FC = () => {
       const hexColor = hslToHex(hue, saturation, lightness);
 
       setSelectedBorderColor(hexColor);
+      updateSelectedTable({ borderColor: hexColor });
     }
   };
 
@@ -356,6 +444,7 @@ export const TablePanel: React.FC = () => {
     const hexColor = hslToHex(customTextHue, saturation, lightness);
 
     setSelectedTextColor(hexColor);
+    updateSelectedTable({ textColor: hexColor });
   };
 
   // Handle hue slider click for text
@@ -373,6 +462,7 @@ export const TablePanel: React.FC = () => {
       const hexColor = hslToHex(hue, saturation, lightness);
 
       setSelectedTextColor(hexColor);
+      updateSelectedTable({ textColor: hexColor });
     }
   };
 

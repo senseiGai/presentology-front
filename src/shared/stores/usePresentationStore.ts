@@ -99,6 +99,27 @@ export interface PresentationState {
 
   // Table editing state
   selectedTableElement: string | null;
+  tableElements: Record<
+    number,
+    Record<
+      string,
+      {
+        id: string;
+        rows: number;
+        cols: number;
+        cells: any[][];
+        style: {
+          borderThickness: number;
+          borderColor: string;
+          textColor: string;
+          fontSize: number;
+          textAlign: "left" | "center" | "right";
+          textFormats: string[];
+        };
+        position: { x: number; y: number };
+      }
+    >
+  >;
 
   // Infographics editing state
   selectedInfographicsElement: string | null;
@@ -174,6 +195,13 @@ export interface PresentationState {
   // Table editing actions
   setSelectedTableElement: (elementId: string | null) => void;
   clearTableSelection: () => void;
+  addTableElement: (
+    tableData: any,
+    position: { x: number; y: number }
+  ) => string;
+  updateTableElement: (elementId: string, tableData: any) => void;
+  deleteTableElement: (elementId: string) => void;
+  getTableElement: (elementId: string) => any;
 
   // Infographics editing actions
   setSelectedInfographicsElement: (elementId: string | null) => void;
@@ -229,6 +257,7 @@ const initialState = {
 
   // Table editing state
   selectedTableElement: null,
+  tableElements: {},
 
   // Infographics editing state
   selectedInfographicsElement: null,
@@ -588,6 +617,84 @@ export const usePresentationStore = create<PresentationState>()(
       set({
         selectedTableElement: null,
       }),
+
+    addTableElement: (tableData: any, position: { x: number; y: number }) => {
+      const tableId = `table-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+
+      const currentSlide = get().currentSlide;
+
+      set((state) => ({
+        tableElements: {
+          ...state.tableElements,
+          [currentSlide]: {
+            ...state.tableElements[currentSlide],
+            [tableId]: {
+              ...tableData,
+              id: tableId,
+              position,
+            },
+          },
+        },
+        selectedTableElement: tableId,
+      }));
+
+      return tableId;
+    },
+
+    updateTableElement: (elementId: string, tableData: any) => {
+      const currentSlide = get().currentSlide;
+
+      set((state) => {
+        const currentElement = state.tableElements[currentSlide]?.[elementId];
+        if (!currentElement) return state;
+
+        // Preserve position and other critical properties when updating
+        const updatedElement = {
+          ...currentElement,
+          ...tableData,
+          // Always preserve the position unless explicitly being updated
+          position: tableData.position || currentElement.position,
+        };
+
+        return {
+          tableElements: {
+            ...state.tableElements,
+            [currentSlide]: {
+              ...state.tableElements[currentSlide],
+              [elementId]: updatedElement,
+            },
+          },
+        };
+      });
+    },
+
+    deleteTableElement: (elementId: string) => {
+      const currentSlide = get().currentSlide;
+
+      set((state) => {
+        const slideElements = state.tableElements[currentSlide] || {};
+        const { [elementId]: removed, ...remainingTables } = slideElements;
+
+        return {
+          tableElements: {
+            ...state.tableElements,
+            [currentSlide]: remainingTables,
+          },
+          selectedTableElement:
+            state.selectedTableElement === elementId
+              ? null
+              : state.selectedTableElement,
+        };
+      });
+    },
+
+    getTableElement: (elementId: string) => {
+      const state = get();
+      const currentSlide = state.currentSlide;
+      return state.tableElements[currentSlide]?.[elementId] || null;
+    },
 
     // Infographics editing actions
     setSelectedInfographicsElement: (elementId: string | null) =>

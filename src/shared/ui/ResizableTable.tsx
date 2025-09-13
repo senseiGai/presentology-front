@@ -3,6 +3,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { TableToolbar } from "./TableToolbar";
+import { EditableTableRef } from "@/features/TablePanel/ui/EditableTable";
+import PlusIcon from "../../../public/icons/PlusIcon";
+import GrayPlusIcon from "../../../public/icons/GrayPlusIcon";
 
 interface ResizableTableProps {
   elementId: string;
@@ -27,7 +30,10 @@ export const ResizableTable: React.FC<ResizableTableProps> = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [tableSize, setTableSize] = useState({ width: 0, height: 0 });
+  const [isInternalDragging, setIsInternalDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<EditableTableRef>(null);
 
   const {
     getTableElement,
@@ -40,6 +46,16 @@ export const ResizableTable: React.FC<ResizableTableProps> = ({
   const tableData = getTableElement(elementId);
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Don't start table dragging if clicking on row/column selection buttons
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button[draggable="true"]') || // Row/column drag buttons
+      target.closest(".cursor-col-resize") || // Column resize handles
+      target.closest(".cursor-row-resize") // Row resize handles
+    ) {
+      return;
+    }
+
     if (
       e.target === e.currentTarget ||
       (e.target as HTMLElement).closest(".table-drag-handle")
@@ -59,7 +75,7 @@ export const ResizableTable: React.FC<ResizableTableProps> = ({
   };
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging && containerRef.current) {
+    if (isDragging && !isInternalDragging && containerRef.current) {
       const slideContainer = containerRef.current.closest(".slide-container");
       if (slideContainer) {
         const slideRect = slideContainer.getBoundingClientRect();
@@ -106,7 +122,26 @@ export const ResizableTable: React.FC<ResizableTableProps> = ({
         document.removeEventListener("mouseup", handleMouseUp);
       };
     }
-  }, [isDragging, dragOffset]);
+  }, [isDragging, dragOffset, isInternalDragging]);
+
+  // Update table size when container changes
+  useEffect(() => {
+    const updateSize = () => {
+      if (tableRef.current) {
+        const size = tableRef.current.getTableSize();
+        setTableSize(size);
+      }
+    };
+
+    updateSize();
+
+    // Update size periodically to catch resize changes
+    const interval = setInterval(updateSize, 100);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [children]);
 
   if (!tableData) return null;
 
@@ -121,32 +156,57 @@ export const ResizableTable: React.FC<ResizableTableProps> = ({
         top: tableData.position.y,
       }}
       onMouseDown={handleMouseDown}
+      onDragStart={() => setIsInternalDragging(true)}
+      onDragEnd={() => setIsInternalDragging(false)}
       data-table-element
     >
       {/* Table Content */}
-      <div className="relative ">{children}</div>
+      <div className="relative ">
+        {React.isValidElement(children) &&
+          React.cloneElement(children as React.ReactElement<any>, {
+            ref: tableRef,
+          })}
+      </div>
+
+      {isSelected && (
+        <button
+          onClick={() => tableRef.current?.addRow()}
+          className="absolute flex items-center justify-center border-[1px] border-[#E9E9E9] h-[24px] w-[68%] shadow-xl bg-[#FFFFFF] rounded-[8px] transition-all z-20"
+          style={{
+            left: "45%",
+            top: `${tableSize.height + 58}px`,
+            transform: "translateX(-50%)",
+            width: `${Math.max(120, tableSize.width * 0.68)}px`,
+          }}
+        >
+          <GrayPlusIcon />
+        </button>
+      )}
+
+      {isSelected && (
+        <button
+          onClick={() => tableRef.current?.addColumn()}
+          className="absolute flex items-center justify-center border-[1px] border-[#E9E9E9] w-[24px] shadow-xl bg-[#FFFFFF] rounded-[8px] transition-all z-20"
+          style={{
+            left: `${tableSize.width + 58}px`,
+            top: "50%",
+            transform: "translateY(-50%)",
+            height: `${Math.max(120, tableSize.height * 0.68)}px`,
+          }}
+        >
+          <GrayPlusIcon />
+        </button>
+      )}
 
       {/* Selection border and handles - only visible when selected */}
       {isSelected && (
-        <div
-          className="absolute border border-[#bba2fe] rounded-[8px] border-solid"
-          style={{
-            top: "0px",
-            left: "0px",
-            right: "0px",
-            bottom: "0px",
-            zIndex: 1,
-            boxSizing: "border-box",
-            pointerEvents: "none",
-          }}
-        >
-          {/* Toolbar - only show when editing */}
+        <>
           {isEditing && (
             <div
               className="absolute pointer-events-auto"
               style={{
-                top: "-60px",
-                left: "0%",
+                top: "-8px",
+                left: "7%",
                 zIndex: 9999999,
               }}
             >
@@ -160,7 +220,7 @@ export const ResizableTable: React.FC<ResizableTableProps> = ({
               />
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );

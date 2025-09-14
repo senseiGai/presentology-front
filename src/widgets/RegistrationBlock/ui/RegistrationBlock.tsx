@@ -11,10 +11,15 @@ import { useRegisterStore } from "../model/use-registration-store";
 import { useAuthStore } from "@/shared/stores";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useWindowWidth } from "@/shared/hooks/useWindowWidth";
 
 export const RegistrationBlock = () => {
+  const width = useWindowWidth();
   const router = useRouter();
   const { setUser } = useAuthStore();
+
+  const middleWidth = width > 1600;
+  const topWidth = width > 1800;
 
   const {
     email,
@@ -179,13 +184,31 @@ export const RegistrationBlock = () => {
       </div>
 
       <div className="ml-auto relative h-[784px]">
-        <Image
-          src="/assets/registration_mask.png"
-          alt="Login Illustration"
-          className="w-[809px] h-full"
-          width={809}
-          height={784}
-        />
+        {topWidth ? (
+          <Image
+            src="/assets/registration_top_mask.png"
+            alt="Registration Illustration"
+            className="w-[1329px] h-full"
+            width={1329}
+            height={784}
+          />
+        ) : middleWidth ? (
+          <Image
+            src="/assets/reg_middle_mask.png"
+            alt="Registration Illustration"
+            className="w-[1129px] h-full"
+            width={1129}
+            height={784}
+          />
+        ) : (
+          <Image
+            src="/assets/registration_mask.png"
+            alt="Registration Illustration"
+            className="w-[809px] h-full"
+            width={809}
+            height={784}
+          />
+        )}
         <Link href="#" className="absolute right-4 bottom-[14px]">
           <Image
             src="/assets/logos_telegram.webp"

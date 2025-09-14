@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { SurveyApi } from "@/shared/api/survey.api";
-import { toast } from "sonner";
 
 interface SurveyStep {
   id: number;
@@ -182,10 +181,6 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
         isSubmitting: false,
       });
 
-      toast.success(
-        `Спасибо за участие в опросе! Вы получили ${response.pointsEarned} баллов.`
-      );
-
       console.log("Опрос успешно отправлен:", response);
     } catch (err) {
       const error = err as any;
@@ -198,7 +193,6 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
         isSubmitting: false,
       });
 
-      toast.error(errorMessage);
       console.error("Ошибка отправки опроса:", error);
     }
   },

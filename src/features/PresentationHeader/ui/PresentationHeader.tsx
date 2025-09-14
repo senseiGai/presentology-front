@@ -14,6 +14,8 @@ import LogoIllustration from "../../../../public/icons/LogoIllustration";
 import RevertPast from "../../../../public/icons/RevertPast";
 import RevertNext from "../../../../public/icons/RevertNext";
 
+import { useRouter } from "next/navigation";
+
 interface PresentationHeaderProps {
   onBack?: () => void;
   onDownload: () => void;
@@ -35,6 +37,8 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
   onShare,
   isGenerating = false,
 }) => {
+  const router = useRouter();
+
   const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
   const [isDownloadPopupOpen, setIsDownloadPopupOpen] = useState(false);
   const [isDesignPopupOpen, setIsDesignPopupOpen] = useState(false);
@@ -125,7 +129,7 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
         <LogoIllustration />
         {/* Home icon */}
         <button
-          onClick={onBack}
+          onClick={() => router.push("/")}
           className="flex items-center justify-center cursor-pointer rounded-[8px] bg-[#F4F4F4] w-[40px] h-[40px] hover:bg-[#E5E7EB] ease-in-out duration-300 transition-colors"
         >
           <HouseIcon />

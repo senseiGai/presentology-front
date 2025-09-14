@@ -19,10 +19,12 @@ import {
 import { useSubscriptionStore } from "@/shared/stores";
 import { CancelSubPopup, OfferPopup } from "@/entities/SubscriptionPopup";
 import { useSurveyStatus } from "@/shared/hooks/useSurvey";
+import { useRouter } from "next/navigation";
 
 export const HomeBlock = () => {
   const { activeItem } = useSideBarStore();
   const windowWidth = useWindowWidth();
+  const router = useRouter();
 
   // Проверяем статус опроса
   const {
@@ -203,7 +205,7 @@ export const HomeBlock = () => {
         >
           {activeItem === "Создать презентацию" && (
             <div className="flex flex-row gap-x-4 mt-[24px] 2xl:mt-[40px]">
-              {createCards.map((item, index) => {
+              {createCards(router).map((item, index) => {
                 return (
                   <CreatePresentationCard
                     key={index}

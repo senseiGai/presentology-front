@@ -4,6 +4,8 @@ import React from "react";
 import Image from "next/image";
 import { Toaster } from "sonner";
 
+import { useWindowWidth } from "../hooks/useWindowWidth";
+
 export const MainLayout = ({
   children,
   isBg,
@@ -13,6 +15,11 @@ export const MainLayout = ({
   isBg?: boolean;
   fullWidth?: boolean;
 }) => {
+  const width = useWindowWidth();
+
+  const middleWidth = width > 1600;
+  const topWidth = width > 1800;
+
   return (
     <div className="relative overflow-x-hidden min-h-screen">
       {/* Фоновая картинка */}
@@ -32,8 +39,14 @@ export const MainLayout = ({
       <div
         className={
           fullWidth
-            ? "relative w-[1280px] mx-auto"
-            : "max-w-[1280px] mx-auto relative min-h-screen"
+            ? `relative ${middleWidth ? "w-[1560px]" : "w-[1280px]"} mx-auto`
+            : `${
+                topWidth
+                  ? "max-w-[1760px]"
+                  : middleWidth
+                  ? "max-w-[1560px]"
+                  : "max-w-[1280px]"
+              }  mx-auto relative min-h-screen`
         }
       >
         <div
@@ -48,7 +61,6 @@ export const MainLayout = ({
           {children}
         </div>
 
-        {/* Тостер позиционируется относительно контейнера с max-width */}
         <Toaster
           position="bottom-left"
           richColors
@@ -63,7 +75,11 @@ export const MainLayout = ({
               bottom: "24px",
               position: "fixed",
               transform: fullWidth
-                ? "translateX(calc((100vw - 1280px) / 2))"
+                ? topWidth
+                  ? "translateX(calc((100vw - 1680px) / 2))"
+                  : middleWidth
+                  ? "translateX(calc((100vw - 1480px) / 2))"
+                  : "translateX(calc((100vw - 1280px) / 2))"
                 : "none",
             },
             classNames: {

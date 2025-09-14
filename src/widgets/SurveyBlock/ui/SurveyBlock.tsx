@@ -9,8 +9,10 @@ import { Button } from "@/shared/ui/Button";
 import { Mascot } from "@/shared/ui";
 
 import { useRouter } from "next/navigation";
+import { useWindowWidth } from "@/shared/hooks/useWindowWidth";
 
 export const SurveyBlock = () => {
+  const width = useWindowWidth();
   const {
     steps,
     currentStepIndex,
@@ -23,13 +25,20 @@ export const SurveyBlock = () => {
 
   const isCompleted = currentStepIndex >= steps.length;
   const router = useRouter();
+  const middleWidth = width > 1600;
 
   if (isCompleted) {
     return (
       <section className="mt-[24px] flex flex-row gap-x-[51px]">
         <div
-          className="relative w-[809px] h-[784px] bg-cover bg-center bg-no-repeat overflow-hidden flex justify-center"
-          style={{ backgroundImage: "url('/assets/survey.png')" }}
+          className={`relative ${
+            middleWidth ? "w-[1129px]" : "w-[809px]"
+          } h-[784px] bg-cover bg-center bg-no-repeat overflow-hidden flex justify-center`}
+          style={{
+            backgroundImage: middleWidth
+              ? "url('/assets/survey_middle.png')"
+              : "url('/assets/survey.png')",
+          }}
         >
           <Mascot className="!absolute w-[429px] h-[429px] bottom-[-80px] left-1/2 transform -translate-x-1/2" />
         </div>
@@ -63,8 +72,14 @@ export const SurveyBlock = () => {
   return (
     <section className="mt-[24px] flex flex-row gap-x-[51px]">
       <div
-        className="relative w-[809px] h-[784px] bg-cover bg-center bg-no-repeat overflow-hidden flex justify-center"
-        style={{ backgroundImage: "url('/assets/survey.png')" }}
+        className={`relative ${
+          middleWidth ? "w-[1129px]" : "w-[809px]"
+        } h-[784px] bg-cover bg-center bg-no-repeat overflow-hidden flex justify-center`}
+        style={{
+          backgroundImage: middleWidth
+            ? "url('/assets/survey_middle.png')"
+            : "url('/assets/survey.png')",
+        }}
       >
         <Mascot className="!absolute w-[429px] h-[429px] bottom-[-80px] left-1/2 transform -translate-x-1/2" />
       </div>

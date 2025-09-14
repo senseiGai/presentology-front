@@ -1,7 +1,6 @@
 import { X } from "lucide-react";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
-import { Check } from "typeorm";
 import SquareCheckIcon from "../../../public/icons/SquareCheckIcon";
 
 interface DesignChangePopupProps {

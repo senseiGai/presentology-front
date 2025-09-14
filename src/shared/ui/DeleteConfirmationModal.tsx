@@ -11,9 +11,8 @@ interface DeleteConfirmationModalProps {
 export const DeleteConfirmationModal: React.FC<
   DeleteConfirmationModalProps
 > = ({ isOpen, slideNumber, onConfirm, onCancel }) => {
-  if (!isOpen) return null;
-
   useEffect(() => {
+    if (!isOpen) return;
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onCancel();
@@ -24,7 +23,9 @@ export const DeleteConfirmationModal: React.FC<
     return () => {
       document.removeEventListener("keydown", handleEsc);
     };
-  }, [onCancel]);
+  }, [isOpen, onCancel]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-[#BBA2FE66] backdrop-blur-[8px] flex items-center justify-center z-50">

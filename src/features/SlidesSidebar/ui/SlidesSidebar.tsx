@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { SlidePreview } from "@/entities/Slide";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { AddSlidePopup } from "@/shared/ui/AddSlidePopup";
+import { useSlideNavigation } from "@/shared/hooks/useSlideNavigation";
 import SideBarIcon from "../../../../public/icons/SideBarIcon";
 import MiniPlusIcon from "../../../../public/icons/MiniPlusIcon";
 
@@ -18,6 +19,9 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
   const [isAddSlidePopupOpen, setIsAddSlidePopupOpen] = useState(false);
   const [insertAfterSlide, setInsertAfterSlide] = useState<number | null>(null);
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const slideRefs = useRef<Record<number, HTMLDivElement>>({});
+
   const {
     totalSlides,
     currentSlide,
@@ -27,7 +31,13 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
     setCurrentSlide,
     toggleSidebar,
     insertSlideAfter,
+    scrollToSlideInCanvas,
   } = usePresentationStore();
+
+  const { scrollToSlideInSidebar } = useSlideNavigation({
+    slideRefs,
+    scrollContainerRef,
+  });
 
   const handleInsertSlideClick = (slideNumber: number) => {
     setInsertAfterSlide(slideNumber);
@@ -41,10 +51,24 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
       console.log(
         `Adding slide after ${insertAfterSlide} with content: ${content}`
       );
+
+      // Auto-scroll to the newly added slide after a short delay
+      // to allow the DOM to update
+      setTimeout(() => {
+        const newSlideNumber = insertAfterSlide + 1;
+        scrollToSlideInSidebar(newSlideNumber);
+      }, 100);
     }
     setIsAddSlidePopupOpen(false);
     setInsertAfterSlide(null);
   };
+
+  // Auto-scroll when currentSlide changes (from canvas scroll)
+  useEffect(() => {
+    if (!isGenerating && generatedSlides.includes(currentSlide)) {
+      scrollToSlideInSidebar(currentSlide);
+    }
+  }, [currentSlide, isGenerating, generatedSlides, scrollToSlideInSidebar]);
 
   const handleClosePopup = () => {
     setIsAddSlidePopupOpen(false);
@@ -77,6 +101,7 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
 
         {/* Scrollable content area */}
         <div
+          ref={scrollContainerRef}
           className={`flex-1 overflow-y-auto overflow-x-hidden px-2 pb-[24px] ${
             isGenerating && "pt-[24px]"
           }`}
@@ -95,19 +120,29 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
 
               return (
                 <React.Fragment key={slideNumber}>
-                  <SlidePreview
-                    slideNumber={slideNumber}
-                    isActive={!isGenerating && currentSlide === slideNumber}
-                    isCompleted={isGenerated}
-                    isGenerating={isGenerating}
-                    onClick={() =>
-                      !isGenerating &&
-                      isGenerated &&
-                      setCurrentSlide(slideNumber)
-                    }
+                  <div
+                    ref={(el) => {
+                      if (el) {
+                        slideRefs.current[slideNumber] = el;
+                      }
+                    }}
                   >
-                    {renderSlideContent(slideNumber)}
-                  </SlidePreview>
+                    <SlidePreview
+                      slideNumber={slideNumber}
+                      isActive={!isGenerating && currentSlide === slideNumber}
+                      isCompleted={isGenerated}
+                      isGenerating={isGenerating}
+                      onClick={() => {
+                        if (!isGenerating && isGenerated) {
+                          setCurrentSlide(slideNumber);
+                          // Also scroll to slide in canvas
+                          scrollToSlideInCanvas?.(slideNumber);
+                        }
+                      }}
+                    >
+                      {renderSlideContent(slideNumber)}
+                    </SlidePreview>
+                  </div>
 
                   {isGenerated && !isGenerating && (
                     <div

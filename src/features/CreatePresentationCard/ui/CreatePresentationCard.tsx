@@ -16,7 +16,10 @@ export const CreatePresentationCard = ({
   onClick,
 }: CreatePresentationCardProps) => {
   return (
-    <div className="group flex cursor-pointer hover:-translate-y-2 transition-transform duration-300 ease-in-out relative flex-col w-[229px] h-[288px] bg-white rounded-[24px] pt-[24px] pl-[24px]">
+    <div
+      onClick={onClick}
+      className="group flex cursor-pointer hover:-translate-y-2 transition-transform duration-300 ease-in-out relative flex-col w-[229px] h-[288px] bg-white rounded-[24px] pt-[24px] pl-[24px]"
+    >
       <span className="text-[#0C0C0C] text-[24px] font-medium">{label}</span>
       <p className="mt-[16px] text-[14px] text-[#BEBEC0] font-normal leading-[120%] tracking-[-3%] max-w-[182px]">
         {description}

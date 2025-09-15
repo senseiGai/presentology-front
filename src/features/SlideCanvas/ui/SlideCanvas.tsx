@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { SlideContent, getSlideType } from "@/entities/SlideContent";
 import { DeleteConfirmationModal } from "@/shared/ui/DeleteConfirmationModal";
 import { SlideTypeChangePopup } from "@/shared/ui/SlideTypeChangePopup/SlideTypeChangePopup";
 import { useSlideTypeChangePopup } from "@/shared/hooks/useSlideTypeChangePopup";
+import { useSlideNavigation } from "@/shared/hooks/useSlideNavigation";
 
 import Image from "next/image";
 import { Mascot } from "@/shared/ui/Mascot";
@@ -23,15 +24,30 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
     number | null
   >(null);
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const slideRefs = useRef<Record<number, HTMLDivElement>>({});
+
   const {
     generatedSlides,
     totalSlides,
     isGenerating,
+    currentSlide,
     setCurrentSlide,
     deleteSlideByIndex,
     zoomLevel,
     clearTextSelection,
+    setScrollToSlideInCanvas,
+    setSelectedTextElement,
+    setSelectedImageElement,
+    setSelectedTableElement,
+    setSelectedInfographicsElement,
+    clearImageAreaSelection,
   } = usePresentationStore();
+
+  const { scrollToSlide } = useSlideNavigation({
+    slideRefs,
+    scrollContainerRef,
+  });
 
   const { isOpen, openPopup, closePopup, handleConfirm } =
     useSlideTypeChangePopup((textBlockCount, contentType, templateIndex) => {
@@ -46,10 +62,82 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
       setCurrentSlideForTypeChange(null);
     });
 
+  // Function to determine which slide is in the center of the viewport
+  const findCenterSlide = useCallback(() => {
+    if (!scrollContainerRef.current || isGenerating) return;
+
+    const container = scrollContainerRef.current;
+    const containerRect = container.getBoundingClientRect();
+    const containerCenter = containerRect.top + containerRect.height / 2;
+
+    let closestSlide = 1;
+    let closestDistance = Infinity;
+
+    // Check all generated slides to find the one closest to center
+    generatedSlides.forEach((slideNumber) => {
+      const slideElement = slideRefs.current[slideNumber];
+      if (slideElement) {
+        const slideRect = slideElement.getBoundingClientRect();
+        const slideCenter = slideRect.top + slideRect.height / 2;
+        const distance = Math.abs(slideCenter - containerCenter);
+
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestSlide = slideNumber;
+        }
+      }
+    });
+
+    // Only update if the slide has changed and the slide is generated
+    if (
+      closestSlide !== currentSlide &&
+      generatedSlides.includes(closestSlide)
+    ) {
+      setCurrentSlide(closestSlide);
+    }
+  }, [currentSlide, generatedSlides, isGenerating, setCurrentSlide]);
+
+  // Throttled scroll handler to avoid too many updates
+  const handleScroll = useCallback(() => {
+    const timeoutId = setTimeout(findCenterSlide, 100);
+    return () => clearTimeout(timeoutId);
+  }, [findCenterSlide]);
+
+  // Add scroll listener
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    let timeoutId: NodeJS.Timeout;
+    const throttledScroll = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(findCenterSlide, 100);
+    };
+
+    container.addEventListener("scroll", throttledScroll);
+    return () => {
+      container.removeEventListener("scroll", throttledScroll);
+      clearTimeout(timeoutId);
+    };
+  }, [findCenterSlide]);
+
+  // Register scroll function in store for use by sidebar
+  useEffect(() => {
+    setScrollToSlideInCanvas(scrollToSlide);
+    return () => setScrollToSlideInCanvas(undefined);
+  }, [scrollToSlide, setScrollToSlideInCanvas]);
+
   const handleCanvasClick = (e: React.MouseEvent) => {
     // Clear text selection if clicking on the canvas background
     if (e.target === e.currentTarget) {
       clearTextSelection();
+
+      // Close all panels by clearing selections
+      setSelectedTextElement(null);
+      setSelectedImageElement(null);
+      setSelectedTableElement(null);
+      setSelectedInfographicsElement(null);
+      clearImageAreaSelection();
     }
   };
 
@@ -99,6 +187,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
 
   return (
     <div
+      ref={scrollContainerRef}
       className="flex-1 bg-[#BBA2FE66] overflow-y-auto"
       style={{ height: "calc(100vh - 80px)" }}
       onClick={handleCanvasClick}
@@ -117,6 +206,11 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
           return (
             <React.Fragment key={`slide-${slideNumber}-${totalSlides}`}>
               <div
+                ref={(el) => {
+                  if (el) {
+                    slideRefs.current[slideNumber] = el;
+                  }
+                }}
                 className="flex flex-col items-center"
                 style={{
                   transform: `scale(${scale})`,
@@ -176,9 +270,10 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
                 <div
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (isGenerated) setCurrentSlide(slideNumber);
+                    // Remove manual slide selection since it's now handled by scroll
+                    // if (isGenerated) setCurrentSlide(slideNumber);
                   }}
-                  className="cursor-pointer"
+                  className="cursor-default"
                 >
                   {renderSlide(slideNumber)}
                 </div>

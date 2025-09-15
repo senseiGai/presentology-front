@@ -310,8 +310,17 @@ export const TextEditorPanel: React.FC = () => {
       const currentContent = getTextElementContent(selectedTextElement) || "";
       let newContent = currentContent;
 
+      // First, always remove existing list formatting to avoid overlapping
+      const cleanContent = currentContent
+        .split("\n")
+        .map((line: string) => {
+          return line.replace(/^(•\s*|-\s*|\*\s*|\d+\.\s*)/, "").trim();
+        })
+        .filter((line: string) => line)
+        .join("\n");
+
       if (currentListType) {
-        const lines = currentContent
+        const lines = cleanContent
           .split("\n")
           .filter((line: string) => line.trim() !== "");
 
@@ -319,32 +328,20 @@ export const TextEditorPanel: React.FC = () => {
           newContent = lines
             .map((line: string) => {
               const trimmed = line.trim();
-              if (!trimmed.match(/^(•\s*|-\s*|\*\s*)/)) {
-                return `• ${trimmed}`;
-              }
-              return line;
+              return `• ${trimmed}`;
             })
             .join("\n");
         } else if (currentListType === "numberList") {
           newContent = lines
             .map((line: string, index: number) => {
               const trimmed = line.trim();
-              if (!trimmed.match(/^\d+\.\s*/)) {
-                return `${index + 1}. ${trimmed}`;
-              }
-              return line;
+              return `${index + 1}. ${trimmed}`;
             })
             .join("\n");
         }
       } else {
-        // Remove list formatting
-        newContent = currentContent
-          .split("\n")
-          .map((line: string) => {
-            return line.replace(/^(•\s*|-\s*|\*\s*|\d+\.\s*)/, "").trim();
-          })
-          .filter((line: string) => line)
-          .join("\n");
+        // Just use the clean content without any list formatting
+        newContent = cleanContent;
       }
 
       setTextElementContent(selectedTextElement, newContent);

@@ -28,6 +28,12 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
     setSelectedTableElement,
     setSelectedInfographicsElement,
     clearImageAreaSelection,
+    currentSlide,
+    updateTextElementStyle,
+    setTextElementContent,
+    setTextElementPosition,
+    addTableElement,
+    addImageElement,
   } = usePresentationStore();
   const handleElementSelect = (elementId: string) => {
     setSelectedElement(elementId);
@@ -51,13 +57,65 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
       clearImageAreaSelection(); // Clear all selections when not using image panel
     }
 
-    // Set new selection based on element type
+    // Create and set new selection based on element type
     if (elementId === "text") {
-      setSelectedTextElement("text-element");
+      // Create a new text element automatically with slide-specific ID
+      const newTextElementId = `text-slide-${currentSlide}-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+
+      // Set initial position (center of slide)
+      const initialPosition = { x: 100, y: 100 };
+
+      // Set position first (required for rendering)
+      setTextElementPosition(newTextElementId, initialPosition);
+
+      // Create text element with default content
+      updateTextElementStyle(newTextElementId, {
+        fontSize: 16,
+        fontWeight: "normal",
+        textAlign: "left",
+        color: "#000000",
+        ...initialPosition,
+        rotation: 0,
+      });
+
+      // Set initial content
+      setTextElementContent(newTextElementId, "Новый текст");
+
+      // Select the new element
+      setSelectedTextElement(newTextElementId);
     } else if (elementId === "image") {
-      setSelectedImageElement("image-element");
+      // Create a new image element automatically
+      const newImageElementId = addImageElement(
+        currentSlide,
+        { x: 100, y: 100 }, // Initial position
+        { width: 200, height: 150 } // Default size
+      );
+
+      // Select the new image element
+      setSelectedImageElement(newImageElementId);
     } else if (elementId === "table") {
-      setSelectedTableElement("table-element");
+      // Create a new table element automatically
+      const tableData = {
+        rows: 4,
+        cols: 4,
+        cells: Array(4)
+          .fill(null)
+          .map(() => Array(4).fill("")),
+        style: {
+          borderThickness: 1,
+          borderColor: "#BBA2FE",
+          textColor: "#000000",
+          fontSize: 14,
+          textAlign: "left" as const,
+          textFormats: [],
+        },
+      };
+
+      const initialPosition = { x: 100, y: 100 };
+      const newTableId = addTableElement(tableData, initialPosition);
+      setSelectedTableElement(newTableId);
     } else if (elementId === "chart") {
       setSelectedInfographicsElement("infographics-element");
     }

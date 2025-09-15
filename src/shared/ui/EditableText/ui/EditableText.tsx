@@ -283,16 +283,100 @@ export const EditableText: React.FC<EditableTextProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     console.log("Key pressed:", e.key, "Shift:", e.shiftKey);
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      console.log("Enter pressed without Shift, finishing edit");
-      finishEditing();
-    } else if (e.key === "Escape") {
+
+    if (e.key === "Escape") {
       e.preventDefault();
       console.log("Escape pressed, canceling edit");
       cancelEditing();
+      return;
     }
-    // Shift+Enter allows new lines
+
+    // Handle Enter key for list continuation
+    if (e.key === "Enter" && !e.shiftKey) {
+      const textarea = e.currentTarget;
+      const cursorPosition = textarea.selectionStart;
+      const textBeforeCursor = textarea.value.substring(0, cursorPosition);
+      const textAfterCursor = textarea.value.substring(cursorPosition);
+
+      // Get the current line
+      const lines = textBeforeCursor.split("\n");
+      const currentLine = lines[lines.length - 1];
+      const trimmedCurrentLine = currentLine.trim();
+
+      // Check if current line is a list item
+      const bulletMatch = trimmedCurrentLine.match(/^(•\s*|-\s*|\*\s*)(.*)/);
+      const numberMatch = trimmedCurrentLine.match(/^(\d+)\.\s*(.*)/);
+
+      if (bulletMatch) {
+        // Handle bullet list continuation
+        const content = bulletMatch[2].trim();
+
+        if (content === "") {
+          // If current line is empty bullet, remove it and exit list mode
+          e.preventDefault();
+          const newText =
+            textBeforeCursor.replace(/\n(•\s*|-\s*|\*\s*)$/, "") +
+            textAfterCursor;
+          setEditText(newText);
+
+          // Set cursor position after the removed bullet
+          setTimeout(() => {
+            const newCursorPos = textBeforeCursor.replace(
+              /\n(•\s*|-\s*|\*\s*)$/,
+              ""
+            ).length;
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+          }, 0);
+        } else {
+          // Add new bullet point
+          e.preventDefault();
+          const newText = textBeforeCursor + "\n• " + textAfterCursor;
+          setEditText(newText);
+
+          // Set cursor position after the new bullet
+          setTimeout(() => {
+            const newCursorPos = cursorPosition + 3; // +3 for '\n• '
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+          }, 0);
+        }
+      } else if (numberMatch) {
+        // Handle numbered list continuation
+        const number = parseInt(numberMatch[1]);
+        const content = numberMatch[2].trim();
+
+        if (content === "") {
+          // If current line is empty number, remove it and exit list mode
+          e.preventDefault();
+          const newText =
+            textBeforeCursor.replace(/\n\d+\.\s*$/, "") + textAfterCursor;
+          setEditText(newText);
+
+          // Set cursor position after the removed number
+          setTimeout(() => {
+            const newCursorPos = textBeforeCursor.replace(
+              /\n\d+\.\s*$/,
+              ""
+            ).length;
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+          }, 0);
+        } else {
+          // Add new numbered item
+          e.preventDefault();
+          const nextNumber = number + 1;
+          const newText =
+            textBeforeCursor + `\n${nextNumber}. ` + textAfterCursor;
+          setEditText(newText);
+
+          // Set cursor position after the new number
+          setTimeout(() => {
+            const newCursorPos = cursorPosition + `\n${nextNumber}. `.length;
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+          }, 0);
+        }
+      }
+      // If not in a list, Enter works normally (creates new line)
+    }
+    // Shift+Enter always creates new line regardless of list context
   };
 
   const handleBlur = () => {

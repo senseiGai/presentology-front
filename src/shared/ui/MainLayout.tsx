@@ -39,7 +39,7 @@ export const MainLayout = ({
       <div
         className={
           fullWidth
-            ? `relative ${middleWidth ? "w-[1560px]" : "w-[1280px]"} mx-auto`
+            ? `relative mx-auto`
             : `${
                 topWidth
                   ? "max-w-[1760px]"
@@ -74,13 +74,6 @@ export const MainLayout = ({
               left: fullWidth ? "24px" : "24px", // 24px = ml-6
               bottom: "24px",
               position: "fixed",
-              transform: fullWidth
-                ? topWidth
-                  ? "translateX(calc((100vw - 1680px) / 2))"
-                  : middleWidth
-                  ? "translateX(calc((100vw - 1480px) / 2))"
-                  : "translateX(calc((100vw - 1280px) / 2))"
-                : "none",
             },
             classNames: {
               toast: "rounded-[20px] !ml-0 !z-[99999999]",

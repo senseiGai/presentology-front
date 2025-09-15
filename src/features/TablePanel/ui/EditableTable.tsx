@@ -111,11 +111,11 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     const [tableData, setTableData] = useState<TableData>(() => {
       if (initialData) return initialData;
 
-      // Create default 4x3 table to match Figma design with "Label" text
+      // Create default 4x4 table to match Figma design with "Label" text
       const defaultCells: TableCell[][] = [];
       for (let row = 0; row < 4; row++) {
         defaultCells[row] = [];
-        for (let col = 0; col < 3; col++) {
+        for (let col = 0; col < 4; col++) {
           defaultCells[row][col] = {
             id: `cell-${row}-${col}`,
             content: "Label",
@@ -128,7 +128,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       return {
         id: `table-${Date.now()}`,
         rows: 4,
-        cols: 3,
+        cols: 4,
         cells: defaultCells,
         style: {
           borderThickness: 1,
@@ -195,8 +195,11 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     } | null>(null);
 
     // Size states for dynamic resizing
-    const [columnWidths, setColumnWidths] = useState<number[]>([121, 121, 121]); // Default equal widths
-    const [rowHeights, setRowHeights] = useState<number[]>([53, 53, 53, 53]); // Default equal heights
+    const [columnWidths, setColumnWidths] = useState<number[]>([
+      121.66667175292969, 121.66667175292969, 121.66667175292969,
+      121.66667175292969,
+    ]); // Default equal widths - 4 columns
+    const [rowHeights, setRowHeights] = useState<number[]>([53, 53, 53, 53]); // Default equal heights - 4 rows
     const [resizeStartPos, setResizeStartPos] = useState<{
       x: number;
       y: number;
@@ -580,7 +583,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
         (sum, width) => sum + width,
         0
       );
-      const newColumnWidth = 121; // Default width
+      const newColumnWidth = 121.66667175292969; // Default width
       const slideWidth = 759;
       const maxTableWidth = slideWidth - 100; // Leave some margin
 
@@ -601,7 +604,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       }
 
       // Add new column width
-      const newColumnWidths = [...columnWidths, 121]; // Default width
+      const newColumnWidths = [...columnWidths, 121.66667175292969]; // Default width
 
       const newTableData = {
         ...tableData,
@@ -694,7 +697,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
 
       // Add new column width at the specified index
       const newColumnWidths = [...columnWidths];
-      newColumnWidths.splice(colIndex, 0, 121);
+      newColumnWidths.splice(colIndex, 0, 121.66667175292969);
 
       const newTableData = {
         ...tableData,
@@ -845,12 +848,13 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       const thickness = tableData.style?.borderThickness || 1;
       const color = tableData.style?.borderColor || "#BBA2FE";
 
-      // Only vertical borders (left and right), no horizontal borders inside
-      const topBorder = row === 0 ? `${thickness}px` : "0px"; // Top border only for first row
+      // Create full table border - all edges get borders
+      const topBorder = row === 0 ? `${thickness}px` : "0px"; // Top border for first row
       const bottomBorder =
-        row === tableData.rows - 1 ? `${thickness}px` : "0px"; // Bottom border only for last row
-      const leftBorder = `${thickness}px`; // All cells have left border
-      const rightBorder = `${thickness}px`; // All cells have right border
+        row === tableData.rows - 1 ? `${thickness}px` : "0px"; // Bottom border for last row
+      const leftBorder = col === 0 ? `${thickness}px` : "0px"; // Left border for first column
+      const rightBorder =
+        col === tableData.cols - 1 ? `${thickness}px` : `${thickness}px`; // Right border for all columns except last gets internal border
 
       return {
         borderWidth: `${topBorder} ${rightBorder} ${bottomBorder} ${leftBorder}`,
@@ -986,7 +990,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
           {/* Table Container - Dynamic sizing */}
           <div
             ref={tableRef}
-            className="relative bg-[#FBFBFB] rounded-[8px] cursor-move table-drag-handle"
+            className="relative rounded-[8px] cursor-move table-drag-handle"
             style={{
               width: `${columnWidths.reduce((sum, width) => sum + width, 0)}px`,
               height: `${rowHeights.reduce(
@@ -1550,7 +1554,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
 
             {/* Table Content - Dynamic columns */}
             <div
-              className="absolute box-border flex items-center justify-start left-0 pl-0 pr-px py-0 top-0"
+              className="absolute box-border flex items-start justify-start left-0 top-0"
               style={{
                 height: `${rowHeights.reduce(
                   (sum, height) => sum + height,
@@ -1566,7 +1570,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
               {Array.from({ length: tableData.cols }, (_, colIndex) => (
                 <div
                   key={`column-${colIndex}`}
-                  className="box-border flex flex-col h-full items-start justify-start min-h-px min-w-px mr-[-1px] relative shrink-0"
+                  className="box-border flex flex-col h-full items-start justify-start relative shrink-0"
                   style={{
                     width: `${columnWidths[colIndex]}px`,
                     ...getColumnContainerStyle(colIndex),
@@ -1643,7 +1647,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
                           )}
                         </div>
                         <div
-                          className="absolute border-solid inset-0 pointer-events-none"
+                          className="absolute inset-0 pointer-events-none z-10"
                           style={{
                             ...getCellBorderStyle(rowIndex, colIndex),
                             ...(isFirstRow &&

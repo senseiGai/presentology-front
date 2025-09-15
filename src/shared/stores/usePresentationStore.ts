@@ -96,6 +96,21 @@ export interface PresentationState {
       isSelecting: boolean;
     }
   >;
+  imageElements: Record<
+    number,
+    Record<
+      string,
+      {
+        id: string;
+        src?: string;
+        alt?: string;
+        width: number;
+        height: number;
+        position: { x: number; y: number };
+        placeholder?: boolean;
+      }
+    >
+  >;
 
   // Table editing state
   selectedTableElement: string | null;
@@ -147,6 +162,12 @@ export interface PresentationState {
   zoomOut: () => void;
   resetZoom: () => void;
 
+  // Navigation actions
+  scrollToSlideInCanvas?: (slideNumber: number) => void;
+  setScrollToSlideInCanvas: (
+    scrollFn: ((slideNumber: number) => void) | undefined
+  ) => void;
+
   // Text editing actions
   setSelectedTextElement: (elementId: string | null) => void;
   setTextEditorContent: (content: string) => void;
@@ -191,6 +212,19 @@ export interface PresentationState {
   getImageAreaSelection: (
     slideNumber: number
   ) => PresentationState["imageAreaSelections"][number] | null;
+  addImageElement: (
+    slideNumber: number,
+    position: { x: number; y: number },
+    size: { width: number; height: number }
+  ) => string;
+  updateImageElement: (
+    elementId: string,
+    updates: Partial<PresentationState["imageElements"][number][string]>
+  ) => void;
+  deleteImageElement: (elementId: string) => void;
+  getImageElement: (
+    elementId: string
+  ) => PresentationState["imageElements"][number][string] | null;
 
   // Table editing actions
   setSelectedTableElement: (elementId: string | null) => void;
@@ -254,6 +288,7 @@ const initialState = {
   selectedImageElement: null,
   isImageAreaSelectionMode: false,
   imageAreaSelections: {},
+  imageElements: {},
 
   // Table editing state
   selectedTableElement: null,
@@ -266,6 +301,9 @@ const initialState = {
   history: [],
   historyIndex: -1,
   maxHistorySize: 50,
+
+  // Navigation functions
+  scrollToSlideInCanvas: undefined,
 };
 
 export const usePresentationStore = create<PresentationState>()(
@@ -457,6 +495,11 @@ export const usePresentationStore = create<PresentationState>()(
 
     resetZoom: () => set({ zoomLevel: 100 }),
 
+    // Navigation actions
+    setScrollToSlideInCanvas: (
+      scrollFn: ((slideNumber: number) => void) | undefined
+    ) => set({ scrollToSlideInCanvas: scrollFn }),
+
     // Text editing actions
     setSelectedTextElement: (elementId: string | null) =>
       set({ selectedTextElement: elementId }),
@@ -607,6 +650,75 @@ export const usePresentationStore = create<PresentationState>()(
     getImageAreaSelection: (slideNumber: number) => {
       const state = get();
       return state.imageAreaSelections[slideNumber] || null;
+    },
+
+    // Image element management actions
+    addImageElement: (
+      slideNumber: number,
+      position: { x: number; y: number },
+      size: { width: number; height: number }
+    ) => {
+      const imageId = `image-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+
+      set((state) => ({
+        imageElements: {
+          ...state.imageElements,
+          [slideNumber]: {
+            ...state.imageElements[slideNumber],
+            [imageId]: {
+              id: imageId,
+              position,
+              width: size.width,
+              height: size.height,
+              placeholder: true,
+              alt: "Image placeholder",
+            },
+          },
+        },
+      }));
+
+      return imageId;
+    },
+
+    updateImageElement: (
+      elementId: string,
+      updates: Partial<PresentationState["imageElements"][number][string]>
+    ) => {
+      const currentSlide = get().currentSlide;
+      set((state) => ({
+        imageElements: {
+          ...state.imageElements,
+          [currentSlide]: {
+            ...state.imageElements[currentSlide],
+            [elementId]: {
+              ...state.imageElements[currentSlide]?.[elementId],
+              ...updates,
+            },
+          },
+        },
+      }));
+    },
+
+    deleteImageElement: (elementId: string) => {
+      const currentSlide = get().currentSlide;
+      set((state) => {
+        const slideImages = { ...state.imageElements[currentSlide] };
+        delete slideImages[elementId];
+        return {
+          imageElements: {
+            ...state.imageElements,
+            [currentSlide]: slideImages,
+          },
+        };
+      });
+    },
+
+    getImageElement: (elementId: string) => {
+      const state = get();
+      const currentSlide = state.currentSlide;
+      return state.imageElements[currentSlide]?.[elementId] || null;
     },
 
     // Table editing actions

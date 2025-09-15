@@ -4,6 +4,7 @@ import { ResizableTextBox } from "@/shared/ui/ResizableTextBox";
 import { EditableText } from "@/shared/ui/EditableText";
 import { ResizableTable } from "@/shared/ui/ResizableTable";
 import { EditableTable } from "@/features/TablePanel/ui/EditableTable";
+import { ResizableImageBox } from "@/shared/ui/ResizableImageBox";
 
 interface SlideContentProps {
   slideNumber: number;
@@ -41,6 +42,11 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     finishImageAreaSelection,
     clearImageAreaSelection,
     getImageAreaSelection,
+    // Image state
+    imageElements,
+    selectedImageElement,
+    setSelectedImageElement,
+    deleteImageElement,
     // Table state
     tableElements,
     selectedTableElement,
@@ -266,7 +272,14 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     ];
 
     return Object.entries(textElementPositions)
-      .filter(([elementId]) => !staticElementIds.includes(elementId))
+      .filter(([elementId]) => {
+        // Filter out static elements
+        if (staticElementIds.includes(elementId)) {
+          return false;
+        }
+        // Only show elements that belong to current slide
+        return elementId.includes(`slide-${slideNumber}-`);
+      })
       .map(([elementId, position]) => {
         const content = textElementContents[elementId] || "New text element";
 
@@ -283,7 +296,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             <EditableText
               elementId={elementId}
               initialText={content}
-              className="text-[16px] cursor-pointer transition-colors hover:bg-gray-100 rounded p-2"
+              className="text-[16px] cursor-pointer transition-colors"
               onClick={(e) => {
                 handleTextClick(elementId, content, e);
               }}
@@ -340,13 +353,58 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     );
   };
 
-  // Render static alignment guides when text element is selected
+  // Render image elements from store
+  const renderImageElements = () => {
+    const currentSlideElements = imageElements[slideNumber] || {};
+    return Object.entries(currentSlideElements).map(
+      ([elementId, imageData]) => {
+        return (
+          <ResizableImageBox
+            key={elementId}
+            elementId={elementId}
+            isSelected={selectedImageElement === elementId}
+            onDelete={() => {
+              deleteImageElement(elementId);
+              setSelectedImageElement(null);
+            }}
+          />
+        );
+      }
+    );
+  };
+
+  // Render static alignment guides when any element is selected on current slide
   const renderAlignmentGuides = () => {
-    if (!selectedTextElement) return null;
+    // Check if any element is selected and belongs to current slide
+    const isTextElementOnCurrentSlide =
+      selectedTextElement &&
+      (selectedTextElement.includes(`slide-${slideNumber}-`) ||
+        (slideType === "title" &&
+          (selectedTextElement === "title-main" ||
+            selectedTextElement === "title-sub")) ||
+        (slideType === "content" &&
+          selectedTextElement.startsWith("content-")));
+
+    const isTableElementOnCurrentSlide =
+      selectedTableElement &&
+      tableElements[slideNumber]?.[selectedTableElement];
+
+    const isImageElementOnCurrentSlide =
+      selectedImageElement &&
+      imageElements[slideNumber]?.[selectedImageElement];
+
+    // Show guides only if an element from current slide is selected
+    if (
+      !isTextElementOnCurrentSlide &&
+      !isTableElementOnCurrentSlide &&
+      !isImageElementOnCurrentSlide
+    ) {
+      return null;
+    }
 
     return (
       <>
-        {/* Vertical guide line - center of slide */}
+        {/* Left vertical guide line */}
         <div
           className="absolute pointer-events-none"
           style={{
@@ -359,6 +417,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             zIndex: 998,
           }}
         />
+        {/* Top horizontal guide line */}
         <div
           className="absolute pointer-events-none"
           style={{
@@ -371,6 +430,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             zIndex: 998,
           }}
         />
+        {/* Bottom horizontal guide line */}
         <div
           className="absolute pointer-events-none"
           style={{
@@ -383,6 +443,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             zIndex: 998,
           }}
         />
+        {/* Right vertical guide line */}
         <div
           className="absolute pointer-events-none"
           style={{
@@ -471,26 +532,42 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     );
   };
 
+  const handleSlideClick = (e: React.MouseEvent) => {
+    // Don't clear text selection if we're in image area selection mode
+    if (isImageAreaSelectionMode) return;
+
+    const target = e.target as HTMLElement;
+    const isToolbarClick =
+      target.closest('[role="toolbar"]') ||
+      target.closest(".bg-white.rounded-\\[8px\\]") ||
+      target.closest("button");
+    const isTextElement = target.closest("[data-text-element]");
+    const isTableElement = target.closest("[data-table-element]");
+    const isImageElement = target.closest("[data-image-element]");
+
+    if (
+      !isToolbarClick &&
+      !isTextElement &&
+      !isTableElement &&
+      !isImageElement
+    ) {
+      clearTextSelection();
+      setSelectedTableElement(null);
+      setEditingTableElement(null); // Also clear editing state
+      setSelectedImageElement(null); // Clear image selection
+
+      // Close all tool panels by clearing their selections
+      // This will close any open panels (TextEditor, Image, Table, Infographics)
+      const store = usePresentationStore.getState();
+      store.setSelectedTextElement(null);
+      store.setSelectedImageElement(null);
+      store.setSelectedTableElement(null);
+      store.setSelectedInfographicsElement(null);
+      store.clearImageAreaSelection();
+    }
+  };
+
   const renderSlideByType = () => {
-    const handleSlideClick = (e: React.MouseEvent) => {
-      // Don't clear text selection if we're in image area selection mode
-      if (isImageAreaSelectionMode) return;
-
-      const target = e.target as HTMLElement;
-      const isToolbarClick =
-        target.closest('[role="toolbar"]') ||
-        target.closest(".bg-white.rounded-\\[8px\\]") ||
-        target.closest("button");
-      const isTextElement = target.closest("[data-text-element]");
-      const isTableElement = target.closest("[data-table-element]");
-
-      if (!isToolbarClick && !isTextElement && !isTableElement) {
-        clearTextSelection();
-        setSelectedTableElement(null);
-        setEditingTableElement(null); // Also clear editing state
-      }
-    };
-
     switch (slideType) {
       case "title":
         return (
@@ -517,11 +594,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               <EditableText
                 elementId="title-main"
                 initialText="ЗАГОЛОВОК\nВ ДВЕ СТРОКИ"
-                className={`text-[48px] font-bold leading-tight cursor-pointer transition-colors ${
-                  selectedTextElement === "title-main"
-                    ? ""
-                    : "hover:bg-white/10 rounded p-2"
-                }`}
+                className="text-[48px] font-bold leading-tight cursor-pointer transition-colors"
                 onClick={(e) => {
                   handleTextClick("title-main", "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ", e);
                 }}
@@ -539,11 +612,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               <EditableText
                 elementId="title-sub"
                 initialText="Подзаголовок\nв две строки"
-                className={`text-[20px] font-light cursor-pointer transition-colors ${
-                  selectedTextElement === "title-sub"
-                    ? ""
-                    : "hover:bg-white/10 rounded p-2"
-                }`}
+                className="text-[20px] font-light cursor-pointer transition-colors"
                 onClick={(e) => {
                   handleTextClick("title-sub", "Подзаголовок\nв две строки", e);
                 }}
@@ -553,6 +622,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             {renderDynamicTextElements()}
 
             {renderTableElements()}
+
+            {renderImageElements()}
 
             {renderAlignmentGuides()}
 
@@ -585,11 +656,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               <EditableText
                 elementId={`slide-${slideNumber}-text`}
                 initialText={`Слайд ${slideNumber}`}
-                className={`text-[#6B7280] text-[18px] cursor-pointer transition-colors text-center ${
-                  selectedTextElement === `slide-${slideNumber}-text`
-                    ? ""
-                    : "hover:bg-gray-200 rounded p-2"
-                }`}
+                className="text-[#6B7280] text-[18px] cursor-pointer transition-colors text-center"
                 onClick={(e) => {
                   handleTextClick(
                     `slide-${slideNumber}-text`,
@@ -603,6 +670,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             {renderDynamicTextElements()}
 
             {renderTableElements()}
+
+            {renderImageElements()}
 
             {renderAlignmentGuides()}
 

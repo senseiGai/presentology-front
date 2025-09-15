@@ -206,7 +206,7 @@ export const ResizableTable: React.FC<ResizableTableProps> = ({
               className="absolute pointer-events-auto"
               style={{
                 top: "-8px",
-                left: "7%",
+                left: "9%",
                 zIndex: 9999999,
               }}
             >

@@ -61,15 +61,15 @@ export const ImagePanel: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Автоматически активируем режим выделения области при открытии панели
-  React.useEffect(() => {
-    setImageAreaSelectionMode(true);
+  // Убираем автоматическое активирование режима выделения области
+  // React.useEffect(() => {
+  //   setImageAreaSelectionMode(true);
 
-    // Очищаем режим при размонтировании компонента (но не очищаем выделения)
-    return () => {
-      setImageAreaSelectionMode(false);
-    };
-  }, [setImageAreaSelectionMode]);
+  //   // Очищаем режим при размонтировании компонента (но не очищаем выделения)
+  //   return () => {
+  //     setImageAreaSelectionMode(false);
+  //   };
+  // }, [setImageAreaSelectionMode]);
 
   const handleStyleSelect = (style: ImageStyle["type"]) => {
     setSelectedStyle(style);

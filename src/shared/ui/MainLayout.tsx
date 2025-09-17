@@ -74,6 +74,14 @@ export const MainLayout = ({
               left: fullWidth ? "24px" : "24px", // 24px = ml-6
               bottom: "24px",
               position: "fixed",
+              translate: isBg ? "translateY((100vh - 684px) / 2)" : "none",
+              transform: isBg
+                ? middleWidth
+                  ? "translateX(calc((100vw - 1560px) / 2))"
+                  : topWidth
+                  ? "translateX(calc((100vw - 1760px) / 2))"
+                  : "translateX(calc((100vw - 1280px) / 2))"
+                : "none",
             },
             classNames: {
               toast: "rounded-[20px] !ml-0 !z-[99999999]",

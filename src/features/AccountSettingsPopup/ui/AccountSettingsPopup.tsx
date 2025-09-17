@@ -286,7 +286,6 @@ export default function AccountSettingsPopup() {
           <div className="flex items-end flex-row w-full gap-4 mt-2">
             <InputField
               label="Пароль"
-              type="password"
               value={password}
               disabled={true}
               onChange={setPassword}

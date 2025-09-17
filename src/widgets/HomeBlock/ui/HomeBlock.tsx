@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation";
 export const HomeBlock = () => {
   const { activeItem } = useSideBarStore();
   const windowWidth = useWindowWidth();
+  const middleWidth = windowWidth > 1600;
   const router = useRouter();
 
   // Проверяем статус опроса
@@ -225,7 +226,11 @@ export const HomeBlock = () => {
                 Создайте презентацию и она появится здесь
               </h2>
             ) : (
-              <div className="grid grid-cols-3 gap-[24px] 2xl:gap-[20px] mt-[40px]">
+              <div
+                className={`grid ${
+                  middleWidth ? "grid-cols-4" : "grid-cols-3"
+                }  gap-[24px] 2xl:gap-[20px] mt-[40px]`}
+              >
                 {presentationsContent.map((item, index) => (
                   <PresentationCard
                     key={index}

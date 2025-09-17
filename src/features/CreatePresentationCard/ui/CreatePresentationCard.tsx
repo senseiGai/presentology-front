@@ -7,6 +7,7 @@ interface CreatePresentationCardProps {
   description: string;
   image: string;
   onClick: () => void;
+  isActive?: boolean;
 }
 
 export const CreatePresentationCard = ({
@@ -14,11 +15,16 @@ export const CreatePresentationCard = ({
   description,
   image,
   onClick,
+  isActive = true,
 }: CreatePresentationCardProps) => {
   return (
     <div
       onClick={onClick}
-      className="group flex cursor-pointer hover:-translate-y-2 transition-transform duration-300 ease-in-out relative flex-col w-[229px] h-[288px] bg-white rounded-[24px] pt-[24px] pl-[24px]"
+      className={`flex cursor-pointer transition-transform duration-300 ease-in-out relative flex-col w-[229px] h-[288px] bg-white rounded-[24px] pt-[24px] pl-[24px] ${
+        isActive
+          ? "opacity-100 group hover:-translate-y-2 "
+          : "opacity-50 cursor-not-allowed"
+      }`}
     >
       <span className="text-[#0C0C0C] text-[24px] font-medium">{label}</span>
       <p className="mt-[16px] text-[14px] text-[#BEBEC0] font-normal leading-[120%] tracking-[-3%] max-w-[182px]">

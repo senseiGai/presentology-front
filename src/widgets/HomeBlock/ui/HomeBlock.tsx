@@ -213,6 +213,7 @@ export const HomeBlock = () => {
                     description={item.description}
                     image={item.image}
                     onClick={item.onClick}
+                    isActive={item.label !== "По брендбуку"}
                   />
                 );
               })}

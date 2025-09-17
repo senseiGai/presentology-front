@@ -246,13 +246,23 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
                       e.stopPropagation();
                       if (isGenerated) {
                         console.log(
-                          `Deleting slide ${slideNumber} from position ${
+                          `[DEBUG] Deleting slide ${slideNumber} from position ${
                             index + 1
                           }`
                         );
+                        console.log(
+                          `[DEBUG] generatedSlides:`,
+                          generatedSlides
+                        );
+                        console.log(`[DEBUG] slideNumber:`, slideNumber);
+                        console.log(`[DEBUG] array index:`, index);
+                        console.log(
+                          `[DEBUG] slideIndex to pass:`,
+                          slideNumber - 1
+                        );
                         setDeleteConfirmSlide({
                           slideNumber,
-                          slideIndex: index,
+                          slideIndex: slideNumber - 1, // Use slideNumber - 1 as the actual index
                         });
                       }
                     }}
@@ -289,8 +299,13 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
         onConfirm={() => {
           if (deleteConfirmSlide) {
             console.log(
-              `Confirming delete for slide: ${deleteConfirmSlide.slideNumber} at index: ${deleteConfirmSlide.slideIndex}`
+              `[DEBUG] Confirming delete for slide: ${deleteConfirmSlide.slideNumber} at index: ${deleteConfirmSlide.slideIndex}`
             );
+            console.log(
+              `[DEBUG] Current generatedSlides before delete:`,
+              generatedSlides
+            );
+            console.log(`[DEBUG] Current totalSlides:`, totalSlides);
             deleteSlideByIndex(deleteConfirmSlide.slideIndex);
             setDeleteConfirmSlide(null);
           }

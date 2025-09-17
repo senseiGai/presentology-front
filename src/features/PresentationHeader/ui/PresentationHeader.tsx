@@ -15,6 +15,7 @@ import RevertPast from "../../../../public/icons/RevertPast";
 import RevertNext from "../../../../public/icons/RevertNext";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface PresentationHeaderProps {
   onBack?: () => void;
@@ -243,7 +244,6 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
               Поделиться
             </span>
           </button>
-
           <SharePopup
             isOpen={isSharePopupOpen}
             onClose={() => setIsSharePopupOpen(false)}
@@ -260,7 +260,12 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
               isGenerating ? "!cursor-not-allowed" : "cursor-pointer"
             }`}
           >
-            <DownloadIcon />
+            <Image
+              src="/download_icon.svg"
+              alt="Download"
+              width={24}
+              height={24}
+            />
             <span className={`text-[18px] font-regular`}>Скачать</span>
           </Button>
 

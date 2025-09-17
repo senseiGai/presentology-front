@@ -27,15 +27,21 @@ export const EditableText: React.FC<EditableTextProps> = ({
     setTextElementContent,
     textElementContents, // Add this to track content changes from undo/redo
     addToHistory,
+    updateTextElementStyle,
   } = usePresentationStore();
 
   const [displayText, setDisplayText] = useState(initialText || defaultText);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState("");
   const [forceUpdate, setForceUpdate] = useState(0);
-  const [clickCount, setClickCount] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [hasDragged, setHasDragged] = useState(false); // Track if we actually dragged
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Get the specific style for this element
+  const elementStyle = getTextElementStyle(elementId);
 
   // Debug: log when component renders
   console.log(
@@ -45,14 +51,129 @@ export const EditableText: React.FC<EditableTextProps> = ({
   // Add mouse event handlers for debugging
   const handleMouseDown = (e: React.MouseEvent) => {
     console.log("MOUSE DOWN on", elementId, "target:", e.target);
+
+    // If we're in editing mode, don't start dragging
+    if (isEditing) {
+      return;
+    }
+
+    // Start drag after a short delay to distinguish from click
+    dragTimeoutRef.current = setTimeout(() => {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX,
+        y: e.clientY,
+      });
+      console.log("Started dragging text element");
+    }, 150); // 150ms delay before drag starts
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
     console.log("MOUSE UP on", elementId, "target:", e.target);
+
+    // Clear drag timeout if mouse is released quickly (indicates click, not drag)
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+      dragTimeoutRef.current = null;
+    }
+
+    if (isDragging) {
+      setIsDragging(false);
+      // Reset hasDragged after a short delay to prevent click from firing
+      setTimeout(() => {
+        setHasDragged(false);
+      }, 100);
+    }
   };
 
-  // Get the specific style for this element
-  const elementStyle = getTextElementStyle(elementId);
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging) return;
+
+      const deltaX = e.clientX - dragStart.x;
+      const deltaY = e.clientY - dragStart.y;
+
+      // Mark as dragged if we moved more than a few pixels
+      if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+        setHasDragged(true);
+      }
+
+      const currentX = elementStyle.x || 0;
+      const currentY = elementStyle.y || 0;
+      const newX = currentX + deltaX;
+      const newY = currentY + deltaY;
+
+      // Slide dimensions
+      const slideWidth = 759;
+      const slideHeight = 427;
+
+      // Get element rotation
+      const rotation = elementStyle.rotation || 0;
+
+      // If element is not rotated, use simple boundary check
+      if (Math.abs(rotation) < 1) {
+        const minX = 0;
+        const maxX = slideWidth - 100; // Assume minimum element width
+        const minY = 0;
+        const maxY = slideHeight - 50; // Assume minimum element height
+
+        const boundedX = Math.max(minX, Math.min(maxX, newX));
+        const boundedY = Math.max(minY, Math.min(maxY, newY));
+
+        updateTextElementStyle(elementId, { x: boundedX, y: boundedY });
+      } else {
+        // For rotated elements, use more permissive bounds to avoid getting stuck
+        // Allow the element center to move within a larger area
+        const padding = 100; // Extra padding for rotated elements
+        const minX = -padding;
+        const maxX = slideWidth + padding;
+        const minY = -padding;
+        const maxY = slideHeight + padding;
+
+        const boundedX = Math.max(minX, Math.min(maxX, newX));
+        const boundedY = Math.max(minY, Math.min(maxY, newY));
+
+        updateTextElementStyle(elementId, { x: boundedX, y: boundedY });
+      }
+
+      setDragStart({ x: e.clientX, y: e.clientY });
+    },
+    [
+      isDragging,
+      dragStart,
+      elementStyle.x,
+      elementStyle.y,
+      elementStyle.rotation,
+      updateTextElementStyle,
+      elementId,
+    ]
+  );
+
+  const handleGlobalMouseUp = useCallback(() => {
+    setIsDragging(false);
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+      dragTimeoutRef.current = null;
+    }
+
+    // Reset hasDragged after a short delay to prevent click from firing
+    setTimeout(() => {
+      setHasDragged(false);
+    }, 100);
+  }, []);
+
+  // Add global mouse event listeners for dragging
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleGlobalMouseUp);
+
+      return () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleGlobalMouseUp);
+      };
+    }
+  }, [isDragging, handleMouseMove, handleGlobalMouseUp]);
 
   const cancelEditing = useCallback(() => {
     console.log("Canceling edit");
@@ -214,8 +335,8 @@ export const EditableText: React.FC<EditableTextProps> = ({
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (clickTimeoutRef.current) {
-        clearTimeout(clickTimeoutRef.current);
+      if (dragTimeoutRef.current) {
+        clearTimeout(dragTimeoutRef.current);
       }
     };
   }, []);
@@ -225,25 +346,20 @@ export const EditableText: React.FC<EditableTextProps> = ({
     console.log("Single click on element:", elementId);
     console.log("Event target:", e.target);
     console.log("Current target:", e.currentTarget);
+    console.log("Is dragging:", isDragging);
+    console.log("Has dragged:", hasDragged);
 
-    // Alternative double click detection
-    setClickCount((prev) => prev + 1);
-
-    if (clickTimeoutRef.current) {
-      clearTimeout(clickTimeoutRef.current);
+    // Don't handle click if we were dragging or just finished dragging
+    if (isDragging || hasDragged) {
+      console.log("Was dragging, ignoring click");
+      return;
     }
 
-    clickTimeoutRef.current = setTimeout(() => {
-      console.log("Click count:", clickCount + 1);
-      if (clickCount + 1 >= 2) {
-        console.log("DETECTED DOUBLE CLICK via manual tracking!");
-        startEditing();
-      }
-      setClickCount(0);
-    }, 300); // 300ms window for double click
+    // Prevent event bubbling to parent components
+    e.stopPropagation();
 
-    // Don't prevent default or stop propagation for single clicks
-    // e.stopPropagation(); // Removed this line
+    // Start editing immediately on click
+    startEditing();
 
     // Just select the element, don't save to history here
     // History will be saved when making actual changes
@@ -257,22 +373,12 @@ export const EditableText: React.FC<EditableTextProps> = ({
   const handleDoubleClick = (e: React.MouseEvent) => {
     console.log("=== DOUBLE CLICK EVENT ===");
     console.log("Double click detected on element:", elementId);
-    console.log("Event target:", e.target);
-    console.log("Current target:", e.currentTarget);
-    console.log("Is editing:", isEditing);
-    console.log("Selected element:", selectedTextElement);
 
+    // Prevent double click from bubbling
     e.stopPropagation();
-    // Remove preventDefault to allow proper double click detection
-    // e.preventDefault();
+    e.preventDefault();
 
-    // Clear any pending single click timeout
-    if (clickTimeoutRef.current) {
-      clearTimeout(clickTimeoutRef.current);
-      clickTimeoutRef.current = null;
-    }
-    setClickCount(0);
-
+    // Double click should also start editing (redundant but safe)
     startEditing();
     console.log("=== END DOUBLE CLICK EVENT ===");
   };
@@ -432,7 +538,7 @@ export const EditableText: React.FC<EditableTextProps> = ({
 
   return (
     <div
-      className={`cursor-pointer transition-all duration-200 ${className} `}
+      className={`transition-all duration-200 ${className} `}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       onMouseDown={handleMouseDown}
@@ -451,7 +557,8 @@ export const EditableText: React.FC<EditableTextProps> = ({
         minHeight: "1.2em",
         minWidth: "50px",
         pointerEvents: "auto",
-        userSelect: "text",
+        userSelect: isEditing ? "text" : "none", // Allow text selection only when editing
+        cursor: isEditing ? "text" : isDragging ? "grabbing" : "grab", // Show drag cursor when not editing
         overflow: "hidden", // Prevent content overflow
         wordWrap: "break-word",
         overflowWrap: "break-word",

@@ -20,7 +20,6 @@ export const SharePopup: React.FC<SharePopupProps> = ({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40" onClick={onClose} />
 
       {/* Popup */}
       <div className="absolute w-[197px] h-[100px] px-4 flex flex-col items-center justify-center top-full right-0 mt-2 bg-white rounded-[12px] shadow-lg border border-[#E5E7EB] z-50 overflow-hidden">

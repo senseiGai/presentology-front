@@ -106,7 +106,7 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
             isGenerating && "pt-[24px]"
           }`}
         >
-          <div className="space-y-[24px]">
+          <div className="flex flex-col gap-y-[24px]">
             {Array.from({ length: totalSlides }, (_, index) => {
               const slideNumber = index + 1;
               const isGenerated = generatedSlides.includes(slideNumber);
@@ -126,6 +126,7 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
                         slideRefs.current[slideNumber] = el;
                       }
                     }}
+                    className="relative"
                   >
                     <SlidePreview
                       slideNumber={slideNumber}
@@ -142,29 +143,29 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
                     >
                       {renderSlideContent(slideNumber)}
                     </SlidePreview>
-                  </div>
 
-                  {isGenerated && !isGenerating && (
-                    <div
-                      className="w-full h-[3px] flex items-center justify-center relative cursor-pointer"
-                      onMouseEnter={() => setHoveredInsertZone(slideNumber)}
-                      onMouseLeave={() => setHoveredInsertZone(null)}
-                      onClick={() => handleInsertSlideClick(slideNumber)}
-                    >
-                      {hoveredInsertZone === slideNumber && (
-                        <div className="flex items-center justify-center relative z-[50] w-[24px] h-[24px] bg-[#BBA2FE] text-white rounded-full text-lg font-bold">
-                          <MiniPlusIcon />
-                        </div>
-                      )}
+                    {isGenerated && !isGenerating && (
                       <div
-                        className={`absolute inset-0 ${
-                          hoveredInsertZone === slideNumber
-                            ? "bg-[#BBA2FE]"
-                            : ""
-                        } rounded transition-colors`}
-                      />
-                    </div>
-                  )}
+                        className="w-full absolute -bottom-[12px] left-0 h-[3px] flex items-center justify-center cursor-pointer z-10"
+                        onMouseEnter={() => setHoveredInsertZone(slideNumber)}
+                        onMouseLeave={() => setHoveredInsertZone(null)}
+                        onClick={() => handleInsertSlideClick(slideNumber)}
+                      >
+                        {hoveredInsertZone === slideNumber && (
+                          <div className="flex items-center justify-center relative z-[50] w-[24px] h-[24px] bg-[#BBA2FE] text-white rounded-full text-lg font-bold">
+                            <MiniPlusIcon />
+                          </div>
+                        )}
+                        <div
+                          className={`absolute inset-0 ${
+                            hoveredInsertZone === slideNumber
+                              ? "bg-[#BBA2FE]"
+                              : ""
+                          } rounded transition-colors`}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </React.Fragment>
               );
             })}

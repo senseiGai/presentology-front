@@ -184,16 +184,26 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   };
 
   const handleTextCopy = (elementId: string) => {
-    console.log("SlideContent: handleTextCopy called for:", elementId);
+    console.log(
+      "SlideContent: handleTextCopy called for:",
+      elementId,
+      "on slide:",
+      slideNumber
+    );
     const newElementId = usePresentationStore
       .getState()
-      .copyTextElement(elementId);
+      .copyTextElement(elementId, slideNumber);
     console.log(
       "Text element copied:",
       elementId,
       "-> new element:",
       newElementId
     );
+
+    // Select the newly copied element
+    if (newElementId && newElementId !== elementId) {
+      setSelectedTextElement(newElementId);
+    }
   };
 
   const handleTextMoveUp = (elementId: string) => {
@@ -271,39 +281,66 @@ export const SlideContent: React.FC<SlideContentProps> = ({
       `slide-${slideNumber}-text`,
     ];
 
-    return Object.entries(textElementPositions)
-      .filter(([elementId]) => {
+    console.log("renderDynamicTextElements - slideNumber:", slideNumber);
+    console.log(
+      "renderDynamicTextElements - textElementPositions:",
+      textElementPositions
+    );
+
+    const filteredElements = Object.entries(textElementPositions).filter(
+      ([elementId]) => {
         // Filter out static elements
         if (staticElementIds.includes(elementId)) {
+          console.log("Filtering out static element:", elementId);
           return false;
         }
         // Only show elements that belong to current slide
-        return elementId.includes(`slide-${slideNumber}-`);
-      })
-      .map(([elementId, position]) => {
-        const content = textElementContents[elementId] || "New text element";
-
-        return (
-          <ResizableTextBox
-            key={elementId}
-            isSelected={selectedTextElement === elementId}
-            elementId={elementId}
-            onDelete={handleTextDelete}
-            onCopy={() => handleTextCopy(elementId)}
-            onMoveUp={() => handleTextMoveUp(elementId)}
-            onMoveDown={() => handleTextMoveDown(elementId)}
-          >
-            <EditableText
-              elementId={elementId}
-              initialText={content}
-              className="text-[16px] cursor-pointer transition-colors"
-              onClick={(e) => {
-                handleTextClick(elementId, content, e);
-              }}
-            />
-          </ResizableTextBox>
+        const belongsToSlide = elementId.includes(`slide-${slideNumber}-`);
+        console.log(
+          "Element",
+          elementId,
+          "belongs to slide",
+          slideNumber,
+          ":",
+          belongsToSlide
         );
-      });
+        return belongsToSlide;
+      }
+    );
+
+    console.log(
+      "Filtered elements for slide",
+      slideNumber,
+      ":",
+      filteredElements
+    );
+
+    return filteredElements.map(([elementId, position]) => {
+      const content = textElementContents[elementId] || "New text element";
+
+      console.log("Rendering element:", elementId, "with content:", content);
+
+      return (
+        <ResizableTextBox
+          key={elementId}
+          isSelected={selectedTextElement === elementId}
+          elementId={elementId}
+          onDelete={handleTextDelete}
+          onCopy={() => handleTextCopy(elementId)}
+          onMoveUp={() => handleTextMoveUp(elementId)}
+          onMoveDown={() => handleTextMoveDown(elementId)}
+        >
+          <EditableText
+            elementId={elementId}
+            initialText={content}
+            className="text-[16px] cursor-pointer transition-colors"
+            onClick={(e) => {
+              handleTextClick(elementId, content, e);
+            }}
+          />
+        </ResizableTextBox>
+      );
+    });
   };
 
   // Render table elements from store

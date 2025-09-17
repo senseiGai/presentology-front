@@ -64,25 +64,13 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
   ]);
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      console.log("ResizableTextBox handleMouseDown triggered");
+      console.log(
+        "ResizableTextBox handleMouseDown triggered - this should NOT handle drag anymore"
+      );
 
-      // Only handle drag if this is actually selected
-      if (!isSelected) {
-        console.log("Element not selected, ignoring drag");
-        return;
-      }
-
-      // Prevent default behavior to avoid text selection during drag
-      e.preventDefault();
-      e.stopPropagation();
-
-      setIsDragging(true);
-      setDragStart({
-        x: e.clientX,
-        y: e.clientY,
-      });
-
-      console.log("Started dragging");
+      // ResizableTextBox no longer handles dragging
+      // Dragging is now handled by EditableText component
+      return;
     },
     [isSelected]
   );
@@ -105,38 +93,8 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
     (e: MouseEvent) => {
       if (!boxRef.current) return;
 
-      if (isDragging) {
-        // Handle element movement - update the element style
-        const deltaX = e.clientX - dragStart.x;
-        const deltaY = e.clientY - dragStart.y;
-
-        const currentX = elementStyle.x || 0;
-        const currentY = elementStyle.y || 0;
-        const newX = currentX + deltaX;
-        const newY = currentY + deltaY;
-
-        // Simple boundary check with fixed slide dimensions
-        const slideWidth = 759;
-        const slideHeight = 427;
-
-        // Get current element dimensions
-        const boxRect = boxRef.current.getBoundingClientRect();
-
-        // Calculate boundaries to keep element within slide
-        const minX = 0;
-        const maxX = slideWidth - boxRect.width;
-        const minY = 0;
-        const maxY = slideHeight - boxRect.height;
-
-        // Apply boundaries
-        const boundedX = Math.max(minX, Math.min(maxX, newX));
-        const boundedY = Math.max(minY, Math.min(maxY, newY));
-
-        updateTextElementStyle(elementId, { x: boundedX, y: boundedY });
-        setDragStart({ x: e.clientX, y: e.clientY });
-        onMove?.(deltaX, deltaY);
-      }
-
+      // Remove dragging logic - now handled by EditableText
+      // Only handle resizing now
       if (isResizing) {
         const deltaX = e.clientX - dragStart.x;
         const deltaY = e.clientY - dragStart.y;
@@ -214,28 +172,23 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
       }
     },
     [
-      isDragging,
       isResizing,
       dragStart,
       initialDimensions,
       resizeDirection,
-      onMove,
       onResize,
       elementId,
-      updateTextElementStyle,
       getTextElementPosition,
-      elementStyle,
     ]
   );
 
   const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
     setIsResizing(false);
     setResizeDirection("");
   }, []);
 
   useEffect(() => {
-    if (isDragging || isResizing) {
+    if (isResizing) {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
 
@@ -244,7 +197,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
         document.removeEventListener("mouseup", handleMouseUp);
       };
     }
-  }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
+  }, [isResizing, handleMouseMove, handleMouseUp]);
 
   if (!isSelected) {
     return (
@@ -298,7 +251,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           wordWrap: "break-word",
           overflowWrap: "break-word",
           overflow: "visible",
-          transition: isDragging ? "none" : "all 0.1s ease-out",
+          transition: "all 0.1s ease-out",
           zIndex: elementStyle.zIndex || 1,
           boxSizing: "border-box",
         }}
@@ -334,64 +287,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
               pointerEvents: "none",
             }}
           >
-            {/* Draggable areas - only on the borders, not over text */}
-            {/* Top border */}
-            <div
-              className="absolute pointer-events-auto"
-              onMouseDown={handleMouseDown}
-              style={{
-                top: "-2px",
-                left: "-2px",
-                right: "-2px",
-                height: "4px",
-                background: "transparent",
-                cursor: isDragging ? "grabbing" : "grab",
-                zIndex: 2,
-              }}
-            />
-            {/* Bottom border */}
-            <div
-              className="absolute pointer-events-auto"
-              onMouseDown={handleMouseDown}
-              style={{
-                bottom: "-2px",
-                left: "-2px",
-                right: "-2px",
-                height: "4px",
-                background: "transparent",
-                cursor: isDragging ? "grabbing" : "grab",
-                zIndex: 2,
-              }}
-            />
-            {/* Left border */}
-            <div
-              className="absolute pointer-events-auto"
-              onMouseDown={handleMouseDown}
-              style={{
-                top: "2px",
-                bottom: "2px",
-                left: "-2px",
-                width: "4px",
-                background: "transparent",
-                cursor: isDragging ? "grabbing" : "grab",
-                zIndex: 2,
-              }}
-            />
-            {/* Right border */}
-            <div
-              className="absolute pointer-events-auto"
-              onMouseDown={handleMouseDown}
-              style={{
-                top: "2px",
-                bottom: "2px",
-                right: "-2px",
-                width: "4px",
-                background: "transparent",
-                cursor: isDragging ? "grabbing" : "grab",
-                zIndex: 2,
-              }}
-            />
-
+            {" "}
             <div
               className="absolute pointer-events-auto"
               style={{
@@ -409,7 +305,6 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
                 onDelete={onDelete}
               />
             </div>
-
             {/* Resize handles */}
             <div
               className="absolute bg-[#bba2fe] size-2 cursor-nw-resize pointer-events-auto"

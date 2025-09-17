@@ -196,7 +196,7 @@ export interface PresentationState {
   setTextElementContent: (elementId: string, content: string) => void;
   getTextElementContent: (elementId: string) => string;
   deleteTextElement: (elementId: string) => void;
-  copyTextElement: (elementId: string) => string;
+  copyTextElement: (elementId: string, slideNumber?: number) => string;
   moveTextElementUp: (elementId: string) => void;
   moveTextElementDown: (elementId: string) => void;
   clearTextSelection: () => void;
@@ -225,6 +225,7 @@ export interface PresentationState {
   getImageElement: (
     elementId: string
   ) => PresentationState["imageElements"][number][string] | null;
+  copyImageElement: (elementId: string) => string;
 
   // Table editing actions
   setSelectedTableElement: (elementId: string | null) => void;
@@ -721,6 +722,55 @@ export const usePresentationStore = create<PresentationState>()(
       return state.imageElements[currentSlide]?.[elementId] || null;
     },
 
+    copyImageElement: (elementId: string) => {
+      console.log("Store: copyImageElement called for:", elementId);
+      const state = get();
+      const currentSlide = state.currentSlide;
+      const originalElement = state.imageElements[currentSlide]?.[elementId];
+
+      if (!originalElement) {
+        console.log("Store: No image element found to copy:", elementId);
+        return elementId;
+      }
+
+      // Generate new unique ID
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substr(2, 9);
+      const newId = `image-${timestamp}-${randomId}`;
+
+      // Copy element with offset position (20px down and right)
+      const newPosition = {
+        x: originalElement.position.x + 20,
+        y: originalElement.position.y + 20,
+      };
+
+      console.log(
+        "Store: Copying image element with new ID:",
+        newId,
+        "at position:",
+        newPosition
+      );
+      console.log("Original element data:", originalElement);
+
+      set((state) => ({
+        imageElements: {
+          ...state.imageElements,
+          [currentSlide]: {
+            ...state.imageElements[currentSlide],
+            [newId]: {
+              ...originalElement,
+              id: newId,
+              position: newPosition,
+            },
+          },
+        },
+        selectedImageElement: newId, // Automatically select the new copied element
+      }));
+
+      console.log("Store: Successfully copied image element, new ID:", newId);
+      return newId;
+    },
+
     // Table editing actions
     setSelectedTableElement: (elementId: string | null) =>
       set({ selectedTableElement: elementId }),
@@ -935,25 +985,59 @@ export const usePresentationStore = create<PresentationState>()(
         };
       }),
 
-    copyTextElement: (elementId: string) => {
+    copyTextElement: (elementId: string, slideNumber?: number) => {
       // Save current state to history before making changes
       get().saveToHistory();
 
-      console.log("Store: copyTextElement called for:", elementId);
+      console.log(
+        "Store: copyTextElement called for:",
+        elementId,
+        "on slide:",
+        slideNumber
+      );
       const state = get();
       const originalElement = state.textElementStyles[elementId];
       const originalPosition = state.textElementPositions[elementId];
-      const originalContent = state.textElementContents[elementId];
+      let originalContent = state.textElementContents[elementId];
+
+      // If no content is stored, try to get default content for static elements
+      if (!originalContent) {
+        switch (elementId) {
+          case "title-main":
+            originalContent = "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ";
+            break;
+          case "title-sub":
+            originalContent = "Подзаголовок\nв две строки";
+            break;
+          case "content-main":
+            originalContent = "ОСНОВНОЙ ЗАГОЛОВОК";
+            break;
+          case "content-sub":
+            originalContent = "Подзаголовок для контентного слайда";
+            break;
+          default:
+            if (elementId.includes(`slide-${slideNumber}-text`)) {
+              originalContent = `Слайд ${slideNumber}`;
+            } else {
+              originalContent = "New text element";
+            }
+            break;
+        }
+      }
+
+      console.log("Final content to copy:", originalContent);
 
       if (!originalElement) {
         console.log("Store: No element found to copy:", elementId);
         return elementId;
       }
 
-      // Generate new unique ID
-      const newId = `text-${Date.now()}-${Math.random()
-        .toString(36)
-        .substr(2, 9)}`;
+      // Generate new unique ID with slide number if provided
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substr(2, 9);
+      const newId = slideNumber
+        ? `slide-${slideNumber}-text-${timestamp}-${randomId}`
+        : `text-${timestamp}-${randomId}`;
 
       // Copy element with offset position
       const newPosition = originalPosition
@@ -966,11 +1050,16 @@ export const usePresentationStore = create<PresentationState>()(
         "at position:",
         newPosition
       );
+      console.log("Original element data:", {
+        styles: originalElement,
+        position: originalPosition,
+        content: originalContent,
+      });
 
       set((state) => ({
         textElementStyles: {
           ...state.textElementStyles,
-          [newId]: { ...originalElement }, // Copy exact style without color change
+          [newId]: { ...originalElement }, // Copy all styles including fontSize, color, etc.
         },
         textElementPositions: {
           ...state.textElementPositions,
@@ -978,10 +1067,17 @@ export const usePresentationStore = create<PresentationState>()(
         },
         textElementContents: {
           ...state.textElementContents,
-          [newId]: originalContent || "",
+          [newId]: originalContent || "", // Copy the text content
         },
+        selectedTextElement: newId, // Automatically select the new copied element
       }));
 
+      console.log("Store: Successfully copied element, new ID:", newId);
+      console.log("New element data:", {
+        styles: get().textElementStyles[newId],
+        position: get().textElementPositions[newId],
+        content: get().textElementContents[newId],
+      });
       return newId;
     },
 

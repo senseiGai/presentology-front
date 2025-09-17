@@ -178,10 +178,17 @@ export const TextEditorPanel: React.FC = () => {
       const formats = new Set<TextFormat>();
       if (elementStyle.fontWeight === "bold") formats.add("bold");
       if (elementStyle.fontStyle === "italic") formats.add("italic");
+      if (elementStyle.textDecoration === "underline") formats.add("underline");
+
+      setTextFormats(formats);
 
       // Detect list type from saved content
       const savedContent = getTextElementContent(selectedTextElement);
       setSelectedListType(detectListType(savedContent || ""));
+    } else {
+      // Reset formatting state when no element is selected
+      setTextFormats(new Set());
+      setSelectedListType(null);
     }
   }, [selectedTextElement, getTextElementStyle, getTextElementContent]);
 
@@ -497,7 +504,11 @@ export const TextEditorPanel: React.FC = () => {
       className="bg-white relative w-[274px]"
       style={{ height: "calc(100vh - 80px)" }}
     >
-      {/* AI Input Section */}
+      <div className="w-full h-9 bg-[#F4F4F4] flex items-center px-4">
+        <div className="text-[14px] font-medium text-[#0B0911] tracking-[-0.42px]">
+          Генерация
+        </div>
+      </div>
       <div className="p-4">
         <div className="flex flex-col gap-2 w-[242px]">
           <div className="flex items-center justify-between w-full">
@@ -526,7 +537,7 @@ export const TextEditorPanel: React.FC = () => {
               onChange={handleAiInputChange}
               onFocus={() => setIsTextareaFocused(true)}
               onBlur={() => setIsTextareaFocused(false)}
-              placeholder="Какое изображение сгенерировать?"
+              placeholder="Пожелания к тексту"
               className="w-full h-[73px] absolute top-3 left-4 pr-10 outline-none resize-none text-[14px] font-normal text-[#0B0911] tracking-[-0.42px] placeholder-[#BEBEC0]"
               maxLength={500}
             />
@@ -630,9 +641,10 @@ export const TextEditorPanel: React.FC = () => {
         )}
       </div>
 
-      {/* Divider */}
-      <div className="w-full h-0 relative">
-        <div className="absolute top-[-1px] left-0 right-0 border-t border-[#E9E9E9]" />
+      <div className="w-full h-9 bg-[#F4F4F4] flex items-center px-4 mt-2">
+        <div className="text-[14px] font-medium text-[#0B0911] tracking-[-0.42px]">
+          Стилизация
+        </div>
       </div>
 
       {/* Position Section */}
@@ -749,7 +761,7 @@ export const TextEditorPanel: React.FC = () => {
                   />
                 </div>
               </div>
-              <div className="w-16 h-8 relative rounded-[8px] border border-[#E9E9E9]">
+              <div className="w-18 h-8 relative rounded-[8px] border border-[#E9E9E9]">
                 <div className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4">
                   <AngleIcon />
                 </div>
@@ -799,7 +811,7 @@ export const TextEditorPanel: React.FC = () => {
                   </div>
                 </button>
                 {showFontDropdown && (
-                  <div className="absolute top-full left-0 mt-1 w-full bg-white border border-[#E9E9E9] rounded-[16px] shadow-[0px_4px_10px_0px_rgba(0,0,0,0.08)] z-50 p-2 max-h-64 overflow-y-auto">
+                  <div className="absolute -top-20 left-0 mt-1 w-full bg-white border border-[#E9E9E9] rounded-[16px] shadow-[0px_4px_10px_0px_rgba(0,0,0,0.08)] z-50 p-2 max-h-64 overflow-y-auto">
                     {fontSizes.map((size) => (
                       <button
                         key={size}

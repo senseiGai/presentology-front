@@ -13,8 +13,12 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
   isSelected,
   onDelete,
 }) => {
-  const { getImageElement, updateImageElement, setSelectedImageElement } =
-    usePresentationStore();
+  const {
+    getImageElement,
+    updateImageElement,
+    setSelectedImageElement,
+    copyImageElement,
+  } = usePresentationStore();
 
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -283,7 +287,10 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
   };
 
   const handleCopy = () => {
-    // This will be handled by ImageToolbar itself
+    if (imageElement) {
+      console.log("ResizableImageBox: Duplicating image element:", elementId);
+      copyImageElement(elementId);
+    }
   };
 
   const handleDelete = () => {

@@ -22,20 +22,20 @@ export const ImageToolbar: React.FC<ImageToolbarProps> = ({
   onCopy,
   onDelete,
 }) => {
-  const { getImageElement, updateImageElement } = usePresentationStore();
+  const {
+    getImageElement,
+    updateImageElement,
+    deleteImageElement,
+    setSelectedImageElement,
+    copyImageElement,
+  } = usePresentationStore();
 
   console.log("ImageToolbar rendering at position:", position);
 
-  // Handle copying image source to clipboard
-  const handleCopyToClipboard = async () => {
-    try {
-      const imageElement = getImageElement(elementId);
-      const imageSrc = imageElement?.src || "";
-      await navigator.clipboard.writeText(imageSrc);
-      console.log("Image source copied to clipboard:", imageSrc);
-    } catch (err) {
-      console.error("Failed to copy image source to clipboard:", err);
-    }
+  // Handle duplicating image element
+  const handleDuplicateImage = () => {
+    console.log("ImageToolbar: Duplicating image element:", elementId);
+    copyImageElement(elementId);
   };
 
   // Handle moving element up
@@ -66,6 +66,13 @@ export const ImageToolbar: React.FC<ImageToolbarProps> = ({
       position: { x: currentX, y: newY },
     });
     console.log("Moving image element down from y:", currentY, "to y:", newY);
+  };
+
+  // Handle deleting image element
+  const handleDelete = () => {
+    console.log("ImageToolbar: Deleting image element:", elementId);
+    deleteImageElement(elementId);
+    setSelectedImageElement(null);
   };
 
   // Prevent toolbar from losing focus when clicking on buttons
@@ -117,19 +124,19 @@ export const ImageToolbar: React.FC<ImageToolbarProps> = ({
       </button>
       <button
         onClick={handleButtonClick(() => {
-          console.log("ImageToolbar: Copy to clipboard button clicked");
-          handleCopyToClipboard();
+          console.log("ImageToolbar: Duplicate button clicked");
+          handleDuplicateImage();
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"
-        title="Копировать ссылку на изображение"
+        title="Дублировать изображение"
       >
         <GrayClipboardIcon />
       </button>
       <button
         onClick={handleButtonClick(() => {
           console.log("ImageToolbar: Delete button clicked");
-          onDelete();
+          handleDelete();
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#FEE2E2] rounded-[8px] transition-colors p-[8px]"

@@ -22,21 +22,10 @@ export const TextToolbar: React.FC<TextToolbarProps> = ({
   onCopy,
   onDelete,
 }) => {
-  const { getTextElementContent, getTextElementStyle, updateTextElementStyle } =
+  const { getTextElementStyle, updateTextElementStyle } =
     usePresentationStore();
 
   console.log("TextToolbar rendering at position:", position);
-
-  // Handle copying text content to clipboard
-  const handleCopyToClipboard = async () => {
-    try {
-      const textContent = getTextElementContent(elementId) || "";
-      await navigator.clipboard.writeText(textContent);
-      console.log("Text copied to clipboard:", textContent);
-    } catch (err) {
-      console.error("Failed to copy text to clipboard:", err);
-    }
-  };
 
   // Handle moving element up
   const handleMoveUp = () => {
@@ -109,12 +98,16 @@ export const TextToolbar: React.FC<TextToolbarProps> = ({
       </button>
       <button
         onClick={handleButtonClick(() => {
-          console.log("TextToolbar: Copy to clipboard button clicked");
-          handleCopyToClipboard();
+          console.log(
+            "TextToolbar: Copy/Duplicate button clicked for element:",
+            elementId
+          );
+          onCopy();
+          console.log("TextToolbar: onCopy callback executed");
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"
-        title="Копировать текст"
+        title="Дублировать объект"
       >
         <GrayClipboardIcon />
       </button>

@@ -39,6 +39,10 @@ export const ImagePanel: React.FC = () => {
     clearImageAreaSelection,
     currentSlide,
     getImageAreaSelection,
+    selectedImageElement,
+    deleteImageElement,
+    setSelectedImageElement,
+    addImageElement,
   } = usePresentationStore();
 
   // Get image area selection for current slide
@@ -217,8 +221,29 @@ export const ImagePanel: React.FC = () => {
   };
 
   const handleDelete = () => {
+    if (selectedImageElement) {
+      console.log(
+        "ImagePanel: Deleting selected image element:",
+        selectedImageElement
+      );
+      deleteImageElement(selectedImageElement);
+      setSelectedImageElement(null);
+    } else {
+      console.log("ImagePanel: No image element selected to delete");
+    }
     clearImageSelection();
     // Не очищаем выделение области, оставляем режим активным
+  };
+
+  // Test function to add a sample image
+  const handleAddTestImage = () => {
+    console.log("Adding test image to slide:", currentSlide);
+    const imageId = addImageElement(
+      currentSlide,
+      { x: 100, y: 100 },
+      { width: 200, height: 150 }
+    );
+    console.log("Test image added with ID:", imageId);
   };
 
   return (

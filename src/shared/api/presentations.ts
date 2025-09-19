@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { getAuthToken } from "@/shared/stores/auth.store";
 
 export interface Presentation {
   id: string;
@@ -33,10 +34,18 @@ const fetchPresentations = async (params?: {
   if (params?.limit) searchParams.append("limit", params.limit.toString());
   if (params?.cursor) searchParams.append("cursor", params.cursor);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://presentology-back-production.up.railway.app";
+  const token = getAuthToken();
+
+  if (!token) {
+    throw new Error("Требуется авторизация");
+  }
+
   const response = await fetch(`${baseUrl}/presentations/my?${searchParams}`, {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
   });

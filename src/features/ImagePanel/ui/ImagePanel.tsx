@@ -1,5 +1,11 @@
 import React, { useState, useRef } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
+import {
+  useFluxImageGeneration,
+  useMixedImageGeneration,
+  getImageSizeForStyle,
+  enhancePromptForStyle,
+} from "@/shared/api/images";
 import Image from "next/image";
 
 import GrayTrashIcon from "../../../../public/icons/GrayTrashIcon";
@@ -53,7 +59,6 @@ export const ImagePanel: React.FC = () => {
   const [prompt, setPrompt] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
   const [fileUploadProgress, setFileUploadProgress] = useState<number | null>(
     null
@@ -62,8 +67,13 @@ export const ImagePanel: React.FC = () => {
     "idle" | "loading" | "success" | "error" | "invalid"
   >("idle");
   const [urlError, setUrlError] = useState<string>("");
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Hook для генерации изображений
+  const fluxImageMutation = useFluxImageGeneration();
+  const mixedImageMutation = useMixedImageGeneration();
 
   // Убираем автоматическое активирование режима выделения области
   // React.useEffect(() => {
@@ -138,29 +148,68 @@ export const ImagePanel: React.FC = () => {
       setUploadedFiles([]);
     }
 
-    setIsGenerating(true);
     try {
-      // Здесь будет логика генерации изображения
       console.log("Generating image with:", {
         style: selectedStyle,
         model: selectedModel,
         prompt: prompt.trim(),
       });
 
-      // Симуляция генерации
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      let result;
 
-      // После успешной генерации обнуляем все поля
-      setSelectedStyle(undefined);
-      setSelectedModel(undefined);
-      setPrompt("");
-      setImageUrl("");
-      setUrlLoadingState("idle");
-      setUrlError("");
+      if (selectedModel === "flux") {
+        // Определяем размер изображения на основе стиля
+        const size = getImageSizeForStyle(selectedStyle);
+
+        // Улучшаем промпт на основе выбранного стиля
+        const enhancedPrompt = enhancePromptForStyle(
+          prompt.trim(),
+          selectedStyle
+        );
+
+        // Генерируем изображение через Flux API
+        result = await fluxImageMutation.mutateAsync({
+          prompt: enhancedPrompt,
+          count: 1,
+          size,
+        });
+      } else if (selectedModel === "internet") {
+        // Генерируем изображение через Mixed API (из интернета)
+        const enhancedPrompt = enhancePromptForStyle(
+          prompt.trim(),
+          selectedStyle
+        );
+
+        result = await mixedImageMutation.mutateAsync({
+          model: "unsplash",
+          count: 1,
+          unsplashOrientation: "landscape",
+          prompts: [enhancedPrompt],
+        });
+      }
+
+      if (
+        result?.success &&
+        result.data?.images &&
+        result.data.images.length > 0
+      ) {
+        console.log("Image generated successfully:", result.data.images);
+        setGeneratedImages(result.data.images);
+
+        // После успешной генерации обнуляем поля
+        setSelectedStyle(undefined);
+        setSelectedModel(undefined);
+        setPrompt("");
+        setImageUrl("");
+        setUrlLoadingState("idle");
+        setUrlError("");
+      } else {
+        console.error("Image generation failed:", result?.error);
+        // Здесь можно показать уведомление об ошибке
+      }
     } catch (error) {
       console.error("Error generating image:", error);
-    } finally {
-      setIsGenerating(false);
+      // Здесь можно показать уведомление об ошибке
     }
   };
 
@@ -345,16 +394,62 @@ export const ImagePanel: React.FC = () => {
           <button
             onClick={handleGenerate}
             disabled={
-              !prompt.trim() || !selectedStyle || !selectedModel || isGenerating
+              !prompt.trim() ||
+              !selectedStyle ||
+              !selectedModel ||
+              fluxImageMutation.isPending ||
+              mixedImageMutation.isPending
             }
             className={`w-[242px] mx-auto h-10 rounded-[8px] text-[18px] font-normal tracking-[-0.36px] transition-colors flex items-center justify-center ${
-              prompt.trim() && selectedStyle && selectedModel && !isGenerating
+              prompt.trim() &&
+              selectedStyle &&
+              selectedModel &&
+              !fluxImageMutation.isPending &&
+              !mixedImageMutation.isPending
                 ? "bg-[#BBA2FE] text-white hover:bg-[#A693FD]"
                 : "bg-[#DDD1FF] text-white cursor-not-allowed"
             }`}
           >
-            {isGenerating ? "Генерируем..." : "Сгенерировать"}
+            {fluxImageMutation.isPending || mixedImageMutation.isPending
+              ? "Генерируем..."
+              : "Сгенерировать"}
           </button>
+
+          {/* Generated Images Section */}
+          {generatedImages.length > 0 && (
+            <div className="space-y-2 px-4">
+              <div className="text-[14px] font-normal text-[#8F8F92] tracking-[-0.42px]">
+                Сгенерированные изображения
+              </div>
+              <div className="space-y-2">
+                {generatedImages.map((imageUrl, index) => (
+                  <div key={index} className="relative">
+                    <img
+                      src={imageUrl}
+                      alt={`Generated image ${index + 1}`}
+                      className="w-full h-auto rounded-[8px] border border-[#E9E9E9]"
+                      onError={(e) => {
+                        console.error(
+                          "Failed to load generated image:",
+                          imageUrl
+                        );
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        // Здесь можно добавить логику использования изображения
+                        console.log("Using generated image:", imageUrl);
+                      }}
+                      className="absolute bottom-2 right-2 bg-[#BBA2FE] text-white px-3 py-1 rounded-[4px] text-[12px] font-medium hover:bg-[#A693FD] transition-colors"
+                    >
+                      Использовать
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Divider */}
           <div className="w-full h-[36px] bg-[#F4F4F4] flex items-center pl-4">

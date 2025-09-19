@@ -22,26 +22,18 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   onCopy,
   onDelete,
 }) => {
-  const { getTableElement, updateTableElement } = usePresentationStore();
+  const { getTableElement, updateTableElement, copyTableElement } =
+    usePresentationStore();
 
   console.log("TableToolbar rendering at position:", position);
 
-  // Handle copying table content to clipboard
-  const handleCopyToClipboard = async () => {
-    try {
-      const tableData = getTableElement(elementId);
-      if (tableData) {
-        // Convert table to tab-separated text format
-        const tableText = tableData.cells
-          .map((row: any) => row.map((cell: any) => cell.content).join("\t"))
-          .join("\n");
-
-        await navigator.clipboard.writeText(tableText);
-        console.log("Table copied to clipboard:", tableText);
-      }
-    } catch (err) {
-      console.error("Failed to copy table to clipboard:", err);
-    }
+  // Handle duplicating table as new object (not copying to clipboard)
+  const handleDuplicateTable = () => {
+    console.log("TableToolbar: Duplicating table:", elementId);
+    const newTableId = copyTableElement(elementId);
+    console.log("TableToolbar: Table duplicated with new ID:", newTableId);
+    // onCopy callback can be used if needed for additional logic
+    onCopy();
   };
 
   // Handle moving element up
@@ -125,12 +117,12 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
       </button>
       <button
         onClick={handleButtonClick(() => {
-          console.log("TableToolbar: Copy to clipboard button clicked");
-          handleCopyToClipboard();
+          console.log("TableToolbar: Duplicate table button clicked");
+          handleDuplicateTable();
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"
-        title="Копировать таблицу"
+        title="Дублировать таблицу"
       >
         <GrayClipboardIcon />
       </button>

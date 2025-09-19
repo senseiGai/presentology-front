@@ -24,6 +24,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   const {
     setSelectedTextElement,
     selectedTextElement,
+    selectedTextElements,
     clearTextSelection,
     updateTextElementStyle,
     getTextElementStyle,
@@ -53,6 +54,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     setSelectedTableElement,
     updateTableElement,
     deleteTableElement,
+    copyTableElement,
   } = usePresentationStore();
 
   // Get image area selection for current slide
@@ -323,7 +325,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
       return (
         <ResizableTextBox
           key={elementId}
-          isSelected={selectedTextElement === elementId}
+          isSelected={selectedTextElements.includes(elementId)}
           elementId={elementId}
           onDelete={handleTextDelete}
           onCopy={() => handleTextCopy(elementId)}
@@ -360,8 +362,22 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               setEditingTableElement(null);
             }}
             onCopy={() => {
-              // TODO: Implement table copy functionality
-              console.log("Copy table:", elementId);
+              console.log(
+                "SlideContent: handleTableCopy called for:",
+                elementId
+              );
+              const newElementId = copyTableElement(elementId);
+              console.log(
+                "Table element copied:",
+                elementId,
+                "-> new element:",
+                newElementId
+              );
+
+              // Select the newly copied element
+              if (newElementId && newElementId !== elementId) {
+                setSelectedTableElement(newElementId);
+              }
             }}
             onMoveUp={() => {
               // TODO: Implement table layer movement
@@ -621,7 +637,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             style={{ position: "relative" }}
           >
             <ResizableTextBox
-              isSelected={selectedTextElement === "title-main"}
+              isSelected={selectedTextElements.includes("title-main")}
               elementId="title-main"
               onDelete={handleTextDelete}
               onCopy={() => handleTextCopy("title-main")}
@@ -639,7 +655,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             </ResizableTextBox>
 
             <ResizableTextBox
-              isSelected={selectedTextElement === "title-sub"}
+              isSelected={selectedTextElements.includes("title-sub")}
               elementId="title-sub"
               onDelete={handleTextDelete}
               onCopy={() => handleTextCopy("title-sub")}
@@ -683,7 +699,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             style={{ position: "relative" }}
           >
             <ResizableTextBox
-              isSelected={selectedTextElement === `slide-${slideNumber}-text`}
+              isSelected={selectedTextElements.includes(
+                `slide-${slideNumber}-text`
+              )}
               elementId={`slide-${slideNumber}-text`}
               onDelete={handleTextDelete}
               onCopy={() => handleTextCopy(`slide-${slideNumber}-text`)}

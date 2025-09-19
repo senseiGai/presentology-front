@@ -20,7 +20,9 @@ export const EditableText: React.FC<EditableTextProps> = ({
 }) => {
   const {
     selectedTextElement,
+    selectedTextElements,
     setSelectedTextElement,
+    toggleTextElementSelection,
     getTextElementStyle,
     deletedTextElements,
     getTextElementContent,
@@ -358,12 +360,18 @@ export const EditableText: React.FC<EditableTextProps> = ({
     // Prevent event bubbling to parent components
     e.stopPropagation();
 
-    // Start editing immediately on click
-    startEditing();
+    // Check if Ctrl/Cmd is pressed for multi-selection
+    const isCtrlPressed = e.ctrlKey || e.metaKey;
+    console.log("Ctrl/Cmd pressed:", isCtrlPressed);
 
-    // Just select the element, don't save to history here
-    // History will be saved when making actual changes
-    setSelectedTextElement(elementId);
+    // Handle selection (single or multi)
+    toggleTextElementSelection(elementId, isCtrlPressed);
+
+    // Only start editing if this is a single selection (not multi-select)
+    if (!isCtrlPressed) {
+      startEditing();
+    }
+
     if (onClick) {
       onClick(e);
     }

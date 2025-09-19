@@ -84,8 +84,11 @@ const colors = [
 export const TextEditorPanel: React.FC = () => {
   const {
     selectedTextElement,
+    selectedTextElements,
     setTextPosition,
     updateTextElementStyle,
+    updateMultipleTextElementStyles,
+    setMultipleTextElementContent,
     getTextElementStyle,
     deleteTextElement,
     clearTextSelection,
@@ -117,6 +120,12 @@ export const TextEditorPanel: React.FC = () => {
 
   // Text generation mutation
   const textMutation = useTextGeneration();
+
+  // Check if we're working with multiple selected elements
+  const hasMultipleSelection = selectedTextElements.length > 1;
+  const primaryElement = selectedTextElement; // This is the main selected element
+  const isMultiSelectionMode =
+    hasMultipleSelection && selectedTextElements.length > 0;
 
   const [xPosition, setXPosition] = useState(20);
   const [yPosition, setYPosition] = useState(60);
@@ -229,9 +238,15 @@ export const TextEditorPanel: React.FC = () => {
 
   // Handle element deletion
   const handleDeleteElement = () => {
-    if (selectedTextElement) {
-      console.log("Deleting element:", selectedTextElement);
-      deleteTextElement(selectedTextElement);
+    if (isMultiSelectionMode) {
+      // Delete all selected elements
+      console.log("Deleting multiple elements:", selectedTextElements);
+      selectedTextElements.forEach((elementId) => {
+        deleteTextElement(elementId);
+      });
+    } else if (primaryElement) {
+      console.log("Deleting element:", primaryElement);
+      deleteTextElement(primaryElement);
     } else {
       console.log("No element selected for deletion");
     }
@@ -272,8 +287,14 @@ export const TextEditorPanel: React.FC = () => {
         const generatedText = result.data.choices[0].message.content.trim();
         console.log("Generated text:", generatedText);
 
-        // Обновляем текст элемента
-        setTextElementContent(selectedTextElement, generatedText);
+        // Обновляем текст элемента (только для основного элемента при множественном выборе)
+        if (primaryElement) {
+          if (isMultiSelectionMode) {
+            setMultipleTextElementContent(selectedTextElements, generatedText);
+          } else {
+            setTextElementContent(primaryElement, generatedText);
+          }
+        }
 
         // Очищаем поле ввода
         setAiInput("");
@@ -299,10 +320,15 @@ export const TextEditorPanel: React.FC = () => {
 
   // Apply selected styles
   const handleApplyStyles = () => {
-    if (selectedStyles.length > 0 && selectedTextElement) {
-      updateTextElementStyle(selectedTextElement, {
-        style: selectedStyles.join(", ") as any,
-      });
+    if (selectedStyles.length > 0 && primaryElement) {
+      const styleUpdate = { style: selectedStyles.join(", ") as any };
+
+      if (isMultiSelectionMode) {
+        updateMultipleTextElementStyles(selectedTextElements, styleUpdate);
+      } else {
+        updateTextElementStyle(primaryElement, styleUpdate);
+      }
+
       setSelectedStyles([]);
       setShowApplyButton(false);
     }
@@ -312,16 +338,28 @@ export const TextEditorPanel: React.FC = () => {
   const handleFontSizeSelect = (size: FontSize) => {
     setFontSize(size);
     setShowFontDropdown(false);
-    if (selectedTextElement) {
-      updateTextElementStyle(selectedTextElement, { fontSize: size });
+    if (primaryElement) {
+      if (isMultiSelectionMode) {
+        updateMultipleTextElementStyles(selectedTextElements, {
+          fontSize: size,
+        });
+      } else {
+        updateTextElementStyle(primaryElement, { fontSize: size });
+      }
     }
   };
 
   // Handle text alignment
   const handleTextAlignChange = (align: TextAlign) => {
     setTextAlign(align);
-    if (selectedTextElement) {
-      updateTextElementStyle(selectedTextElement, { textAlign: align });
+    if (primaryElement) {
+      if (isMultiSelectionMode) {
+        updateMultipleTextElementStyles(selectedTextElements, {
+          textAlign: align,
+        });
+      } else {
+        updateTextElementStyle(primaryElement, { textAlign: align });
+      }
     }
   };
 
@@ -335,25 +373,29 @@ export const TextEditorPanel: React.FC = () => {
         newFormats.add(format);
       }
 
-      // Apply formatting changes to selected element
-      if (selectedTextElement) {
+      // Apply formatting changes to selected element(s)
+      if (primaryElement) {
+        const styleUpdates: any = {};
+
         if (format === "bold") {
           const isBold = newFormats.has("bold");
-          updateTextElementStyle(selectedTextElement, {
-            fontWeight: isBold ? "bold" : "normal",
-          });
+          styleUpdates.fontWeight = isBold ? "bold" : "normal";
         }
         if (format === "italic") {
           const isItalic = newFormats.has("italic");
-          updateTextElementStyle(selectedTextElement, {
-            fontStyle: isItalic ? "italic" : "normal",
-          });
+          styleUpdates.fontStyle = isItalic ? "italic" : "normal";
         }
         if (format === "underline") {
           const isUnderline = newFormats.has("underline");
-          updateTextElementStyle(selectedTextElement, {
-            textDecoration: isUnderline ? "underline" : "none",
-          });
+          styleUpdates.textDecoration = isUnderline ? "underline" : "none";
+        }
+
+        if (Object.keys(styleUpdates).length > 0) {
+          if (isMultiSelectionMode) {
+            updateMultipleTextElementStyles(selectedTextElements, styleUpdates);
+          } else {
+            updateTextElementStyle(primaryElement, styleUpdates);
+          }
         }
       }
 
@@ -370,26 +412,18 @@ export const TextEditorPanel: React.FC = () => {
 
     console.log("New list type:", currentListType);
 
-    // Apply list formatting to the current text content
-    if (selectedTextElement) {
-      const currentContent = getTextElementContent(selectedTextElement) || "";
-      console.log("Current content:", currentContent);
-
-      // If there's no content, create placeholder content for lists
-      if (!currentContent.trim() && currentListType) {
-        const placeholderContent =
-          currentListType === "bulletList"
-            ? "• Элемент списка"
-            : "1. Элемент списка";
-        console.log("Creating placeholder content:", placeholderContent);
-        setTextElementContent(selectedTextElement, placeholderContent);
-        return;
+    const formatListContent = (
+      content: string,
+      listType: "bulletList" | "numberList" | null
+    ) => {
+      if (!content.trim() && listType) {
+        return listType === "bulletList"
+          ? "• Элемент списка"
+          : "1. Элемент списка";
       }
 
-      let newContent = currentContent;
-
       // First, always remove existing list formatting to avoid overlapping
-      const cleanContent = currentContent
+      const cleanContent = content
         .split("\n")
         .map((line: string) => {
           return line.replace(/^(•\s*|-\s*|\*\s*|\d+\.\s*)/, "").trim();
@@ -398,35 +432,28 @@ export const TextEditorPanel: React.FC = () => {
 
       console.log("Clean content:", cleanContent);
 
-      if (currentListType) {
+      if (listType) {
         // Split by lines and preserve empty lines for better formatting
         const lines = cleanContent.split("\n");
 
         // If content becomes empty after cleaning, add a default item
         if (lines.every((line) => !line.trim())) {
-          const defaultContent =
-            currentListType === "bulletList"
-              ? "• Элемент списка"
-              : "1. Элемент списка";
-          console.log(
-            "Content empty after cleaning, using default:",
-            defaultContent
-          );
-          setTextElementContent(selectedTextElement, defaultContent);
-          return;
+          return listType === "bulletList"
+            ? "• Элемент списка"
+            : "1. Элемент списка";
         }
 
-        if (currentListType === "bulletList") {
-          newContent = lines
+        if (listType === "bulletList") {
+          return lines
             .map((line: string) => {
               const trimmed = line.trim();
               // Keep empty lines as they are, add bullets only to non-empty lines
               return trimmed ? `• ${trimmed}` : "";
             })
             .join("\n");
-        } else if (currentListType === "numberList") {
+        } else if (listType === "numberList") {
           let itemNumber = 1;
-          newContent = lines
+          return lines
             .map((line: string) => {
               const trimmed = line.trim();
               // Keep empty lines as they are, add numbers only to non-empty lines
@@ -437,19 +464,32 @@ export const TextEditorPanel: React.FC = () => {
             })
             .join("\n");
         }
+      }
+
+      // Just use the clean content without any list formatting
+      return cleanContent || "Введите текст";
+    };
+
+    // Apply list formatting to text content
+    if (primaryElement) {
+      if (isMultiSelectionMode) {
+        // Apply to multiple elements
+        const elementsToUpdate = selectedTextElements.map((elementId) => {
+          const currentContent = getTextElementContent(elementId) || "";
+          const newContent = formatListContent(currentContent, currentListType);
+          return { elementId, content: newContent };
+        });
+
+        elementsToUpdate.forEach(({ elementId, content }) => {
+          setTextElementContent(elementId, content);
+        });
       } else {
-        // Just use the clean content without any list formatting
-        newContent = cleanContent;
+        // Apply to single element
+        const currentContent = getTextElementContent(primaryElement) || "";
+        const newContent = formatListContent(currentContent, currentListType);
+        console.log("Final content:", newContent);
+        setTextElementContent(primaryElement, newContent);
       }
-
-      // Always ensure we have some content
-      if (!newContent.trim()) {
-        newContent = "Введите текст";
-        console.log("Final content was empty, using fallback");
-      }
-
-      console.log("Final content:", newContent);
-      setTextElementContent(selectedTextElement, newContent);
     }
   };
 
@@ -457,7 +497,7 @@ export const TextEditorPanel: React.FC = () => {
   const handleHorizontalAlign = (align: "left" | "center" | "right") => {
     setHorizontalAlign((prev) => (prev === align ? null : align));
 
-    if (selectedTextElement) {
+    if (primaryElement) {
       const slideWidth = 759;
       let newX = 0;
 
@@ -469,7 +509,11 @@ export const TextEditorPanel: React.FC = () => {
         newX = slideWidth - 200; // Approximate right, adjust as needed
       }
 
-      updateTextElementStyle(selectedTextElement, { x: newX });
+      if (isMultiSelectionMode) {
+        updateMultipleTextElementStyles(selectedTextElements, { x: newX });
+      } else {
+        updateTextElementStyle(primaryElement, { x: newX });
+      }
     }
   };
 
@@ -477,7 +521,7 @@ export const TextEditorPanel: React.FC = () => {
   const handleVerticalAlign = (align: "top" | "center" | "bottom") => {
     setVerticalAlign((prev) => (prev === align ? null : align));
 
-    if (selectedTextElement) {
+    if (primaryElement) {
       const slideHeight = 427;
       let newY = 0;
 
@@ -489,15 +533,23 @@ export const TextEditorPanel: React.FC = () => {
         newY = slideHeight - 50; // Approximate bottom, adjust as needed
       }
 
-      updateTextElementStyle(selectedTextElement, { y: newY });
+      if (isMultiSelectionMode) {
+        updateMultipleTextElementStyles(selectedTextElements, { y: newY });
+      } else {
+        updateTextElementStyle(primaryElement, { y: newY });
+      }
     }
   };
 
   // Handle color selection
   const handleColorSelect = (color: string) => {
     setSelectedColor(color);
-    if (selectedTextElement) {
-      updateTextElementStyle(selectedTextElement, { color });
+    if (primaryElement) {
+      if (isMultiSelectionMode) {
+        updateMultipleTextElementStyles(selectedTextElements, { color });
+      } else {
+        updateTextElementStyle(primaryElement, { color });
+      }
     }
   };
 
@@ -517,13 +569,20 @@ export const TextEditorPanel: React.FC = () => {
     });
 
     // Update element style with position changes
-    if (selectedTextElement) {
+    if (primaryElement) {
+      const styleUpdate: any = {};
       if (field === "x") {
-        updateTextElementStyle(selectedTextElement, { x: value });
+        styleUpdate.x = value;
       } else if (field === "y") {
-        updateTextElementStyle(selectedTextElement, { y: value });
+        styleUpdate.y = value;
       } else if (field === "rotation") {
-        updateTextElementStyle(selectedTextElement, { rotation: value });
+        styleUpdate.rotation = value;
+      }
+
+      if (isMultiSelectionMode) {
+        updateMultipleTextElementStyles(selectedTextElements, styleUpdate);
+      } else {
+        updateTextElementStyle(primaryElement, styleUpdate);
       }
     }
   };
@@ -569,8 +628,14 @@ export const TextEditorPanel: React.FC = () => {
     const hexColor = hslToHex(customHue, saturation, lightness);
 
     setSelectedColor(hexColor);
-    if (selectedTextElement) {
-      updateTextElementStyle(selectedTextElement, { color: hexColor });
+    if (primaryElement) {
+      if (isMultiSelectionMode) {
+        updateMultipleTextElementStyles(selectedTextElements, {
+          color: hexColor,
+        });
+      } else {
+        updateTextElementStyle(primaryElement, { color: hexColor });
+      }
     }
   };
 
@@ -589,8 +654,14 @@ export const TextEditorPanel: React.FC = () => {
       const hexColor = hslToHex(hue, saturation, lightness);
 
       setSelectedColor(hexColor);
-      if (selectedTextElement) {
-        updateTextElementStyle(selectedTextElement, { color: hexColor });
+      if (primaryElement) {
+        if (isMultiSelectionMode) {
+          updateMultipleTextElementStyles(selectedTextElements, {
+            color: hexColor,
+          });
+        } else {
+          updateTextElementStyle(primaryElement, { color: hexColor });
+        }
       }
     }
   };
@@ -605,6 +676,11 @@ export const TextEditorPanel: React.FC = () => {
       <div className="w-full h-9 bg-[#F4F4F4] flex items-center px-4">
         <div className="text-[14px] font-medium text-[#0B0911] tracking-[-0.42px]">
           Генерация
+          {isMultiSelectionMode && (
+            <span className="ml-2 text-[12px] bg-[#ffa500] text-white px-2 py-0.5 rounded-full">
+              {selectedTextElements.length} элементов
+            </span>
+          )}
         </div>
       </div>
       <div className="p-4">

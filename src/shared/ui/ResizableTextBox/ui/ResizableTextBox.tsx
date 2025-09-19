@@ -27,9 +27,12 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
 }) => {
   const {
     setTextElementPosition,
+    setSelectedTextElement,
     getTextElementPosition,
     getTextElementStyle,
     updateTextElementStyle,
+    selectedTextElement,
+    selectedTextElements,
   } = usePresentationStore();
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -44,6 +47,14 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
   // Get position from store instead of local state
   const position = getTextElementPosition(elementId);
   const elementStyle = getTextElementStyle(elementId);
+
+  // Check if element is selected (either primary or in multi-selection)
+  const isElementSelected = selectedTextElements.includes(elementId);
+  const isInMultiSelection = selectedTextElements.length > 1;
+  const isPrimaryElement = selectedTextElement === elementId;
+
+  // Element should show selection UI if it's in the selected elements array
+  const shouldShowSelectionUI = isElementSelected;
 
   // Debug logging
   React.useEffect(() => {
@@ -199,7 +210,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
     }
   }, [isResizing, handleMouseMove, handleMouseUp]);
 
-  if (!isSelected) {
+  if (!shouldShowSelectionUI) {
     return (
       <div
         ref={boxRef}
@@ -273,10 +284,10 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           {children}
         </div>
 
-        {/* Selection border and handles - only visible when selected */}
-        {isSelected && (
+        {/* Selection border and handles - visible when selected */}
+        {shouldShowSelectionUI && (
           <div
-            className="absolute border border-[#bba2fe] border-solid"
+            className="absolute border-1 border-solid border-[#bba2fe]"
             style={{
               top: "0px",
               left: "0px",
@@ -287,45 +298,51 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
               pointerEvents: "none",
             }}
           >
-            {" "}
-            <div
-              className="absolute pointer-events-auto"
-              style={{
-                top: "-60px",
-                left: "0%",
-                zIndex: 9999999,
-              }}
-            >
-              <TextToolbar
-                position={{ x: 0, y: 0 }}
-                elementId={elementId}
-                onMoveUp={onMoveUp}
-                onMoveDown={onMoveDown}
-                onCopy={onCopy}
-                onDelete={onDelete}
-              />
-            </div>
-            {/* Resize handles */}
-            <div
-              className="absolute bg-[#bba2fe] size-2 cursor-nw-resize pointer-events-auto"
-              style={{ top: "-4px", left: "-4px", zIndex: 1000 }}
-              onMouseDown={(e) => handleResizeMouseDown(e, "nw")}
-            />
-            <div
-              className="absolute bg-[#bba2fe] size-2 cursor-ne-resize pointer-events-auto"
-              style={{ top: "-4px", right: "-4px", zIndex: 1000 }}
-              onMouseDown={(e) => handleResizeMouseDown(e, "ne")}
-            />
-            <div
-              className="absolute bg-[#bba2fe] size-2 cursor-sw-resize pointer-events-auto"
-              style={{ bottom: "-4px", left: "-4px", zIndex: 1000 }}
-              onMouseDown={(e) => handleResizeMouseDown(e, "sw")}
-            />
-            <div
-              className="absolute bg-[#bba2fe] size-2 cursor-se-resize pointer-events-auto"
-              style={{ bottom: "-4px", right: "-4px", zIndex: 1000 }}
-              onMouseDown={(e) => handleResizeMouseDown(e, "se")}
-            />
+            {/* Toolbar - only show for primary selected element, not for multi-selection */}
+            {isPrimaryElement && !isInMultiSelection && (
+              <div
+                className="absolute pointer-events-auto"
+                style={{
+                  top: "-60px",
+                  left: "0%",
+                  zIndex: 9999999,
+                }}
+              >
+                <TextToolbar
+                  position={{ x: 0, y: 0 }}
+                  elementId={elementId}
+                  onMoveUp={onMoveUp}
+                  onMoveDown={onMoveDown}
+                  onCopy={onCopy}
+                  onDelete={onDelete}
+                />
+              </div>
+            )}
+            {/* Resize handles - only show for primary selected element, not for multi-selection */}
+            {
+              <>
+                <div
+                  className="absolute bg-[#bba2fe] size-2 cursor-nw-resize pointer-events-auto"
+                  style={{ top: "-4px", left: "-4px", zIndex: 1000 }}
+                  onMouseDown={(e) => handleResizeMouseDown(e, "nw")}
+                />
+                <div
+                  className="absolute bg-[#bba2fe] size-2 cursor-ne-resize pointer-events-auto"
+                  style={{ top: "-4px", right: "-4px", zIndex: 1000 }}
+                  onMouseDown={(e) => handleResizeMouseDown(e, "ne")}
+                />
+                <div
+                  className="absolute bg-[#bba2fe] size-2 cursor-sw-resize pointer-events-auto"
+                  style={{ bottom: "-4px", left: "-4px", zIndex: 1000 }}
+                  onMouseDown={(e) => handleResizeMouseDown(e, "sw")}
+                />
+                <div
+                  className="absolute bg-[#bba2fe] size-2 cursor-se-resize pointer-events-auto"
+                  style={{ bottom: "-4px", right: "-4px", zIndex: 1000 }}
+                  onMouseDown={(e) => handleResizeMouseDown(e, "se")}
+                />
+              </>
+            }
           </div>
         )}
       </div>

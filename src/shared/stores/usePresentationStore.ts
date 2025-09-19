@@ -31,6 +31,7 @@ export interface PresentationState {
 
   // Text editing state
   selectedTextElement: string | null;
+  selectedTextElements: string[]; // Array for multiple selection
   textEditorContent: string;
   textPosition: { x: number; y: number; rotation: number };
   textElementPositions: Record<string, { x: number; y: number }>; // Store positions for all text elements
@@ -136,7 +137,7 @@ export interface PresentationState {
     >
   >;
 
-  // Infographics editing state
+  // Infographics editing statey
   selectedInfographicsElement: string | null;
 
   // History for undo/redo
@@ -170,6 +171,14 @@ export interface PresentationState {
 
   // Text editing actions
   setSelectedTextElement: (elementId: string | null) => void;
+  setSelectedTextElements: (elementIds: string[]) => void;
+  addToSelectedTextElements: (elementId: string) => void;
+  removeFromSelectedTextElements: (elementId: string) => void;
+  clearSelectedTextElements: () => void;
+  toggleTextElementSelection: (
+    elementId: string,
+    isCtrlPressed: boolean
+  ) => void;
   setTextEditorContent: (content: string) => void;
   setTextPosition: (position: {
     x: number;
@@ -190,10 +199,18 @@ export interface PresentationState {
     elementId: string,
     style: Partial<PresentationState["textStyle"]>
   ) => void;
+  updateMultipleTextElementStyles: (
+    elementIds: string[],
+    style: Partial<PresentationState["textStyle"]>
+  ) => void;
   getTextElementStyle: (
     elementId: string
   ) => PresentationState["textElementStyles"][string];
   setTextElementContent: (elementId: string, content: string) => void;
+  setMultipleTextElementContent: (
+    elementIds: string[],
+    content: string
+  ) => void;
   getTextElementContent: (elementId: string) => string;
   deleteTextElement: (elementId: string) => void;
   copyTextElement: (elementId: string, slideNumber?: number) => string;
@@ -237,6 +254,7 @@ export interface PresentationState {
   updateTableElement: (elementId: string, tableData: any) => void;
   deleteTableElement: (elementId: string) => void;
   getTableElement: (elementId: string) => any;
+  copyTableElement: (elementId: string) => string;
 
   // Infographics editing actions
   setSelectedInfographicsElement: (elementId: string | null) => void;
@@ -268,6 +286,7 @@ const initialState = {
 
   // Text editing state
   selectedTextElement: null,
+  selectedTextElements: [], // Initialize empty array for multiple selection
   textEditorContent: "",
   textPosition: { x: 20, y: 60, rotation: 0 },
   textElementPositions: {}, // Initialize empty positions object
@@ -505,6 +524,59 @@ export const usePresentationStore = create<PresentationState>()(
     setSelectedTextElement: (elementId: string | null) =>
       set({ selectedTextElement: elementId }),
 
+    setSelectedTextElements: (elementIds: string[]) =>
+      set({ selectedTextElements: elementIds }),
+
+    addToSelectedTextElements: (elementId: string) =>
+      set((state) => ({
+        selectedTextElements: state.selectedTextElements.includes(elementId)
+          ? state.selectedTextElements
+          : [...state.selectedTextElements, elementId],
+      })),
+
+    removeFromSelectedTextElements: (elementId: string) =>
+      set((state) => ({
+        selectedTextElements: state.selectedTextElements.filter(
+          (id) => id !== elementId
+        ),
+      })),
+
+    clearSelectedTextElements: () => set({ selectedTextElements: [] }),
+
+    toggleTextElementSelection: (elementId: string, isCtrlPressed: boolean) =>
+      set((state) => {
+        if (!isCtrlPressed) {
+          // Single selection mode - clear all and select only this element
+          return {
+            selectedTextElement: elementId,
+            selectedTextElements: [elementId],
+          };
+        } else {
+          // Multi-selection mode
+          const isCurrentlySelected =
+            state.selectedTextElements.includes(elementId);
+          let newSelectedElements: string[];
+
+          if (isCurrentlySelected) {
+            // Remove from selection
+            newSelectedElements = state.selectedTextElements.filter(
+              (id) => id !== elementId
+            );
+          } else {
+            // Add to selection
+            newSelectedElements = [...state.selectedTextElements, elementId];
+          }
+
+          return {
+            selectedTextElement:
+              newSelectedElements.length > 0
+                ? newSelectedElements[newSelectedElements.length - 1]
+                : null,
+            selectedTextElements: newSelectedElements,
+          };
+        }
+      }),
+
     setTextEditorContent: (content: string) =>
       set({ textEditorContent: content }),
 
@@ -563,6 +635,7 @@ export const usePresentationStore = create<PresentationState>()(
     clearTextSelection: () =>
       set({
         selectedTextElement: null,
+        selectedTextElements: [], // Clear multiple selection too
         textEditorContent: "",
         textPosition: { x: 20, y: 60, rotation: 0 },
         textStyle: {
@@ -738,10 +811,10 @@ export const usePresentationStore = create<PresentationState>()(
       const randomId = Math.random().toString(36).substr(2, 9);
       const newId = `image-${timestamp}-${randomId}`;
 
-      // Copy element with offset position (20px down and right)
+      // Copy element with offset position (much more noticeable offset - 80px down and right)
       const newPosition = {
-        x: originalElement.position.x + 20,
-        y: originalElement.position.y + 20,
+        x: originalElement.position.x + 80,
+        y: originalElement.position.y + 80,
       };
 
       console.log(
@@ -858,6 +931,55 @@ export const usePresentationStore = create<PresentationState>()(
       return state.tableElements[currentSlide]?.[elementId] || null;
     },
 
+    copyTableElement: (elementId: string) => {
+      console.log("Store: copyTableElement called for:", elementId);
+      const state = get();
+      const currentSlide = state.currentSlide;
+      const originalElement = state.tableElements[currentSlide]?.[elementId];
+
+      if (!originalElement) {
+        console.log("Store: No table element found to copy:", elementId);
+        return elementId;
+      }
+
+      // Generate new unique ID
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substr(2, 9);
+      const newId = `table-${timestamp}-${randomId}`;
+
+      // Copy element with offset position (80px down and right)
+      const newPosition = {
+        x: originalElement.position.x + 80,
+        y: originalElement.position.y + 80,
+      };
+
+      console.log(
+        "Store: Copying table element with new ID:",
+        newId,
+        "at position:",
+        newPosition
+      );
+      console.log("Original element data:", originalElement);
+
+      set((state) => ({
+        tableElements: {
+          ...state.tableElements,
+          [currentSlide]: {
+            ...state.tableElements[currentSlide],
+            [newId]: {
+              ...originalElement,
+              id: newId,
+              position: newPosition,
+            },
+          },
+        },
+        selectedTableElement: newId, // Automatically select the new copied element
+      }));
+
+      console.log("Store: Successfully copied table element, new ID:", newId);
+      return newId;
+    },
+
     // Infographics editing actions
     setSelectedInfographicsElement: (elementId: string | null) =>
       set({ selectedInfographicsElement: elementId }),
@@ -906,6 +1028,15 @@ export const usePresentationStore = create<PresentationState>()(
         };
       }),
 
+    updateMultipleTextElementStyles: (
+      elementIds: string[],
+      style: Partial<PresentationState["textStyle"]>
+    ) => {
+      elementIds.forEach((elementId) => {
+        get().updateTextElementStyle(elementId, style);
+      });
+    },
+
     getTextElementStyle: (elementId: string) => {
       const state = get();
       return (
@@ -941,6 +1072,12 @@ export const usePresentationStore = create<PresentationState>()(
           },
         };
       }),
+
+    setMultipleTextElementContent: (elementIds: string[], content: string) => {
+      elementIds.forEach((elementId) => {
+        get().setTextElementContent(elementId, content);
+      });
+    },
 
     getTextElementContent: (elementId: string) => {
       const state = get();
@@ -1039,9 +1176,9 @@ export const usePresentationStore = create<PresentationState>()(
         ? `slide-${slideNumber}-text-${timestamp}-${randomId}`
         : `text-${timestamp}-${randomId}`;
 
-      // Copy element with offset position
+      // Copy element with offset position (much more noticeable offset)
       const newPosition = originalPosition
-        ? { x: originalPosition.x + 20, y: originalPosition.y + 20 }
+        ? { x: originalPosition.x + 80, y: originalPosition.y + 80 }
         : { x: 100, y: 100 };
 
       console.log(
@@ -1059,7 +1196,11 @@ export const usePresentationStore = create<PresentationState>()(
       set((state) => ({
         textElementStyles: {
           ...state.textElementStyles,
-          [newId]: { ...originalElement }, // Copy all styles including fontSize, color, etc.
+          [newId]: {
+            ...originalElement,
+            x: newPosition.x, // Ensure x position is in styles
+            y: newPosition.y, // Ensure y position is in styles
+          },
         },
         textElementPositions: {
           ...state.textElementPositions,

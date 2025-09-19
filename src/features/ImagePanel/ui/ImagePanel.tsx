@@ -202,56 +202,30 @@ export const ImagePanel: React.FC = () => {
           console.log("Image generated successfully:", imageUrls);
           const imageUrl = imageUrls[0]; // Берем первое изображение
 
-          // Проверяем, есть ли выбранная область для изображения
-          if (imageAreaSelection && !imageAreaSelection.isSelecting) {
-            // Если есть выбранная область, добавляем изображение туда
-            console.log("Adding image to selected area:", imageAreaSelection);
+          // Проверяем, есть ли выбранный элемент изображения
+          if (selectedImageElement) {
+            // Если есть выбранный элемент изображения, обновляем его
+            console.log(
+              "Updating selected image element:",
+              selectedImageElement
+            );
 
-            const position = {
-              x: Math.min(imageAreaSelection.startX, imageAreaSelection.endX),
-              y: Math.min(imageAreaSelection.startY, imageAreaSelection.endY),
-            };
-            const size = {
-              width: Math.abs(
-                imageAreaSelection.endX - imageAreaSelection.startX
-              ),
-              height: Math.abs(
-                imageAreaSelection.endY - imageAreaSelection.startY
-              ),
-            };
-
-            const imageId = addImageElement(currentSlide, position, size);
-
-            // Обновляем элемент с URL изображения
-            updateImageElement(imageId, {
+            updateImageElement(selectedImageElement, {
               placeholder: false,
               src: imageUrl,
               alt: "Generated image",
             });
-
-            // Очищаем выделение области после добавления изображения
-            clearImageAreaSelection();
 
             console.log(
-              "Generated image added to selected area with ID:",
-              imageId
+              "Generated image added to selected element with ID:",
+              selectedImageElement
             );
           } else {
-            // Если нет выбранной области, добавляем в центр слайда
-            console.log("No area selected, adding image to center");
-
-            const position = { x: 200, y: 200 };
-            const size = { width: 300, height: 200 };
-
-            const imageId = addImageElement(currentSlide, position, size);
-
-            updateImageElement(imageId, {
-              placeholder: false,
-              src: imageUrl,
-              alt: "Generated image",
-            });
-
-            console.log("Generated image added to center with ID:", imageId);
+            // Если нет выбранного элемента изображения, показываем сообщение
+            console.log(
+              "No image element selected. Please select an image area first."
+            );
+            // Здесь можно показать уведомление пользователю
           }
 
           // После успешной генерации обнуляем поля

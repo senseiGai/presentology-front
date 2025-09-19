@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
+import { useTextGeneration, buildTextPrompt } from "@/shared/api/text";
 
 import GrayTrashIcon from "../../../../public/icons/GrayTrashIcon";
 import GradientSparksIcon from "../../../../public/icons/GradientSparksIcon";
@@ -97,6 +98,7 @@ export const TextEditorPanel: React.FC = () => {
   const [aiInput, setAiInput] = useState("");
   const [selectedStyles, setSelectedStyles] = useState<TextStyle[]>([]);
   const [showApplyButton, setShowApplyButton] = useState(false);
+  const [textVolume, setTextVolume] = useState<"more" | "less" | null>(null);
   const [fontSize, setFontSize] = useState<FontSize>(14);
   const [showFontDropdown, setShowFontDropdown] = useState(false);
   const [textAlign, setTextAlign] = useState<TextAlign>("left");
@@ -112,7 +114,10 @@ export const TextEditorPanel: React.FC = () => {
   const [verticalAlign, setVerticalAlign] = useState<
     "top" | "center" | "bottom" | null
   >(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Text generation mutation
+  const textMutation = useTextGeneration();
+
   const [xPosition, setXPosition] = useState(20);
   const [yPosition, setYPosition] = useState(60);
   const [rotation, setRotation] = useState(0);
@@ -232,22 +237,51 @@ export const TextEditorPanel: React.FC = () => {
     }
   };
 
+  // Handle text volume selection
+  const handleVolumeSelect = (volume: "more" | "less") => {
+    setTextVolume((prev) => (prev === volume ? null : volume));
+  };
+
   // Handle AI text submission
   const handleAiSubmit = async () => {
     if (!aiInput.trim()) return;
 
-    setIsGenerating(true);
+    if (!selectedTextElement) {
+      console.log("No text element selected");
+      return;
+    }
+
     try {
-      // TODO: Implement actual AI text generation
-      // For now, just use the input as-is
-      if (selectedTextElement) {
-        setTextElementContent(selectedTextElement, aiInput);
+      // Получаем текущий текст элемента
+      const currentText = getTextElementContent(selectedTextElement) || "";
+
+      // Строим промпт для генерации
+      const prompt = buildTextPrompt(
+        currentText,
+        aiInput.trim(),
+        selectedStyles,
+        textVolume || undefined
+      );
+
+      console.log("Generating text with prompt:", prompt);
+
+      // Отправляем запрос на генерацию
+      const result = await textMutation.mutateAsync({ prompt });
+
+      if (result?.success && result.data?.choices?.[0]?.message?.content) {
+        const generatedText = result.data.choices[0].message.content.trim();
+        console.log("Generated text:", generatedText);
+
+        // Обновляем текст элемента
+        setTextElementContent(selectedTextElement, generatedText);
+
+        // Очищаем поле ввода
+        setAiInput("");
+      } else {
+        console.error("Invalid response format:", result);
       }
-      setAiInput("");
     } catch (error) {
       console.error("AI generation failed:", error);
-    } finally {
-      setIsGenerating(false);
     }
   }; // Handle style selection (max 3)
   const handleStyleSelect = (style: TextStyle) => {
@@ -610,9 +644,9 @@ export const TextEditorPanel: React.FC = () => {
             </div>
             <button
               onClick={handleAiSubmit}
-              disabled={!isSubmitActive || isGenerating}
+              disabled={!isSubmitActive || textMutation.isPending}
               className={`w-8 h-8 absolute right-2 bottom-2 flex items-center justify-center rounded-[8px] p-2 transition-all ${
-                isSubmitActive && !isGenerating
+                isSubmitActive && !textMutation.isPending
                   ? "bg-[#BBA2FE] opacity-100 cursor-pointer"
                   : "bg-[#BBA2FE] opacity-50 cursor-not-allowed"
               }`}
@@ -645,11 +679,25 @@ export const TextEditorPanel: React.FC = () => {
             </div>
           </div>
           <div className="flex gap-0.5 h-8 w-full">
-            <button className="flex-1 bg-[#F4F4F4] hover:bg-[#E9E9E9] flex gap-2 items-center justify-center p-2 rounded-tl-[8px] rounded-bl-[8px] rounded-tr-[2px] rounded-br-[2px] text-[14px] text-[#8F8F92] font-medium tracking-[-0.42px]">
+            <button
+              onClick={() => handleVolumeSelect("more")}
+              className={`flex-1 flex gap-2 items-center justify-center p-2 rounded-tl-[8px] rounded-bl-[8px] rounded-tr-[2px] rounded-br-[2px] text-[14px] font-medium tracking-[-0.42px] transition-colors ${
+                textVolume === "more"
+                  ? "bg-[#BBA2FE] text-white"
+                  : "bg-[#F4F4F4] text-[#8F8F92] hover:bg-[#E9E9E9]"
+              }`}
+            >
               <GrayPlusIcon />
               Больше
             </button>
-            <button className="flex-1 bg-[#F4F4F4] hover:bg-[#E9E9E9] flex gap-2 items-center justify-center p-2 rounded-tl-[2px] rounded-bl-[2px] rounded-tr-[8px] rounded-br-[8px] text-[14px] text-[#8F8F92] font-medium tracking-[-0.42px]">
+            <button
+              onClick={() => handleVolumeSelect("less")}
+              className={`flex-1 flex gap-2 items-center justify-center p-2 rounded-tl-[2px] rounded-bl-[2px] rounded-tr-[8px] rounded-br-[8px] text-[14px] font-medium tracking-[-0.42px] transition-colors ${
+                textVolume === "less"
+                  ? "bg-[#BBA2FE] text-white"
+                  : "bg-[#F4F4F4] text-[#8F8F92] hover:bg-[#E9E9E9]"
+              }`}
+            >
               <GrayMinusIcon />
               Меньше
             </button>

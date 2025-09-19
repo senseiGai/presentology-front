@@ -19,11 +19,11 @@ export const CreatePresentationCard = ({
 }: CreatePresentationCardProps) => {
   return (
     <div
-      onClick={onClick}
-      className={`flex cursor-pointer transition-transform duration-300 ease-in-out relative flex-col w-[229px] h-[288px] bg-white rounded-[24px] pt-[24px] pl-[24px] ${
+      onClick={!!isActive ? onClick : undefined}
+      className={`flex transition-transform duration-300 ease-in-out relative flex-col w-[229px] h-[288px] bg-white rounded-[24px] pt-[24px] pl-[24px] ${
         isActive
-          ? "opacity-100 group hover:-translate-y-2 "
-          : "opacity-50 cursor-not-allowed"
+          ? "group hover:-translate-y-2 cursor-pointer"
+          : " cursor-not-allowed"
       }`}
     >
       <span className="text-[#0C0C0C] text-[24px] font-medium">{label}</span>
@@ -39,12 +39,18 @@ export const CreatePresentationCard = ({
           height={134}
           className="absolute left-0"
         />
-        <button
-          onClick={onClick}
-          className="cursor-pointer absolute right-4 bottom-4 rounded-full bg-[#BBA2FE] w-[40px] h-[40px] flex items-center justify-center"
-        >
-          <ArrowRight />
-        </button>
+        {isActive ? (
+          <button
+            onClick={onClick}
+            className="cursor-pointer absolute right-4 bottom-4 rounded-full bg-[#BBA2FE] w-[40px] h-[40px] flex items-center justify-center"
+          >
+            <ArrowRight />
+          </button>
+        ) : (
+          <span className="cursor-not-allowed absolute right-4 bottom-4 text-[#BEBEC0] text-[14px]">
+            Скоро
+          </span>
+        )}
       </div>
 
       {/* Свечение появляется только на hover */}

@@ -4,7 +4,6 @@ import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { useTextGeneration, buildTextPrompt } from "@/shared/api/text";
 
 import GrayTrashIcon from "../../../../public/icons/GrayTrashIcon";
-import GradientSparksIcon from "../../../../public/icons/GradientSparksIcon";
 import MiniRightArrowIcon from "../../../../public/icons/MiniRightArrowIcon";
 import GrayPlusIcon from "../../../../public/icons/GrayPlusIcon";
 import GrayMinusIcon from "../../../../public/icons/GrayMinusIcon";
@@ -676,11 +675,6 @@ export const TextEditorPanel: React.FC = () => {
       <div className="w-full h-9 bg-[#F4F4F4] flex items-center px-4">
         <div className="text-[14px] font-medium text-[#0B0911] tracking-[-0.42px]">
           Генерация
-          {isMultiSelectionMode && (
-            <span className="ml-2 text-[12px] bg-[#ffa500] text-white px-2 py-0.5 rounded-full">
-              {selectedTextElements.length} элементов
-            </span>
-          )}
         </div>
       </div>
       <div className="p-4">

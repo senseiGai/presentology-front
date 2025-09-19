@@ -1112,12 +1112,18 @@ export const usePresentationStore = create<PresentationState>()(
             ? null
             : state.selectedTextElement;
 
+        // Remove element from selectedTextElements array
+        const newSelectedElements = state.selectedTextElements.filter(
+          (id) => id !== elementId
+        );
+
         return {
           deletedTextElements: newDeletedElements,
           textElementStyles: remainingStyles,
           textElementPositions: remainingPositions,
           textElementContents: remainingContents,
           selectedTextElement: newSelectedElement,
+          selectedTextElements: newSelectedElements,
           textEditorContent: newSelectedElement ? state.textEditorContent : "",
         };
       }),

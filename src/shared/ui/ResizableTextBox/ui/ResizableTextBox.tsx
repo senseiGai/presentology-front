@@ -33,6 +33,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
     updateTextElementStyle,
     selectedTextElement,
     selectedTextElements,
+    deletedTextElements,
   } = usePresentationStore();
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -53,8 +54,9 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
   const isInMultiSelection = selectedTextElements.length > 1;
   const isPrimaryElement = selectedTextElement === elementId;
 
-  // Element should show selection UI if it's in the selected elements array
-  const shouldShowSelectionUI = isElementSelected;
+  // Element should show selection UI if it's in the selected elements array AND not deleted
+  const shouldShowSelectionUI =
+    isElementSelected && !deletedTextElements.has(elementId);
 
   // Debug logging
   React.useEffect(() => {
@@ -73,6 +75,15 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
     elementStyle.y,
     elementStyle.rotation,
   ]);
+
+  // Force re-render when deletion status changes
+  React.useEffect(() => {
+    console.log(
+      `ResizableTextBox ${elementId}: deletedTextElements changed:`,
+      deletedTextElements.has(elementId)
+    );
+  }, [elementId, deletedTextElements]);
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       console.log(
@@ -209,6 +220,16 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
       };
     }
   }, [isResizing, handleMouseMove, handleMouseUp]);
+
+  // Don't render if element is deleted
+  if (deletedTextElements.has(elementId)) {
+    console.log(
+      "ResizableTextBox: Element",
+      elementId,
+      "is deleted, not rendering"
+    );
+    return null;
+  }
 
   if (!shouldShowSelectionUI) {
     return (

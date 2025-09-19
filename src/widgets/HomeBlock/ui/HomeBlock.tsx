@@ -16,9 +16,12 @@ import {
   PaymentHistoryTable,
   type PaymentHistoryItem,
 } from "@/shared/ui/PaymentHistoryTable";
+import { PresentationSkeleton } from "@/shared/ui/PresentationSkeleton";
 import { useSubscriptionStore } from "@/shared/stores";
 import { CancelSubPopup, OfferPopup } from "@/entities/SubscriptionPopup";
 import { useSurveyStatus } from "@/shared/hooks/useSurvey";
+import { useUserPresentations } from "@/shared/api/presentations";
+import { formatPresentationsForDisplay } from "@/shared/utils/formatPresentations";
 import { useRouter } from "next/navigation";
 
 export const HomeBlock = () => {
@@ -33,6 +36,13 @@ export const HomeBlock = () => {
     isLoading: surveyLoading,
     error: surveyError,
   } = useSurveyStatus();
+
+  // Загружаем презентации пользователя
+  const {
+    data: presentationsData,
+    isLoading: presentationsLoading,
+    error: presentationsError,
+  } = useUserPresentations();
 
   const {
     isPremium,
@@ -58,6 +68,18 @@ export const HomeBlock = () => {
     hasCompletedSurvey: surveyStatus?.hasCompletedSurvey,
   });
 
+  // Отладочная информация для презентаций
+  console.log("Presentations Debug:", {
+    presentationsData,
+    presentationsLoading,
+    presentationsError,
+  });
+
+  // Форматируем презентации для отображения
+  const formattedPresentations = presentationsData?.presentations
+    ? formatPresentationsForDisplay(presentationsData.presentations)
+    : [];
+
   // Моковые данные для истории платежей
   const paymentHistory: PaymentHistoryItem[] = [
     { date: "31 июля 2025, 16:30", amount: "299 ₽", status: "Успешно" },
@@ -75,108 +97,6 @@ export const HomeBlock = () => {
     { date: "31 августа 2025, 22:30", amount: "299 ₽", status: "Ошибка" },
     { date: "31 августа 2025, 22:30", amount: "299 ₽", status: "Успешно" },
     { date: "31 августа 2025, 22:30", amount: "299 ₽", status: "Ошибка" },
-  ];
-
-  const presentationsContent = [
-    {
-      images: [
-        "/assets/presentation/presentation01.png",
-        "/assets/presentation/presentation01.png",
-      ],
-      label: "Название презентации",
-      date: "Вчера",
-      tag: "Сгенерированная",
-    },
-    {
-      images: [
-        "/assets/presentation/presentation01.png",
-        "/assets/presentation/presentation01.png",
-      ],
-      label: "Название презентации",
-      date: "Вчера",
-      tag: "Сгенерированная",
-    },
-    {
-      images: [
-        "/assets/presentation/presentation01.png",
-        "/assets/presentation/presentation01.png",
-      ],
-      label: "Название презентации",
-      date: "Вчера",
-      tag: "Сгенерированная",
-    },
-    {
-      images: [
-        "/assets/presentation/presentation01.png",
-        "/assets/presentation/presentation01.png",
-      ],
-      label: "Название презентации",
-      date: "Вчера",
-      tag: "Сгенерированная",
-    },
-    {
-      images: [
-        "/assets/presentation/presentation01.png",
-        "/assets/presentation/presentation01.png",
-      ],
-      label: "Название презентации",
-      date: "Вчера",
-      tag: "Сгенерированная",
-    },
-    {
-      images: [
-        "/assets/presentation/presentation01.png",
-        "/assets/presentation/presentation01.png",
-      ],
-      label: "Название презентации",
-      date: "Вчера",
-      tag: "Улучшенная",
-    },
-    {
-      images: [
-        "/assets/presentation/presentation01.png",
-        "/assets/presentation/presentation01.png",
-      ],
-      label: "Название презентации",
-      date: "Вчера",
-      tag: "Сгенерированная",
-    },
-    {
-      images: [
-        "/assets/presentation/presentation01.png",
-        "/assets/presentation/presentation01.png",
-      ],
-      label: "Название презентации",
-      date: "Вчера",
-      tag: "Сгенерированная",
-    },
-    {
-      images: [
-        "/assets/presentation/presentation01.png",
-        "/assets/presentation/presentation01.png",
-      ],
-      label: "Название презентации",
-      date: "Вчера",
-      tag: "Сгенерированная",
-    },
-    {
-      images: [
-        "/assets/presentation/presentation01.png",
-        "/assets/presentation/presentation01.png",
-      ],
-      label: "Название презентации",
-      date: "Вчера",
-      tag: "Сгенерированная",
-    },
-    {
-      images: [
-        "/assets/presentation/presentation01.png",
-        "/assets/presentation/presentation01.png",
-      ],
-      label: "Название презентации",
-      date: "Вчера",
-      tag: "Улучшенная",
-    },
   ];
 
   return (
@@ -220,33 +140,43 @@ export const HomeBlock = () => {
               })}
             </div>
           )}
-          {activeItem === "Мои презентации" &&
-            (presentationsContent.length === 0 ? (
-              <h2 className="text-white mt-[24px] 2xl:mt-[40px]">
-                Создайте презентацию и она появится здесь
-              </h2>
-            ) : (
-              <div
-                className={`grid ${
-                  middleWidth ? "grid-cols-4" : "grid-cols-3"
-                }  gap-[24px] 2xl:gap-[20px] mt-[40px]`}
-              >
-                {presentationsContent.map((item, index) => (
-                  <PresentationCard
-                    key={index}
-                    label={item.label}
-                    images={item.images}
-                    date={item.date}
-                    tag={
-                      item.tag as
-                        | "Сгенерированная"
-                        | "Улучшенная"
-                        | "По брендбуку"
-                    }
-                  />
-                ))}
-              </div>
-            ))}
+          {activeItem === "Мои презентации" && (
+            <>
+              {presentationsLoading ? (
+                <PresentationSkeleton count={6} />
+              ) : presentationsError ? (
+                <div className="mt-[24px] 2xl:mt-[40px]">
+                  <h2 className="text-white text-xl mb-4">
+                    Ошибка загрузки презентаций
+                  </h2>
+                  <p className="text-white/70">
+                    Не удалось загрузить ваши презентации. Попробуйте обновить
+                    страницу.
+                  </p>
+                </div>
+              ) : formattedPresentations.length === 0 ? (
+                <h2 className="text-white mt-[24px] 2xl:mt-[40px]">
+                  Создайте презентацию и она появится здесь
+                </h2>
+              ) : (
+                <div
+                  className={`grid ${
+                    middleWidth ? "grid-cols-4" : "grid-cols-3"
+                  }  gap-[24px] 2xl:gap-[20px] mt-[40px]`}
+                >
+                  {formattedPresentations.map((item) => (
+                    <PresentationCard
+                      key={item.id}
+                      label={item.label}
+                      images={item.images}
+                      date={item.date}
+                      tag={item.tag}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
           {activeItem === "Приобрести подписку" && (
             <div className="flex flex-row gap-x-[40px] mt-[24px] 2xl:mt-[40px]">
               <div className="flex flex-col">

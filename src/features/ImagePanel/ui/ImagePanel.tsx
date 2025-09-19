@@ -6,6 +6,7 @@ import {
   getImageSizeForStyle,
   enhancePromptForStyle,
 } from "@/shared/api/images";
+import { useFileUpload } from "@/shared/api/uploads";
 import Image from "next/image";
 
 import GrayTrashIcon from "../../../../public/icons/GrayTrashIcon";
@@ -73,6 +74,7 @@ export const ImagePanel: React.FC = () => {
   // Hook для генерации изображений
   const fluxImageMutation = useFluxImageGeneration();
   const mixedImageMutation = useMixedImageGeneration();
+  const fileUploadMutation = useFileUpload();
 
   // Убираем автоматическое активирование режима выделения области
   // React.useEffect(() => {
@@ -118,21 +120,16 @@ export const ImagePanel: React.FC = () => {
       new URL(url);
       setUrlLoadingState("loading");
 
-      // Симулируем загрузку изображения
-      setTimeout(() => {
-        // Проверяем, что URL ведет к изображению
-        if (
-          url.includes("image") &&
-          (url.endsWith(".jpg") ||
-            url.endsWith(".png") ||
-            url.endsWith(".jpeg"))
-        ) {
-          setUrlLoadingState("success");
-        } else {
-          setUrlLoadingState("error");
-          setUrlError("Не удалось загрузить файл по ссылке");
-        }
-      }, 1500);
+      // Проверяем, что URL ведет к изображению (можно сделать запрос HEAD)
+      const img = document.createElement("img");
+      img.onload = () => {
+        setUrlLoadingState("success");
+      };
+      img.onerror = () => {
+        setUrlLoadingState("error");
+        setUrlError("Не удалось загрузить изображение по ссылке");
+      };
+      img.src = url;
     } catch {
       setUrlLoadingState("invalid");
       setUrlError("Неправильная ссылка");
@@ -259,25 +256,48 @@ export const ImagePanel: React.FC = () => {
     setUploadedFiles([]);
     setFileUploadProgress(0);
 
-    // Симулируем загрузку файла
-    const simulateUpload = () => {
-      return new Promise<void>((resolve) => {
-        let progress = 0;
-        const interval = setInterval(() => {
-          progress += 10;
-          setFileUploadProgress(progress);
+    try {
+      // Симулируем прогресс загрузки
+      const progressInterval = setInterval(() => {
+        setFileUploadProgress((prev) => {
+          if (prev === null) return 10;
+          if (prev >= 90) return prev;
+          return prev + 10;
+        });
+      }, 100);
 
-          if (progress >= 100) {
-            clearInterval(interval);
-            setUploadedFiles([file]);
-            setFileUploadProgress(null);
-            resolve();
-          }
-        }, 100);
-      });
-    };
+      // Загружаем файл на сервер
+      const result = await fileUploadMutation.mutateAsync(file);
 
-    await simulateUpload();
+      clearInterval(progressInterval);
+      setFileUploadProgress(100);
+
+      if (result.success && result.data.url) {
+        setUploadedFiles([file]);
+        setFileUploadProgress(null);
+
+        // Если есть выбранный элемент изображения, сразу устанавливаем изображение
+        if (selectedImageElement) {
+          updateImageElement(selectedImageElement, {
+            placeholder: false,
+            src: result.data.url,
+            alt: file.name,
+          });
+
+          console.log(
+            "Uploaded file added to selected element:",
+            selectedImageElement
+          );
+
+          // Очищаем состояние после успешной установки
+          setUploadedFiles([]);
+        }
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      setFileUploadProgress(null);
+      // Здесь можно показать уведомление об ошибке
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -292,6 +312,30 @@ export const ImagePanel: React.FC = () => {
   const removeFile = () => {
     setUploadedFiles([]);
     setFileUploadProgress(null);
+  };
+
+  const handleUseUrl = () => {
+    if (!imageUrl.trim() || urlLoadingState !== "success") return;
+
+    // Если есть выбранный элемент изображения, устанавливаем изображение по URL
+    if (selectedImageElement) {
+      updateImageElement(selectedImageElement, {
+        placeholder: false,
+        src: imageUrl,
+        alt: "Image from URL",
+      });
+
+      console.log("URL image added to selected element:", selectedImageElement);
+
+      // Очищаем состояние после успешной установки
+      setImageUrl("");
+      setUrlLoadingState("idle");
+      setUrlError("");
+    } else {
+      console.log(
+        "No image element selected. Please select an image area first."
+      );
+    }
   };
 
   const removeUrl = () => {
@@ -561,25 +605,33 @@ export const ImagePanel: React.FC = () => {
             </div>
 
             {urlLoadingState === "success" ? (
-              // Success state with delete button
-              <div className="flex gap-2 items-center">
-                <div className="flex-1 relative">
-                  <input
-                    type="url"
-                    value={imageUrl}
-                    onChange={handleUrlChange}
-                    placeholder="https://example.com/image.png"
-                    className="w-full h-10 px-4 py-3 pr-10 border border-[#00CF1B] rounded-[8px] focus:outline-none transition-colors text-[14px] tracking-[-0.42px] placeholder-[#BEBEC0] text-[#0B0911]"
-                  />
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <CheckIcon />
+              // Success state with use and delete buttons
+              <div className="space-y-2">
+                <div className="flex gap-2 items-center">
+                  <div className="flex-1 relative">
+                    <input
+                      type="url"
+                      value={imageUrl}
+                      onChange={handleUrlChange}
+                      placeholder="https://example.com/image.png"
+                      className="w-full h-10 px-4 py-3 pr-10 border border-[#00CF1B] rounded-[8px] focus:outline-none transition-colors text-[14px] tracking-[-0.42px] placeholder-[#BEBEC0] text-[#0B0911]"
+                    />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <CheckIcon />
+                    </div>
                   </div>
+                  <button
+                    onClick={removeUrl}
+                    className="size-6 flex items-center justify-center shrink-0"
+                  >
+                    <GrayTrashIcon />
+                  </button>
                 </div>
                 <button
-                  onClick={removeUrl}
-                  className="size-6 flex items-center justify-center shrink-0"
+                  onClick={handleUseUrl}
+                  className="w-full h-8 bg-[#BBA2FE] hover:bg-[#A693FD] text-white rounded-[8px] text-[14px] font-medium tracking-[-0.42px] transition-colors"
                 >
-                  <GrayTrashIcon />
+                  Использовать изображение
                 </button>
               </div>
             ) : urlLoadingState === "error" || urlLoadingState === "invalid" ? (

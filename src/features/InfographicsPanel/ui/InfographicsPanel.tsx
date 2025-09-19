@@ -3,6 +3,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
+import {
+  useInfographicsGeneration,
+  convertTableToCSV,
+  buildInfographicPrompt,
+} from "@/shared/api/infographics";
 
 // Import icons
 import FileCsvIcon from "../../../../public/icons/FileCsvIcon";
@@ -11,7 +16,14 @@ import BigFolderIcon from "../../../../public/icons/BigFolderIcon";
 import GrayTrashIcon from "../../../../public/icons/GrayTrashIcon";
 
 export const InfographicsPanel: React.FC = () => {
-  const { clearInfographicsSelection } = usePresentationStore();
+  const {
+    clearInfographicsSelection,
+    selectedInfographicsElement,
+    setSelectedInfographicsElement,
+  } = usePresentationStore();
+
+  // Infographics generation mutation
+  const infographicsMutation = useInfographicsGeneration();
 
   // State for form data
   const [taskDescription, setTaskDescription] = useState<string>("");
@@ -107,15 +119,73 @@ export const InfographicsPanel: React.FC = () => {
     e.preventDefault();
   };
 
-  const handleGenerate = () => {
-    console.log("Generate infographics with:", {
-      taskDescription,
-      uploadedFile: uploadedFile?.name,
-    });
+  const handleGenerate = async () => {
+    if (!taskDescription.trim()) return;
 
-    setIsGenerated(true);
-    setIsDescriptionChanged(false);
-    setIsFileChanged(false);
+    try {
+      console.log("Generating infographics with:", {
+        taskDescription,
+        uploadedFile: uploadedFile?.name,
+      });
+
+      // Читаем файл CSV если он загружен
+      let csvData = "";
+      if (uploadedFile) {
+        csvData = await readFileAsText(uploadedFile);
+      } else {
+        // Используем примерные данные, если файл не загружен
+        csvData = '"Категория","Значение"\\n"A",120\\n"B",90\\n"C",150';
+      }
+
+      // Строим промпт для генерации
+      const enhancedPrompt = buildInfographicPrompt(taskDescription.trim());
+
+      // Готовим данные для API
+      const requestData = {
+        deckTitle: "Presentation", // Можно сделать настраиваемым
+        slides: [
+          {
+            userPrompt: enhancedPrompt,
+            slideContext: "Слайд с инфографикой",
+            csv: csvData,
+            orientation: "horizontal",
+            format: "svg",
+            response: "json",
+          },
+        ],
+      };
+
+      // Отправляем запрос
+      const result = await infographicsMutation.mutateAsync(requestData);
+
+      if (result?.success && result.data?.slides?.[0]?.infographic?.dataUrl) {
+        const dataUrl = result.data.slides[0].infographic.dataUrl;
+        console.log("Infographic generated successfully:", dataUrl);
+
+        // Здесь можно добавить логику для обновления элемента инфографики на слайде
+        // if (selectedInfographicsElement) {
+        //   // Обновить элемент с новой инфографикой
+        // }
+
+        setIsGenerated(true);
+        setIsDescriptionChanged(false);
+        setIsFileChanged(false);
+      } else {
+        console.error("Invalid response format:", result);
+      }
+    } catch (error) {
+      console.error("Infographics generation failed:", error);
+    }
+  };
+
+  // Вспомогательная функция для чтения файла
+  const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = (e) => reject(e);
+      reader.readAsText(file);
+    });
   };
 
   const handleDelete = () => {
@@ -125,7 +195,9 @@ export const InfographicsPanel: React.FC = () => {
   const isSubmitActive = taskDescription.trim().length > 0;
   const hasParameterChanges = isDescriptionChanged || isFileChanged;
   const isButtonDisabled =
-    !isSubmitActive || (isGenerated && !hasParameterChanges);
+    !isSubmitActive ||
+    infographicsMutation.isPending ||
+    (isGenerated && !hasParameterChanges);
   const showWarning = isGenerated && hasParameterChanges;
 
   return (
@@ -283,7 +355,11 @@ export const InfographicsPanel: React.FC = () => {
                   : "bg-[#DDD1FF] text-white cursor-not-allowed"
               }`}
             >
-              {isGenerated ? "Перегенерировать" : "Сгенерировать"}
+              {infographicsMutation.isPending
+                ? "Генерируем..."
+                : isGenerated
+                ? "Перегенерировать"
+                : "Сгенерировать"}
             </button>
 
             {/* Warning message when parameters changed after generation */}

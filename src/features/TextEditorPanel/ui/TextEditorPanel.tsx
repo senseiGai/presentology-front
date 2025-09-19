@@ -90,6 +90,7 @@ export const TextEditorPanel: React.FC = () => {
     clearTextSelection,
     setTextElementContent,
     getTextElementContent,
+    textElementContents,
   } = usePresentationStore();
 
   // State for UI interactions
@@ -128,15 +129,22 @@ export const TextEditorPanel: React.FC = () => {
   // Helper function to detect list type from text content
   const detectListType = (text: string): "bulletList" | "numberList" | null => {
     if (!text) return null;
-    const lines = text.split("\n");
-    const firstLine = lines[0]?.trim();
+    const lines = text.split("\n").filter((line) => line.trim()); // Filter empty lines
 
-    if (firstLine?.match(/^(•\s*|-\s*|\*\s*)/)) {
+    // Check if any line starts with bullet points
+    const hasBullets = lines.some((line) =>
+      line.trim().match(/^(•\s*|-\s*|\*\s*)/)
+    );
+    if (hasBullets) {
       return "bulletList";
     }
-    if (firstLine?.match(/^\d+\.\s*/)) {
+
+    // Check if any line starts with numbers
+    const hasNumbers = lines.some((line) => line.trim().match(/^\d+\.\s*/));
+    if (hasNumbers) {
       return "numberList";
     }
+
     return null;
   };
 
@@ -184,13 +192,25 @@ export const TextEditorPanel: React.FC = () => {
 
       // Detect list type from saved content
       const savedContent = getTextElementContent(selectedTextElement);
-      setSelectedListType(detectListType(savedContent || ""));
+      const detectedListType = detectListType(savedContent || "");
+      setSelectedListType(detectedListType);
     } else {
       // Reset formatting state when no element is selected
       setTextFormats(new Set());
       setSelectedListType(null);
     }
   }, [selectedTextElement, getTextElementStyle, getTextElementContent]);
+
+  // Additional effect to sync list type when content changes
+  useEffect(() => {
+    if (selectedTextElement) {
+      const savedContent = getTextElementContent(selectedTextElement);
+      const detectedListType = detectListType(savedContent || "");
+      if (detectedListType !== selectedListType) {
+        setSelectedListType(detectedListType);
+      }
+    }
+  }, [selectedTextElement, getTextElementContent, textElementContents]);
 
   // Early return after all hooks
   if (!selectedTextElement) {
@@ -309,12 +329,29 @@ export const TextEditorPanel: React.FC = () => {
 
   // Handle list type selection (radio button behavior)
   const handleListTypeSelect = (listType: "bulletList" | "numberList") => {
+    console.log("List type selected:", listType, "Current:", selectedListType);
+
     const currentListType = selectedListType === listType ? null : listType;
     setSelectedListType(currentListType);
+
+    console.log("New list type:", currentListType);
 
     // Apply list formatting to the current text content
     if (selectedTextElement) {
       const currentContent = getTextElementContent(selectedTextElement) || "";
+      console.log("Current content:", currentContent);
+
+      // If there's no content, create placeholder content for lists
+      if (!currentContent.trim() && currentListType) {
+        const placeholderContent =
+          currentListType === "bulletList"
+            ? "• Элемент списка"
+            : "1. Элемент списка";
+        console.log("Creating placeholder content:", placeholderContent);
+        setTextElementContent(selectedTextElement, placeholderContent);
+        return;
+      }
+
       let newContent = currentContent;
 
       // First, always remove existing list formatting to avoid overlapping
@@ -323,26 +360,46 @@ export const TextEditorPanel: React.FC = () => {
         .map((line: string) => {
           return line.replace(/^(•\s*|-\s*|\*\s*|\d+\.\s*)/, "").trim();
         })
-        .filter((line: string) => line)
         .join("\n");
 
+      console.log("Clean content:", cleanContent);
+
       if (currentListType) {
-        const lines = cleanContent
-          .split("\n")
-          .filter((line: string) => line.trim() !== "");
+        // Split by lines and preserve empty lines for better formatting
+        const lines = cleanContent.split("\n");
+
+        // If content becomes empty after cleaning, add a default item
+        if (lines.every((line) => !line.trim())) {
+          const defaultContent =
+            currentListType === "bulletList"
+              ? "• Элемент списка"
+              : "1. Элемент списка";
+          console.log(
+            "Content empty after cleaning, using default:",
+            defaultContent
+          );
+          setTextElementContent(selectedTextElement, defaultContent);
+          return;
+        }
 
         if (currentListType === "bulletList") {
           newContent = lines
             .map((line: string) => {
               const trimmed = line.trim();
-              return `• ${trimmed}`;
+              // Keep empty lines as they are, add bullets only to non-empty lines
+              return trimmed ? `• ${trimmed}` : "";
             })
             .join("\n");
         } else if (currentListType === "numberList") {
+          let itemNumber = 1;
           newContent = lines
-            .map((line: string, index: number) => {
+            .map((line: string) => {
               const trimmed = line.trim();
-              return `${index + 1}. ${trimmed}`;
+              // Keep empty lines as they are, add numbers only to non-empty lines
+              if (trimmed) {
+                return `${itemNumber++}. ${trimmed}`;
+              }
+              return "";
             })
             .join("\n");
         }
@@ -351,6 +408,13 @@ export const TextEditorPanel: React.FC = () => {
         newContent = cleanContent;
       }
 
+      // Always ensure we have some content
+      if (!newContent.trim()) {
+        newContent = "Введите текст";
+        console.log("Final content was empty, using fallback");
+      }
+
+      console.log("Final content:", newContent);
       setTextElementContent(selectedTextElement, newContent);
     }
   };

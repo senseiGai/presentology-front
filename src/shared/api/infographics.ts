@@ -1,6 +1,20 @@
 import { useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/shared/stores";
 
+// Типы для загрузки файлов
+export interface FileUploadResponse {
+  success: boolean;
+  data: {
+    url: string;
+    filename: string;
+    originalName: string;
+    size: number;
+    mimetype: string;
+  };
+  statusCode: number;
+  timestamp: string;
+}
+
 // Типы для генерации инфографики
 export interface InfographicSlide {
   userPrompt: string;
@@ -44,6 +58,30 @@ export interface RegenerateInfographicsRequest {
 }
 
 // API функции
+const uploadFile = async (file: File): Promise<FileUploadResponse> => {
+  const { accessToken } = useAuthStore.getState();
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://presentology-back-production.up.railway.app";
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${baseUrl}/uploads/files`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to upload file: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
 const generateInfographics = async (
   request: GenerateInfographicsRequest
 ): Promise<InfographicsResponse> => {
@@ -107,6 +145,18 @@ const regenerateInfographics = async (
 };
 
 // React Query хуки
+export const useFileUpload = () => {
+  return useMutation({
+    mutationFn: uploadFile,
+    onSuccess: (data) => {
+      console.log("File upload successful:", data);
+    },
+    onError: (error) => {
+      console.error("File upload failed:", error);
+    },
+  });
+};
+
 export const useInfographicsGeneration = () => {
   return useMutation({
     mutationFn: generateInfographics,

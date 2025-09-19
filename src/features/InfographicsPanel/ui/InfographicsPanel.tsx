@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import {
   useInfographicsGeneration,
+  useFileUpload,
   convertTableToCSV,
   buildInfographicPrompt,
 } from "@/shared/api/infographics";
@@ -25,9 +26,13 @@ export const InfographicsPanel: React.FC = () => {
   // Infographics generation mutation
   const infographicsMutation = useInfographicsGeneration();
 
+  // File upload mutation
+  const fileUploadMutation = useFileUpload();
+
   // State for form data
   const [taskDescription, setTaskDescription] = useState<string>("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
   const [fileUploadProgress, setFileUploadProgress] = useState<number | null>(
     null
   );
@@ -75,35 +80,48 @@ export const InfographicsPanel: React.FC = () => {
 
     // Если уже есть файл, заменяем его
     setUploadedFile(null);
+    setUploadedFileUrl(null);
     setFileUploadProgress(0);
 
-    // Симулируем загрузку файла
-    const simulateUpload = () => {
-      return new Promise<void>((resolve) => {
-        let progress = 0;
-        const interval = setInterval(() => {
-          progress += 10;
-          setFileUploadProgress(progress);
+    try {
+      // Симулируем прогресс загрузки
+      const progressInterval = setInterval(() => {
+        setFileUploadProgress((prev) => {
+          if (prev === null) return 10;
+          if (prev >= 90) return prev;
+          return prev + 10;
+        });
+      }, 100);
 
-          if (progress >= 100) {
-            clearInterval(interval);
-            setUploadedFile(file);
-            setFileUploadProgress(null);
-            resolve();
-          }
-        }, 100);
-      });
-    };
+      // Загружаем файл на сервер
+      const result = await fileUploadMutation.mutateAsync(file);
 
-    await simulateUpload();
+      clearInterval(progressInterval);
+      setFileUploadProgress(100);
+
+      if (result.success && result.data.url) {
+        setUploadedFile(file);
+        setUploadedFileUrl(result.data.url);
+        setFileUploadProgress(null);
+        setIsFileChanged(true);
+
+        console.log("File uploaded successfully:", result.data.url);
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      setFileUploadProgress(null);
+      // Здесь можно показать уведомление об ошибке
+    }
   };
 
   const handleFileRemove = () => {
     setUploadedFile(null);
+    setUploadedFileUrl(null);
     setFileUploadProgress(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+    setIsFileChanged(true);
   };
 
   const handleFileInputClick = () => {
@@ -126,12 +144,15 @@ export const InfographicsPanel: React.FC = () => {
       console.log("Generating infographics with:", {
         taskDescription,
         uploadedFile: uploadedFile?.name,
+        uploadedFileUrl,
       });
 
-      // Читаем файл CSV если он загружен
+      // Подготавливаем данные CSV
       let csvData = "";
-      if (uploadedFile) {
-        csvData = await readFileAsText(uploadedFile);
+      if (uploadedFileUrl) {
+        // Используем URL загруженного файла для обращения к бэкенду
+        // Бэкенд сам прочитает файл по URL
+        csvData = uploadedFileUrl;
       } else {
         // Используем примерные данные, если файл не загружен
         csvData = '"Категория","Значение"\\n"A",120\\n"B",90\\n"C",150';

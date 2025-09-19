@@ -46,12 +46,15 @@ export const ResizableTable: React.FC<ResizableTableProps> = ({
   const tableData = getTableElement(elementId);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Don't start table dragging if clicking on row/column selection buttons
+    // Don't start table dragging if clicking on row/column selection buttons or toolbars
     const target = e.target as HTMLElement;
     if (
       target.closest('button[draggable="true"]') || // Row/column drag buttons
       target.closest(".cursor-col-resize") || // Column resize handles
-      target.closest(".cursor-row-resize") // Row resize handles
+      target.closest(".cursor-row-resize") || // Row resize handles
+      target.closest("button") || // Any button elements
+      target.closest(".row-toolbar") || // Row toolbar
+      target.closest(".col-toolbar") // Column toolbar
     ) {
       return;
     }
@@ -79,31 +82,17 @@ export const ResizableTable: React.FC<ResizableTableProps> = ({
       const slideContainer = containerRef.current.closest(".slide-container");
       if (slideContainer) {
         const slideRect = slideContainer.getBoundingClientRect();
-        const tableRect = containerRef.current.getBoundingClientRect();
 
         const newX = e.clientX - slideRect.left - dragOffset.x;
         const newY = e.clientY - slideRect.top - dragOffset.y;
 
-        // Calculate slide boundaries (759x427 is the slide size)
-        const slideWidth = 759;
-        const slideHeight = 427;
-        const tableWidth = tableRect.width;
-        const tableHeight = tableRect.height;
-
-        // Constrain position within slide boundaries
-        const constrainedX = Math.max(
-          0,
-          Math.min(newX, slideWidth - tableWidth)
-        );
-        const constrainedY = Math.max(
-          0,
-          Math.min(newY, slideHeight - tableHeight)
-        );
+        // No constraints - allow free movement
+        // User can position table anywhere within or even slightly outside the slide
 
         // Update position in store
         updateTableElement(elementId, {
           ...tableData,
-          position: { x: constrainedX, y: constrainedY },
+          position: { x: newX, y: newY },
         });
       }
     }

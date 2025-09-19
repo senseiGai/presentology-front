@@ -266,9 +266,11 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     const handleSelectAllTable = () => {
       setSelectedCell(null);
       setEditingCell(null);
-      setTableSelected(true);
-      onTableSelect?.(true);
-      console.log("Select all table");
+      setSelectedRow(null);
+      setSelectedColumn(null);
+      setTableSelected(!tableSelected); // Toggle table selection state
+      onTableSelect?.(!tableSelected);
+      console.log("Select all table", !tableSelected);
     };
 
     const handleSelectRow = (rowIndex: number) => {
@@ -744,6 +746,18 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       setTableData(newTableData);
       setRowHeights(newRowHeights);
       onTableChange?.(newTableData);
+
+      // Reset selection and toolbar states after deletion
+      setSelectedRow(null);
+      setHoveredRow(null);
+      setShowRowToolbar(null);
+      setTableSelected(false);
+
+      // Clear any pending timeouts
+      if (rowToolbarTimeoutRef.current) {
+        clearTimeout(rowToolbarTimeoutRef.current);
+        rowToolbarTimeoutRef.current = null;
+      }
     };
 
     const deleteColumn = (colIndex: number) => {
@@ -778,6 +792,18 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
       setTableData(newTableData);
       setColumnWidths(newColumnWidths);
       onTableChange?.(newTableData);
+
+      // Reset selection and toolbar states after deletion
+      setSelectedColumn(null);
+      setHoveredColumn(null);
+      setShowColToolbar(null);
+      setTableSelected(false);
+
+      // Clear any pending timeouts
+      if (colToolbarTimeoutRef.current) {
+        clearTimeout(colToolbarTimeoutRef.current);
+        colToolbarTimeoutRef.current = null;
+      }
     };
 
     // Expose functions to parent component via ref
@@ -970,27 +996,27 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
     }, [isResizing, resizeType, resizeIndex]);
 
     return (
-      <div className={`relative ${className}`}>
+      <div
+        className={`relative ${className}`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          setHoverRowButton(null);
+          setHoverColButton(null);
+          setHoveredRow(null);
+          setHoveredColumn(null);
+          hideTooltip();
+        }}
+      >
         {/* Inject resize cursor styles */}
         <style dangerouslySetInnerHTML={{ __html: styles }} />
 
-        {/* Extended hover area to include buttons */}
-        <div
-          className="relative py-12 pl-12 pr-[120px]"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => {
-            setIsHovered(false);
-            setHoverRowButton(null);
-            setHoverColButton(null);
-            setHoveredRow(null);
-            setHoveredColumn(null);
-            hideTooltip();
-          }}
-        >
+        {/* Extended hover area to include buttons - but don't block pointer events */}
+        <div className="relative py-12 pl-12 pr-[120px] pointer-events-none">
           {/* Table Container - Dynamic sizing */}
           <div
             ref={tableRef}
-            className="relative rounded-[8px] cursor-move table-drag-handle"
+            className="relative rounded-[8px] cursor-move table-drag-handle pointer-events-auto"
             style={{
               width: `${columnWidths.reduce((sum, width) => sum + width, 0)}px`,
               height: `${rowHeights.reduce(
@@ -1029,39 +1055,48 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
               </>
             )}
 
-            {/* Vertical Drag Button - Positioned to the left of table */}
-            {isHovered && !tableSelected && (
-              <button
-                onClick={handleSelectAllTable}
-                onMouseEnter={(e) => {
-                  const buttonRect = e.currentTarget.getBoundingClientRect();
-                  const containerRect =
-                    tableRef.current?.getBoundingClientRect();
-                  if (containerRect) {
-                    const relativeX =
-                      buttonRect.left -
-                      containerRect.left +
-                      buttonRect.width / 0.35;
-                    const relativeY =
-                      buttonRect.bottom - containerRect.top + 55;
-                    showTooltip("Выделить таблицу", relativeX, relativeY);
-                  }
-                }}
-                onMouseLeave={hideTooltip}
-                className="absolute -left-8 top-0 w-[20px] h-[32px] bg-white hover:bg-[#DDD1FF] hover:border-white group  rounded border border-[#D5D5D6] border-solid z-20"
-                style={{ boxShadow: "0px 0px 4px 0px rgba(138, 56, 245, 0.2)" }}
-              >
-                <div className="flex flex-col gap-y-1 items-center justify-center w-full h-full">
-                  <div className="w-1 h-1 top-1.5 bg-[#8F8F92] group-hover:bg-white rounded-full"></div>
-                  <div className=" w-1 h-1 top-3.5 bg-[#8F8F92] group-hover:bg-white rounded-full"></div>
-                  <div className=" w-1 h-1 top-[22px] bg-[#8F8F92] group-hover:bg-white rounded-full"></div>
-                </div>
-              </button>
-            )}
+            {/* Always visible table selection button */}
+            <button
+              onClick={handleSelectAllTable}
+              onMouseEnter={(e) => {
+                const buttonRect = e.currentTarget.getBoundingClientRect();
+                const containerRect = tableRef.current?.getBoundingClientRect();
+                if (containerRect) {
+                  const relativeX =
+                    buttonRect.left -
+                    containerRect.left +
+                    buttonRect.width / 0.35;
+                  const relativeY = buttonRect.bottom - containerRect.top + 55;
+                  showTooltip("Выделить таблицу", relativeX, relativeY);
+                }
+              }}
+              onMouseLeave={hideTooltip}
+              className={`absolute -left-8 top-0 w-[20px] h-[32px] hover:bg-[#DDD1FF] hover:border-white group rounded border border-solid z-20 transition-all pointer-events-auto ${"bg-white border-[#D5D5D6]"}`}
+              style={{
+                boxShadow: "0px 0px 4px 0px rgba(138, 56, 245, 0.2)",
+              }}
+            >
+              <div className="flex flex-col gap-y-1 items-center justify-center w-full h-full">
+                <div
+                  className={`w-1 h-1 top-1.5 rounded-full  bg-[#8F8F92] group-hover:bg-white
+                  `}
+                ></div>
+                <div
+                  className={`w-1 h-1 top-3.5 rounded-full 
+                      bg-[#8F8F92] group-hover:bg-white
+                  `}
+                ></div>
+                <div
+                  className={`w-1 h-1 top-[22px] rounded-full 
+                    bg-[#8F8F92] group-hover:bg-white
+                  `}
+                ></div>
+              </div>
+            </button>
 
             {tableSelected && (hoveredRow !== null || selectedRow !== null) && (
               <button
-                className="absolute -left-2.5 w-[20px] h-[32px] bg-white hover:bg-[#DDD1FF] hover:border-white group rounded border border-[#D5D5D6] border-solid z-20 transition-all"
+                className="absolute -left-2.5 w-[20px] h-[32px] bg-white hover:bg-[#DDD1FF] hover:border-white group rounded border border-[#D5D5D6] border-solid z-20 transition-all pointer-events-auto"
                 style={{
                   top: `${
                     rowHeights
@@ -1156,7 +1191,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
             {tableSelected &&
               (hoveredColumn !== null || selectedColumn !== null) && (
                 <button
-                  className="absolute -top-12 w-[32px] h-[20px] bg-white hover:bg-[#DDD1FF] hover:border-white group rounded border border-[#D5D5D6] border-solid z-20 transition-all"
+                  className="absolute -top-12 w-[32px] h-[20px] bg-white hover:bg-[#DDD1FF] hover:border-white group rounded border border-[#D5D5D6] border-solid z-20 transition-all pointer-events-auto"
                   style={{
                     left: `${
                       columnWidths
@@ -1257,7 +1292,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
             {/* Row Toolbar */}
             {showRowToolbar !== null && (
               <div
-                className="row-toolbar absolute z-30 bg-white rounded-[8px] p-[8px] flex gap-1 items-center"
+                className="row-toolbar absolute z-30 bg-white rounded-[8px] p-[8px] flex gap-1 items-center pointer-events-auto"
                 style={{
                   left: `${-60}px`, // Position to the left of the table
                   top: `${
@@ -1326,7 +1361,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
             {/* Drop zones for rows - invisible areas between rows */}
             {showColToolbar !== null && (
               <div
-                className="col-toolbar absolute z-30 bg-white rounded-[8px] p-[8px] flex gap-1 items-center"
+                className="col-toolbar absolute z-30 bg-white rounded-[8px] p-[8px] flex gap-1 items-center pointer-events-auto"
                 style={{
                   left: `${
                     columnWidths
@@ -1502,7 +1537,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
               return (
                 <div
                   key={`col-resize-${i}`}
-                  className="absolute z-40 cursor-col-resize transition-colors"
+                  className="absolute z-40 cursor-col-resize transition-colors pointer-events-auto"
                   style={{
                     left: `${leftOffset - 2}px`,
                     top: "0px",
@@ -1531,7 +1566,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
               return (
                 <div
                   key={`row-resize-${i}`}
-                  className="absolute z-40 cursor-row-resize transition-colors"
+                  className="absolute z-40 cursor-row-resize transition-colors pointer-events-auto"
                   style={{
                     left: "0px",
                     top: `${topOffset - 2}px`,
@@ -1554,7 +1589,7 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
 
             {/* Table Content - Dynamic columns */}
             <div
-              className="absolute box-border flex items-start justify-start left-0 top-0"
+              className="absolute box-border flex items-start justify-start left-0 top-0 table-drag-handle"
               style={{
                 height: `${rowHeights.reduce(
                   (sum, height) => sum + height,
@@ -1608,7 +1643,12 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
                         style={getRowStyle(rowIndex)}
                       >
                         <div
-                          className="box-border flex gap-2 items-center justify-start overflow-clip pb-[11px] pt-3 px-3 relative h-full cursor-text"
+                          className={`box-border flex gap-2 items-center justify-start overflow-clip pb-[11px] pt-3 px-3 relative h-full ${
+                            editingCell?.row === rowIndex &&
+                            editingCell?.col === colIndex
+                              ? "cursor-text"
+                              : "cursor-move table-drag-handle"
+                          }`}
                           onClick={(e) =>
                             handleCellClick(rowIndex, colIndex, e)
                           }

@@ -19,10 +19,12 @@ export interface MixedImageRequest {
 export interface ImageGenerationResponse {
   success: boolean;
   data?: {
-    images?: string[]; // URLs изображений
+    urls?: string[]; // URLs изображений для Flux
+    images?: string[]; // URLs изображений для Mixed
     message?: string;
   };
   error?: string;
+  statusCode?: number;
   timestamp?: string;
 }
 

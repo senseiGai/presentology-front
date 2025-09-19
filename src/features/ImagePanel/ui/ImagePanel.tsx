@@ -49,6 +49,7 @@ export const ImagePanel: React.FC = () => {
     deleteImageElement,
     setSelectedImageElement,
     addImageElement,
+    updateImageElement,
   } = usePresentationStore();
 
   // Get image area selection for current slide
@@ -67,8 +68,6 @@ export const ImagePanel: React.FC = () => {
     "idle" | "loading" | "success" | "error" | "invalid"
   >("idle");
   const [urlError, setUrlError] = useState<string>("");
-  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Hook для генерации изображений
@@ -188,21 +187,83 @@ export const ImagePanel: React.FC = () => {
         });
       }
 
-      if (
-        result?.success &&
-        result.data?.images &&
-        result.data.images.length > 0
-      ) {
-        console.log("Image generated successfully:", result.data.images);
-        setGeneratedImages(result.data.images);
+      if (result?.success && result.data) {
+        let imageUrls: string[] = [];
 
-        // После успешной генерации обнуляем поля
-        setSelectedStyle(undefined);
-        setSelectedModel(undefined);
-        setPrompt("");
-        setImageUrl("");
-        setUrlLoadingState("idle");
-        setUrlError("");
+        if (result.data.urls) {
+          // Flux response format
+          imageUrls = result.data.urls;
+        } else if (result.data.images) {
+          // Mixed response format
+          imageUrls = result.data.images;
+        }
+
+        if (imageUrls.length > 0) {
+          console.log("Image generated successfully:", imageUrls);
+          const imageUrl = imageUrls[0]; // Берем первое изображение
+
+          // Проверяем, есть ли выбранная область для изображения
+          if (imageAreaSelection && !imageAreaSelection.isSelecting) {
+            // Если есть выбранная область, добавляем изображение туда
+            console.log("Adding image to selected area:", imageAreaSelection);
+
+            const position = {
+              x: Math.min(imageAreaSelection.startX, imageAreaSelection.endX),
+              y: Math.min(imageAreaSelection.startY, imageAreaSelection.endY),
+            };
+            const size = {
+              width: Math.abs(
+                imageAreaSelection.endX - imageAreaSelection.startX
+              ),
+              height: Math.abs(
+                imageAreaSelection.endY - imageAreaSelection.startY
+              ),
+            };
+
+            const imageId = addImageElement(currentSlide, position, size);
+
+            // Обновляем элемент с URL изображения
+            updateImageElement(imageId, {
+              placeholder: false,
+              src: imageUrl,
+              alt: "Generated image",
+            });
+
+            // Очищаем выделение области после добавления изображения
+            clearImageAreaSelection();
+
+            console.log(
+              "Generated image added to selected area with ID:",
+              imageId
+            );
+          } else {
+            // Если нет выбранной области, добавляем в центр слайда
+            console.log("No area selected, adding image to center");
+
+            const position = { x: 200, y: 200 };
+            const size = { width: 300, height: 200 };
+
+            const imageId = addImageElement(currentSlide, position, size);
+
+            updateImageElement(imageId, {
+              placeholder: false,
+              src: imageUrl,
+              alt: "Generated image",
+            });
+
+            console.log("Generated image added to center with ID:", imageId);
+          }
+
+          // После успешной генерации обнуляем поля
+          setSelectedStyle(undefined);
+          setSelectedModel(undefined);
+          setPrompt("");
+          setImageUrl("");
+          setUrlLoadingState("idle");
+          setUrlError("");
+        } else {
+          console.error("No images in response:", result);
+        }
       } else {
         console.error("Image generation failed:", result?.error);
         // Здесь можно показать уведомление об ошибке
@@ -414,42 +475,6 @@ export const ImagePanel: React.FC = () => {
               ? "Генерируем..."
               : "Сгенерировать"}
           </button>
-
-          {/* Generated Images Section */}
-          {generatedImages.length > 0 && (
-            <div className="space-y-2 px-4">
-              <div className="text-[14px] font-normal text-[#8F8F92] tracking-[-0.42px]">
-                Сгенерированные изображения
-              </div>
-              <div className="space-y-2">
-                {generatedImages.map((imageUrl, index) => (
-                  <div key={index} className="relative">
-                    <img
-                      src={imageUrl}
-                      alt={`Generated image ${index + 1}`}
-                      className="w-full h-auto rounded-[8px] border border-[#E9E9E9]"
-                      onError={(e) => {
-                        console.error(
-                          "Failed to load generated image:",
-                          imageUrl
-                        );
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
-                    <button
-                      onClick={() => {
-                        // Здесь можно добавить логику использования изображения
-                        console.log("Using generated image:", imageUrl);
-                      }}
-                      className="absolute bottom-2 right-2 bg-[#BBA2FE] text-white px-3 py-1 rounded-[4px] text-[12px] font-medium hover:bg-[#A693FD] transition-colors"
-                    >
-                      Использовать
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Divider */}
           <div className="w-full h-[36px] bg-[#F4F4F4] flex items-center pl-4">

@@ -7,9 +7,10 @@ import { useSlideTypeChangePopup } from "@/shared/hooks/useSlideTypeChangePopup"
 import { useSlideNavigation } from "@/shared/hooks/useSlideNavigation";
 
 import Image from "next/image";
-import { Mascot } from "@/shared/ui/Mascot";
 import SparksIcon from "@/../public/icons/SparksIcon";
 import GrayTrashIcon from "@/../public/icons/GrayTrashIcon";
+import { PresentationMascot } from "@/shared/ui/PesentationMascot";
+import GenerationLoaderIcon from "../../../../public/icons/GenerationLoaderIcon";
 interface SlideCanvasProps {
   children?: React.ReactNode;
 }
@@ -147,14 +148,17 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
       <div className="relative bg-[#BBA2FE66] flex-1 min-h-screen">
         <div className="relative w-[759px] h-[427px] overflow-hidden top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
           <Image
-            src="/assets/presentation/pesentation_generation.png"
+            src="/assets/presentation/presentation_gen.png"
             width={759}
             height={427}
             alt="Presentation"
             className="absolute w-full h-full select-none"
           />
           <div className="relative">
-            <Mascot className="!absolute w-[429px] h-[429px] bottom-[-585px] left-[380px] transform -translate-x-1/2 " />
+            <GenerationLoaderIcon className="animate-spin absolute top-[47px] left-[90px]" />
+          </div>
+          <div className="relative">
+            <PresentationMascot className="!absolute w-[429px] !h-[475px] bottom-[-585px] left-[380px] transform -translate-x-1/2 " />
           </div>
         </div>
       </div>

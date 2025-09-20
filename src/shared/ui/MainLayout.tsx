@@ -60,7 +60,7 @@ export const MainLayout = ({
         </div>
         <div
           className={`${fullWidth ? "relative" : "absolute"} ${
-            fullWidth ? "min-h-screen" : "top-1/2 -translate-y-1/2"
+            fullWidth ? "" : "top-1/2 -translate-y-1/2"
           } z-10 w-full`}
         >
           <Toaster

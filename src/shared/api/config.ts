@@ -134,4 +134,27 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/presentations/${id}`,
     DELETE: (id: string) => `/presentations/${id}`,
   },
+  AI_PROXY: {
+    STRUCTURE: {
+      ADD_SLIDE: "/ai-proxy/v1/create/structure/add-slide",
+      GENERATE_SLIDES: "/ai-proxy/v1/create/structure/generate-slides",
+      PREVIEW: "/ai-proxy/create/structure/preview",
+      SELECT: "/ai-proxy/create/structure/select",
+    },
+    CREATE: {
+      TITLE_AND_SLIDES: "/ai-proxy/create/title-and-slides",
+    },
+    IMAGES: {
+      UNSPLASH: "/ai-proxy/images/unsplash",
+      FLUX: "/ai-proxy/images/flux",
+      MIXED: "/ai-proxy/images/mixed",
+    },
+    TEXT: {
+      GENERATE: "/ai-proxy/text/generate",
+      CORRECT: "/ai-proxy/text/correct",
+    },
+    INFOGRAPHICS: {
+      GENERATE: "/ai-proxy/infographics/generate",
+    },
+  },
 } as const;

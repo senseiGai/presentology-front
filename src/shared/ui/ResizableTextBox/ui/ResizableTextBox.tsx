@@ -127,32 +127,32 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
         // Calculate new dimensions based on resize direction
         switch (resizeDirection) {
           case "se": // bottom-right
-            newWidth = Math.max(200, initialDimensions.width + deltaX); // Увеличили минимум
-            newHeight = Math.max(100, initialDimensions.height + deltaY); // Увеличили минимум
+            newWidth = Math.max(50, initialDimensions.width + deltaX); // Минимум только для видимости
+            newHeight = Math.max(20, initialDimensions.height + deltaY); // Минимум только для видимости
             break;
           case "sw": // bottom-left
-            newWidth = Math.max(200, initialDimensions.width - deltaX);
-            newHeight = Math.max(100, initialDimensions.height + deltaY);
+            newWidth = Math.max(50, initialDimensions.width - deltaX);
+            newHeight = Math.max(20, initialDimensions.height + deltaY);
             break;
           case "ne": // top-right
-            newWidth = Math.max(200, initialDimensions.width + deltaX);
-            newHeight = Math.max(100, initialDimensions.height - deltaY);
+            newWidth = Math.max(50, initialDimensions.width + deltaX);
+            newHeight = Math.max(20, initialDimensions.height - deltaY);
             break;
           case "nw": // top-left
-            newWidth = Math.max(200, initialDimensions.width - deltaX);
-            newHeight = Math.max(100, initialDimensions.height - deltaY);
+            newWidth = Math.max(50, initialDimensions.width - deltaX);
+            newHeight = Math.max(20, initialDimensions.height - deltaY);
             break;
           case "e": // right
-            newWidth = Math.max(200, initialDimensions.width + deltaX);
+            newWidth = Math.max(50, initialDimensions.width + deltaX);
             break;
           case "w": // left
-            newWidth = Math.max(200, initialDimensions.width - deltaX);
+            newWidth = Math.max(50, initialDimensions.width - deltaX);
             break;
           case "n": // top
-            newHeight = Math.max(100, initialDimensions.height - deltaY);
+            newHeight = Math.max(20, initialDimensions.height - deltaY);
             break;
           case "s": // bottom
-            newHeight = Math.max(100, initialDimensions.height + deltaY);
+            newHeight = Math.max(20, initialDimensions.height + deltaY);
             break;
         }
 
@@ -165,8 +165,8 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
         const maxWidth = slideWidth - currentPosition.x;
         const maxHeight = slideHeight - currentPosition.y;
 
-        newWidth = Math.min(newWidth, Math.max(200, maxWidth)); // Обновили минимум
-        newHeight = Math.min(newHeight, Math.max(100, maxHeight)); // Обновили минимум
+        newWidth = Math.min(newWidth, Math.max(50, maxWidth)); // Маленький минимум
+        newHeight = Math.min(newHeight, Math.max(20, maxHeight)); // Маленький минимум
 
         // Apply the new dimensions to the element and ensure text fits
         if (boxRef.current) {
@@ -209,9 +209,22 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
   );
 
   const handleMouseUp = useCallback(() => {
+    if (isResizing && boxRef.current) {
+      // Save the final dimensions when resizing is complete
+      const rect = boxRef.current.getBoundingClientRect();
+      boxRef.current.setAttribute("data-width", rect.width.toString());
+      boxRef.current.setAttribute("data-height", rect.height.toString());
+      console.log(
+        `ResizableTextBox ${elementId}: Resize completed, saved dimensions:`,
+        {
+          width: rect.width,
+          height: rect.height,
+        }
+      );
+    }
     setIsResizing(false);
     setResizeDirection("");
-  }, []);
+  }, [isResizing, elementId]);
 
   useEffect(() => {
     if (isResizing) {
@@ -238,29 +251,26 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
         currentRect: boxRef.current.getBoundingClientRect(),
       });
 
-      if (savedWidth && savedHeight) {
+      // Only apply explicit dimensions if they were manually set through resizing
+      if (savedWidth && savedHeight && isResizing) {
         boxRef.current.style.width = `${savedWidth}px`;
         boxRef.current.style.height = `${savedHeight}px`;
         boxRef.current.style.maxWidth = `${savedWidth}px`;
         boxRef.current.style.maxHeight = `${savedHeight}px`;
-      } else {
-        // If no saved dimensions, preserve current dimensions
+      } else if (!isResizing) {
+        // When not resizing, let it be fit-content but preserve any manual sizes
         const rect = boxRef.current.getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0) {
-          console.log(
-            `ResizableTextBox ${elementId}: No saved dimensions, preserving current:`,
-            rect
-          );
-          boxRef.current.setAttribute("data-width", rect.width.toString());
-          boxRef.current.setAttribute("data-height", rect.height.toString());
-          boxRef.current.style.width = `${rect.width}px`;
-          boxRef.current.style.height = `${rect.height}px`;
-          boxRef.current.style.maxWidth = `${rect.width}px`;
-          boxRef.current.style.maxHeight = `${rect.height}px`;
+        if (rect.width > 0 && rect.height > 0 && savedWidth && savedHeight) {
+          // Use saved dimensions if they exist and are larger than content
+          const contentWidth = Math.max(rect.width, parseInt(savedWidth));
+          const contentHeight = Math.max(rect.height, parseInt(savedHeight));
+
+          boxRef.current.style.width = `${contentWidth}px`;
+          boxRef.current.style.height = `${contentHeight}px`;
         }
       }
     }
-  }, [shouldShowSelectionUI, elementId]); // Re-apply when selection state changes
+  }, [shouldShowSelectionUI, elementId, isResizing]); // Re-apply when selection state changes
 
   // Initialize dimensions on first render
   useEffect(() => {
@@ -269,24 +279,33 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
       const savedHeight = boxRef.current.getAttribute("data-height");
 
       if (!savedWidth || !savedHeight) {
-        // Set default dimensions if none exist
-        const defaultWidth = 200;
-        const defaultHeight = 100;
+        // Wait for content to render, then set dimensions based on content
+        setTimeout(() => {
+          if (boxRef.current) {
+            const rect = boxRef.current.getBoundingClientRect();
+            console.log(
+              `ResizableTextBox ${elementId}: Setting content-based dimensions:`,
+              {
+                contentWidth: rect.width,
+                contentHeight: rect.height,
+              }
+            );
 
-        console.log(
-          `ResizableTextBox ${elementId}: Setting default dimensions:`,
-          {
-            defaultWidth,
-            defaultHeight,
+            // Use content dimensions or reasonable minimums
+            const contentWidth = Math.max(50, rect.width || 100);
+            const contentHeight = Math.max(20, rect.height || 30);
+
+            boxRef.current.setAttribute("data-width", contentWidth.toString());
+            boxRef.current.setAttribute(
+              "data-height",
+              contentHeight.toString()
+            );
+            boxRef.current.style.width = `${contentWidth}px`;
+            boxRef.current.style.height = `${contentHeight}px`;
+            boxRef.current.style.maxWidth = `${contentWidth}px`;
+            boxRef.current.style.maxHeight = `${contentHeight}px`;
           }
-        );
-
-        boxRef.current.setAttribute("data-width", defaultWidth.toString());
-        boxRef.current.setAttribute("data-height", defaultHeight.toString());
-        boxRef.current.style.width = `${defaultWidth}px`;
-        boxRef.current.style.height = `${defaultHeight}px`;
-        boxRef.current.style.maxWidth = `${defaultWidth}px`;
-        boxRef.current.style.maxHeight = `${defaultHeight}px`;
+        }, 100); // Small delay to let content render
       }
     }
   }, []); // Run only once on mount
@@ -312,10 +331,10 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           top: `${elementStyle.y || 0}px`,
           transform: `rotate(${elementStyle.rotation || 0}deg)`,
           transformOrigin: "center",
-          width: "auto", // Позволить контенту определять размер
-          height: "auto", // Позволить контенту определять размер
-          minWidth: "200px", // Увеличенный минимальный размер
-          minHeight: "100px", // Увеличенный минимальный размер
+          width: "fit-content", // Подстраиваться под контент
+          height: "fit-content", // Подстраиваться под контент
+          minWidth: "20px", // Очень маленький минимум
+          minHeight: "16px", // Очень маленький минимум
           maxWidth: "100%",
           wordWrap: "break-word",
           overflowWrap: "break-word",
@@ -332,8 +351,8 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
             zIndex: 10,
             width: "100%",
             height: "100%",
-            minWidth: "200px", // Соответствует родителю
-            minHeight: "100px", // Соответствует родителю
+            minWidth: "20px", // Маленький минимум
+            minHeight: "16px", // Маленький минимум
             overflow: "hidden",
             boxSizing: "border-box",
           }}
@@ -356,10 +375,10 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           top: `${elementStyle.y || 0}px`,
           transform: `rotate(${elementStyle.rotation || 0}deg)`,
           transformOrigin: "center",
-          width: "auto", // Позволить контенту определять размер
-          height: "auto", // Позволить контенту определять размер
-          minWidth: "200px", // Увеличенный минимальный размер
-          minHeight: "100px", // Увеличенный минимальный размер
+          width: "fit-content", // Подстраиваться под контент
+          height: "fit-content", // Подстраиваться под контент
+          minWidth: "20px", // Очень маленький минимум
+          minHeight: "16px", // Очень маленький минимум
           maxWidth: "100%",
           wordWrap: "break-word",
           overflowWrap: "break-word",
@@ -377,8 +396,8 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
             zIndex: 10,
             width: "100%",
             height: "100%",
-            minWidth: "200px", // Соответствует родителю
-            minHeight: "100px", // Соответствует родителю
+            minWidth: "20px", // Маленький минимум
+            minHeight: "16px", // Маленький минимум
             overflow: "hidden",
             boxSizing: "border-box",
           }}

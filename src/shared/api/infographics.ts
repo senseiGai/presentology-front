@@ -37,7 +37,10 @@ export interface InfographicsResponse {
       index: number;
       spec: any;
       ms: number;
-      svgDataUrl: string;
+      svgDataUrl?: string;
+      imageUrl?: string;
+      dataUrl?: string;
+      error?: string;
     }>;
     format: string;
   };

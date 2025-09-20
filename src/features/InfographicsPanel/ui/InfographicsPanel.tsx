@@ -9,6 +9,7 @@ import {
   convertTableToCSV,
   buildInfographicPrompt,
 } from "@/shared/api/infographics";
+import { useFluxImageGeneration } from "@/shared/api/images";
 
 // Import icons
 import FileCsvIcon from "../../../../public/icons/FileCsvIcon";
@@ -157,8 +158,8 @@ export const InfographicsPanel: React.FC = () => {
         // Бэкенд сам прочитает файл по URL
         csvData = uploadedFileUrl;
       } else {
-        // Используем примерные данные, если файл не загружен
-        csvData = '"Категория","Значение"\\n"A",120\\n"B",90\\n"C",150';
+        // Используем правильно отформатированные примерные данные
+        csvData = '"Категория","Значение"\n"A",120\n"B",90\n"C",150';
       }
 
       // Строим промпт для генерации
@@ -173,11 +174,16 @@ export const InfographicsPanel: React.FC = () => {
             slideContext: "Слайд с инфографикой",
             csv: csvData,
             orientation: "horizontal",
-            format: "svg",
+            format: "png", // Изменили на PNG для лучшей совместимости
             response: "json",
           },
         ],
       };
+
+      console.log(
+        "Sending request data:",
+        JSON.stringify(requestData, null, 2)
+      );
 
       // Отправляем запрос
       const result = await infographicsMutation.mutateAsync(requestData);
@@ -185,38 +191,53 @@ export const InfographicsPanel: React.FC = () => {
       console.log("Full API response:", JSON.stringify(result, null, 2));
 
       // Обновленная обработка результата с учетом нового формата ответа
-      if (result?.success && result.data?.items?.[0]?.svgDataUrl) {
-        const svgDataUrl = result.data.items[0].svgDataUrl;
-        console.log("Infographic generated successfully:", svgDataUrl);
+      if (result?.success && result.data?.items?.[0]) {
+        const item = result.data.items[0];
 
-        // Добавляем инфографику на текущий слайд
-        const elementId =
-          selectedInfographicsElement || `infographic-${Date.now()}`;
-
-        setInfographicsElement(currentSlide, elementId, {
-          dataUrl: svgDataUrl,
-          svgContent: svgDataUrl, // SVG content в base64 формате
-          width: 400, // Размеры по умолчанию
-          height: 300,
-          position: { x: 100, y: 100 },
-          placeholder: false,
-        });
-
-        console.log(
-          "Infographic element added to store for slide:",
-          currentSlide,
-          "with elementId:",
-          elementId
-        );
-
-        // Если элемент был выбран, обновляем его
-        if (selectedInfographicsElement) {
-          setSelectedInfographicsElement(elementId);
+        // Проверяем наличие ошибки в ответе
+        if (item.error) {
+          console.error("API returned error:", item.error);
+          alert(`Ошибка генерации инфографики: ${item.error}`);
+          return;
         }
 
-        setIsGenerated(true);
-        setIsDescriptionChanged(false);
-        setIsFileChanged(false);
+        // Проверяем наличие изображения в ответе (SVG или PNG)
+        if (item.svgDataUrl || item.imageUrl || item.dataUrl) {
+          const imageUrl = item.svgDataUrl || item.imageUrl || item.dataUrl;
+          console.log("Infographic generated successfully:", imageUrl);
+
+          // Добавляем инфографику на текущий слайд
+          const elementId =
+            selectedInfographicsElement || `infographic-${Date.now()}`;
+
+          setInfographicsElement(currentSlide, elementId, {
+            dataUrl: imageUrl, // Используем только dataUrl для единообразия
+            // svgContent оставляем пустым, чтобы избежать путаницы
+            width: 300, // Увеличенная ширина для PNG
+            height: 400, // Высота для диаграмм
+            position: { x: 100, y: 50 },
+            placeholder: false,
+          });
+
+          console.log(
+            "Infographic element added to store for slide:",
+            currentSlide,
+            "with elementId:",
+            elementId
+          );
+
+          // Если элемент был выбран, обновляем его
+          if (selectedInfographicsElement) {
+            setSelectedInfographicsElement(elementId);
+          }
+
+          setIsGenerated(true);
+          setIsDescriptionChanged(false);
+          setIsFileChanged(false);
+        } else {
+          console.error("No image data in response:", item);
+          alert("Ошибка: API не вернул данные изображения");
+        }
       } else {
         console.error("Invalid response format:", result);
         console.log(
@@ -229,7 +250,12 @@ export const InfographicsPanel: React.FC = () => {
             "Got first item keys:",
             Object.keys(result.data.items[0])
           );
+          const item = result.data.items[0];
+          if (item.error) {
+            alert(`Ошибка API: ${item.error}`);
+          }
         }
+        alert("Неверный формат ответа от API");
       }
     } catch (error) {
       console.error("Infographics generation failed:", error);

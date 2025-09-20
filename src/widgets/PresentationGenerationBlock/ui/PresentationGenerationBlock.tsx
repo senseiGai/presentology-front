@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { PresentationHeader } from "@/features/PresentationHeader";
 import { SlidesSidebar } from "@/features/SlidesSidebar";
 import { SlideCanvas } from "@/features/SlideCanvas";
@@ -18,9 +19,9 @@ import GrayTableIcon from "../../../../public/icons/GrayTableIcon";
 import GraphIcon from "../../../../public/icons/GraphIcon";
 import Image from "next/image";
 import { Mascot } from "@/shared/ui/Mascot";
-import { Toaster } from "sonner";
 
 export const PresentationGenerationBlock = () => {
+  const searchParams = useSearchParams();
   const {
     currentSlide,
     generatedSlides,
@@ -32,6 +33,19 @@ export const PresentationGenerationBlock = () => {
 
   // Custom hook for slide generation logic
   useSlideGeneration();
+
+  // Debug: log search params and localStorage
+  useEffect(() => {
+    console.log("Search params:", searchParams.toString());
+    console.log("ID from URL:", searchParams.get("id"));
+
+    // Check localStorage for presentation data
+    const structureData = localStorage.getItem("presentationStructure");
+    const briefData = localStorage.getItem("presentationBrief");
+
+    console.log("Structure data from localStorage:", structureData);
+    console.log("Brief data from localStorage:", briefData);
+  }, [searchParams]);
 
   const elementOptions: ElementOption[] = [
     {

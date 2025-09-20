@@ -3,6 +3,7 @@ import { Button } from "@/shared/ui/Button";
 import { SharePopup } from "@/shared/ui/SharePopup";
 import { DownloadPopup } from "@/shared/ui/DownloadPopup";
 import { DesignChangePopup } from "@/shared/ui/DesignChangePopup";
+import { SlideGenerationButton } from "@/features/SlideGenerationButton";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import HouseIcon from "../../../../public/icons/HouseIcon";
 import MinusIcon from "../../../../public/icons/MinusIcon";
@@ -168,6 +169,9 @@ export const PresentationHeader: React.FC<PresentationHeaderProps> = ({
             </button>
           )}
         </div>
+
+        {/* Slide Generation Button */}
+        <SlideGenerationButton isGenerating={isGenerating} />
 
         {/* Undo/Redo controls */}
       </div>

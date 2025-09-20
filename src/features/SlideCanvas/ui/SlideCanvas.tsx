@@ -5,6 +5,11 @@ import { DeleteConfirmationModal } from "@/shared/ui/DeleteConfirmationModal";
 import { SlideTypeChangePopup } from "@/shared/ui/SlideTypeChangePopup/SlideTypeChangePopup";
 import { useSlideTypeChangePopup } from "@/shared/hooks/useSlideTypeChangePopup";
 import { useSlideNavigation } from "@/shared/hooks/useSlideNavigation";
+import {
+  useChangeSlideTemplate,
+  usePickSlideTemplates,
+} from "@/shared/api/presentation-generation";
+import { toast } from "sonner";
 
 import Image from "next/image";
 import SparksIcon from "@/../public/icons/SparksIcon";
@@ -50,18 +55,264 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
     scrollContainerRef,
   });
 
-  const { isOpen, openPopup, closePopup, handleConfirm } =
-    useSlideTypeChangePopup((textBlockCount, contentType, templateIndex) => {
-      console.log(`Changing slide ${currentSlideForTypeChange} type to:`, {
-        textBlockCount,
-        contentType,
-        templateIndex,
+  // Hooks for API calls
+  const changeSlideTemplateMutation = useChangeSlideTemplate();
+  const pickTemplatesMutation = usePickSlideTemplates();
+
+  // State for available templates
+  const [availableTemplates, setAvailableTemplates] = useState<string[]>([]);
+
+  // Function to get templates for a slide
+  const getTemplatesForSlide = async (
+    title: string,
+    summary: string
+  ): Promise<string[]> => {
+    try {
+      console.log(`🔍 Getting templates for slide: ${title}`);
+
+      const response = await pickTemplatesMutation.mutateAsync({
+        uiSlides: [{ title, summary }],
+        volume: "Средний",
+        seed: Math.floor(Math.random() * 1000),
       });
-      // Here you can implement the actual slide type change logic
-      // For example, updating the slide type in your store
-      closePopup();
-      setCurrentSlideForTypeChange(null);
-    });
+
+      if (
+        response.success &&
+        response.data?.slides &&
+        response.data.slides.length > 0
+      ) {
+        const protoId = response.data.slides[0].protoId;
+        console.log(`✅ Got template for slide: ${protoId}`);
+        return [protoId];
+      } else {
+        console.warn(`⚠️ No templates found for slide: ${title}`);
+        return ["proto_118"]; // fallback
+      }
+    } catch (error) {
+      console.error(`❌ Error getting templates for slide: ${title}`, error);
+      return ["proto_118"]; // fallback
+    }
+  };
+
+  // Function to convert templateIndex and contentType to protoId
+  const getProtoId = async (
+    contentType: string,
+    templateIndex: number,
+    slideIndex: number
+  ): Promise<string> => {
+    console.log(
+      `🎨 Getting protoId for contentType: ${contentType}, templateIndex: ${templateIndex}, slideIndex: ${slideIndex}`
+    );
+
+    try {
+      // Create slide title and summary based on content type
+      let slideTitle = `Слайд ${slideIndex + 1}`;
+      let slideSummary = "";
+
+      switch (contentType) {
+        case "title":
+          slideTitle = "Титульный слайд";
+          slideSummary = "Заголовок и основная идея презентации";
+          break;
+        case "infographic":
+          slideTitle = "Инфографика";
+          slideSummary = "Визуальное представление данных и статистики";
+          break;
+        case "contacts":
+          slideTitle = "Контакты";
+          slideSummary = "Контактная информация и способы связи";
+          break;
+        case "timeline":
+          slideTitle = "Таймлайн";
+          slideSummary = "Хронологическая последовательность событий";
+          break;
+        case "divider":
+          slideTitle = "Разделитель";
+          slideSummary = "Переход между разделами презентации";
+          break;
+        case "blocks":
+          slideTitle = `Контентный слайд (${templateIndex + 1} блок${
+            templateIndex > 0 ? "а" : ""
+          })`;
+          slideSummary = "Основной контент с текстовыми блоками";
+          break;
+        default:
+          slideSummary = "Содержимое слайда";
+      }
+
+      // Get templates from API
+      const templates = await getTemplatesForSlide(slideTitle, slideSummary);
+
+      // Select template based on templateIndex or use the first available
+      const selectedTemplate =
+        templates[templateIndex] || templates[0] || "proto_118";
+
+      console.log(
+        `✅ Selected template: ${selectedTemplate} for ${contentType}`
+      );
+      return selectedTemplate;
+    } catch (error) {
+      console.error(`❌ Error getting protoId for ${contentType}:`, error);
+
+      // Fallback to static templates if API fails
+      const fallbackTemplates = {
+        title: [
+          "proto_101",
+          "proto_102",
+          "proto_103",
+          "proto_104",
+          "proto_105",
+        ],
+        infographic: [
+          "proto_118",
+          "proto_119",
+          "proto_120",
+          "proto_121",
+          "proto_122",
+        ],
+        contacts: ["proto_301", "proto_302", "proto_303"],
+        timeline: ["proto_401", "proto_402", "proto_403"],
+        divider: ["proto_501", "proto_502", "proto_503"],
+        blocks: [
+          "proto_601",
+          "proto_602",
+          "proto_603",
+          "proto_604",
+          "proto_605",
+          "proto_606",
+          "proto_607",
+          "proto_608",
+        ],
+      };
+
+      const templates = fallbackTemplates[
+        contentType as keyof typeof fallbackTemplates
+      ] || ["proto_118"];
+      const selectedTemplate = templates[templateIndex] || templates[0];
+
+      console.log(`� Fallback template selected: ${selectedTemplate}`);
+      return selectedTemplate;
+    }
+  };
+
+  const { isOpen, openPopup, closePopup, handleConfirm } =
+    useSlideTypeChangePopup(
+      async (textBlockCount, contentType, templateIndex) => {
+        console.log(`Changing slide ${currentSlideForTypeChange} type to:`, {
+          textBlockCount,
+          contentType,
+          templateIndex,
+        });
+
+        if (currentSlideForTypeChange === null) {
+          console.error("No slide selected for type change");
+          toast.error("Не выбран слайд для изменения");
+          return;
+        }
+
+        try {
+          // Since generatedSlides contains slide numbers, we need to create mock slide data
+          // In the future, this should come from actual slide data store
+          const currentSlideNumber = currentSlideForTypeChange + 1; // Convert index to slide number
+
+          // Create slide title and summary for template selection
+          const slideTitle = `Слайд ${currentSlideNumber}`;
+          const slideSummary = `Содержимое слайда ${currentSlideNumber}`;
+
+          // Get the appropriate template ID
+          const protoId = await getProtoId(
+            contentType,
+            templateIndex,
+            currentSlideForTypeChange
+          );
+
+          // Get neighbor slides for context
+          const neighborLeft =
+            currentSlideForTypeChange > 0
+              ? {
+                  title: `Слайд ${currentSlideNumber - 1}`,
+                  summary: "Контекст предыдущего слайда",
+                }
+              : undefined;
+
+          const neighborRight =
+            currentSlideForTypeChange < totalSlides - 1
+              ? {
+                  title: `Слайд ${currentSlideNumber + 1}`,
+                  summary: "Контекст следующего слайда",
+                }
+              : undefined;
+
+          // Prepare the request data based on your JSON example
+          const requestData = {
+            protoId,
+            deckTitle: "Маркетинговая стратегия 2025", // You might want to get this from store
+            slideData: {
+              title: `Слайд ${currentSlideNumber}`,
+              subtitle: "Финансовые метрики",
+              text1: "Выручка +14% к Q/Q",
+              text2: {
+                t1: "ROMI",
+                t2: "2.4",
+              },
+              table: [
+                ["Метрика", "Q2", "Q3"],
+                ["CAC", "120", "109"],
+              ],
+            },
+            neighborLeft,
+            neighborRight,
+            userData: {
+              files: [
+                {
+                  name: "kpi.txt",
+                  type: "text/plain",
+                  text: "Описание метрик и методологии...",
+                },
+              ],
+            },
+            volume: "Средний",
+            rewrite: {
+              mode: "mixed",
+              preserveTarget: 0.6,
+              preserveMin: 0.3,
+              preserveMax: 0.8,
+            },
+            globalFonts: {
+              _fontScale: 0.95,
+              _fontSizes: {
+                title: 48,
+                subtitle: 28,
+                t1: 20,
+                t2: 18,
+                badge: 14,
+              },
+            },
+          };
+
+          console.log("🚀 Sending change template request:", requestData);
+          toast.promise(changeSlideTemplateMutation.mutateAsync(requestData), {
+            loading: "Изменяем тип слайда...",
+            success: (response) => {
+              console.log("✅ Template changed successfully:", response);
+              // Here you might want to update the slide in your store
+              // updateSlideInStore(currentSlideForTypeChange, response.data);
+              return "Тип слайда успешно изменен!";
+            },
+            error: (error) => {
+              console.error("❌ Template change failed:", error);
+              return `Ошибка при изменении типа слайда: ${error.message}`;
+            },
+          });
+        } catch (error) {
+          console.error("💥 Error in slide type change:", error);
+          toast.error("Произошла ошибка при изменении типа слайда");
+        }
+
+        closePopup();
+        setCurrentSlideForTypeChange(null);
+      }
+    );
 
   // Function to determine which slide is in the center of the viewport
   const findCenterSlide = useCallback(() => {

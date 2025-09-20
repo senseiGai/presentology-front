@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Toaster } from "sonner";
 
 import { useWindowWidth } from "../hooks/useWindowWidth";
+import { usePathname } from "next/navigation";
 
 export const MainLayout = ({
   children,
@@ -16,6 +17,7 @@ export const MainLayout = ({
   fullWidth?: boolean;
 }) => {
   const width = useWindowWidth();
+  const pathname = usePathname();
 
   const middleWidth = width > 1600;
   const topWidth = width > 1800;
@@ -23,7 +25,7 @@ export const MainLayout = ({
   return (
     <div className="relative overflow-x-hidden min-h-screen">
       {/* Фоновая картинка */}
-      {isBg && (
+      {isBg && pathname === "/home" && (
         <>
           <Image
             src="/assets/main_bg.png"
@@ -51,47 +53,38 @@ export const MainLayout = ({
       >
         <div
           className={`${fullWidth ? "relative" : "absolute"} ${
-            isBg
-              ? "top-1/2 -translate-y-1/2"
-              : fullWidth
-              ? "min-h-screen"
-              : "grid place-items-center min-h-screen"
+            fullWidth ? "min-h-screen" : "top-1/2 -translate-y-1/2"
           } z-10 w-full`}
         >
           {children}
         </div>
-
-        <Toaster
-          position="bottom-left"
-          richColors
-          closeButton
-          duration={5000}
-          style={{
-            zIndex: 99999999,
-          }}
-          toastOptions={{
-            style: {
-              left: fullWidth ? "24px" : "24px", // 24px = ml-6
-              bottom: "24px",
-              position: "fixed",
-              translate: isBg ? "translateY((100vh - 684px) / 2)" : "none",
-              transform: isBg
-                ? middleWidth
-                  ? "translateX(calc((100vw - 1560px) / 2))"
-                  : topWidth
-                  ? "translateX(calc((100vw - 1760px) / 2))"
-                  : "translateX(calc((100vw - 1280px) / 2))"
-                : "none",
-            },
-            classNames: {
-              toast: "rounded-[20px] !ml-0 !z-[99999999]",
-              title: "text-[#0B0911] font-semibold",
-              description: "text-[#8F8F92]",
-              actionButton: "rounded-[12px] border border-[#D9D9DE] px-4 py-2",
-              closeButton: "text-[#8F8F92]",
-            },
-          }}
-        />
+        <div
+          className={`${fullWidth ? "relative" : "absolute"} ${
+            fullWidth ? "min-h-screen" : "top-1/2 -translate-y-1/2"
+          } z-10 w-full`}
+        >
+          <Toaster
+            position="bottom-left"
+            richColors
+            closeButton
+            duration={5000}
+            style={{
+              zIndex: 99999999,
+            }}
+            toastOptions={{
+              classNames: {
+                toast: `rounded-[20px] ml-6 !z-[99999999] ${
+                  pathname === "/home" && "top-64"
+                }`,
+                title: "text-[#0B0911] font-semibold",
+                description: "text-[#8F8F92]",
+                actionButton:
+                  "rounded-[12px] border border-[#D9D9DE] px-4 py-2",
+                closeButton: "text-[#8F8F92]",
+              },
+            }}
+          />
+        </div>
       </div>
     </div>
   );

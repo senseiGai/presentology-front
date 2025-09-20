@@ -25,7 +25,7 @@ export function showDeletedToast({
 }: DeletedToastArgs) {
   toast.custom(
     (t) => (
-      <div className="relative -ml-7 w-[350px] h-[157px] rounded-[20px] bg-white shadow-lg p-3 z-[99999999]">
+      <div className="relative bottom-0 w-[350px] h-[157px] rounded-[12px] bg-white shadow-lg p-3 z-[99999999]">
         <div className="flex items-start gap-3">
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#00CF1B] text-white text-sm">
             ✓

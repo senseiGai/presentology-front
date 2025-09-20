@@ -65,7 +65,7 @@ export function ErrorCard({
   };
 
   return (
-    <div className="fixed bottom-4 left-32 z-50">
+    <div className="fixed bottom-4 z-50">
       <div
         className={`max-w-[350px] h-[180px] bg-[#F5F5F5] rounded-[12px] shadow-2xl p-[12px] relative transform transition-all duration-300 ease-in-out ${
           isVisible

@@ -9,7 +9,6 @@ import Image from "next/image";
 import { useLoginStore } from "../model/use-login-store";
 import { useRouter } from "next/navigation";
 import { useWindowWidth } from "@/shared/hooks/useWindowWidth";
-import { toast } from "sonner";
 
 import LogoIcon from "../../../../public/icons/Logo";
 import { socials } from "../lib/socials";
@@ -42,8 +41,6 @@ export const LoginBlock = () => {
       console.log("Login success:", success);
 
       if (success) {
-        toast.success("Вы успешно вошли в систему!");
-
         console.log("Redirecting to /home");
         router.push("/home");
 

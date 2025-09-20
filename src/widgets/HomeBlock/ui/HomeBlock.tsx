@@ -23,6 +23,7 @@ import { useSurveyStatus } from "@/shared/hooks/useSurvey";
 import { useUserPresentations } from "@/shared/api/presentations";
 import { formatPresentationsForDisplay } from "@/shared/utils/formatPresentations";
 import { useRouter } from "next/navigation";
+import { showDeletedToast } from "@/shared/lib/toasts";
 
 export const HomeBlock = () => {
   const { activeItem } = useSideBarStore();
@@ -243,7 +244,18 @@ export const HomeBlock = () => {
           )}
         </div>
       </div>
-      <button className="bg-[#FFFFFF] cursor-pointer rounded-full w-[40px] h-[40px] flex items-center justify-center absolute bottom-0 right-[24px]  z-20">
+      <button
+        // onClick={() =>
+        //   showDeletedToast({
+        //     title: "gOIDA",
+        //     onUndo: () => {
+        //       console.log("Undo delete presentation:");
+        //     },
+        //     durationMs: 5000,
+        //   })
+        // }
+        className="bg-[#FFFFFF] cursor-pointer rounded-full w-[40px] h-[40px] flex items-center justify-center absolute bottom-0 right-[24px]  z-20"
+      >
         <HeadphonesIcon />
       </button>
 

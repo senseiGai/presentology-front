@@ -33,15 +33,13 @@ export interface GenerateInfographicsRequest {
 export interface InfographicsResponse {
   success: boolean;
   data: {
-    slides: Array<{
-      userPrompt: string;
-      slideContext: string;
-      infographic?: {
-        dataUrl?: string;
-        spec?: any;
-        error?: string;
-      };
+    items: Array<{
+      index: number;
+      spec: any;
+      ms: number;
+      svgDataUrl: string;
     }>;
+    format: string;
   };
   statusCode: number;
   timestamp: string;

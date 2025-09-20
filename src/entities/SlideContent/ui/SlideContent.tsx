@@ -54,6 +54,11 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     setSelectedTableElement,
     updateTableElement,
     deleteTableElement,
+    // Infographics state
+    infographicsElements,
+    selectedInfographicsElement,
+    setSelectedInfographicsElement,
+    deleteInfographicsElement,
     copyTableElement,
   } = usePresentationStore();
 
@@ -426,6 +431,127 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     );
   };
 
+  // Render infographics elements from store
+  const renderInfographicsElements = () => {
+    const currentSlideElements = infographicsElements[slideNumber] || {};
+
+    console.log(
+      "Rendering infographics for slide",
+      slideNumber,
+      ":",
+      currentSlideElements
+    );
+
+    return Object.entries(currentSlideElements).map(
+      ([elementId, infographicData]) => {
+        const { dataUrl, svgContent, position, width, height } =
+          infographicData;
+
+        console.log("Rendering infographic element:", elementId, "with data:", {
+          dataUrl: dataUrl?.substring(0, 50) + "...",
+          position,
+          width,
+          height,
+        });
+
+        return (
+          <div
+            key={elementId}
+            className={`absolute cursor-pointer border-2 ${
+              selectedInfographicsElement === elementId
+                ? "border-[#BBA2FE]"
+                : "border-transparent"
+            } hover:border-[#BBA2FE] transition-colors group`}
+            style={{
+              left: `${position.x}px`,
+              top: `${position.y}px`,
+              width: `${width}px`,
+              height: `${height}px`,
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedInfographicsElement(elementId);
+            }}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              setSelectedInfographicsElement(elementId);
+            }}
+          >
+            {/* Render SVG content */}
+            {(dataUrl || svgContent) && (
+              <div className="w-full h-full flex items-center justify-center">
+                {/* Обработка base64 SVG */}
+                {(dataUrl || svgContent)?.startsWith(
+                  "data:image/svg+xml;base64,"
+                ) ? (
+                  <img
+                    src={dataUrl || svgContent}
+                    alt="Infographic"
+                    className="w-full h-full object-contain"
+                    style={{ maxWidth: "100%", maxHeight: "100%" }}
+                  />
+                ) : (dataUrl || svgContent)?.startsWith(
+                    "data:image/svg+xml"
+                  ) ? (
+                  <img
+                    src={dataUrl || svgContent}
+                    alt="Infographic"
+                    className="w-full h-full object-contain"
+                    style={{ maxWidth: "100%", maxHeight: "100%" }}
+                  />
+                ) : (dataUrl || svgContent)?.includes("<svg") ? (
+                  <div
+                    className="w-full h-full"
+                    dangerouslySetInnerHTML={{
+                      __html: dataUrl || svgContent || "",
+                    }}
+                  />
+                ) : (dataUrl || svgContent)?.startsWith("data:image/") ? (
+                  <img
+                    src={dataUrl || svgContent}
+                    alt="Infographic"
+                    className="w-full h-full object-contain"
+                    style={{ maxWidth: "100%", maxHeight: "100%" }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">
+                    Инфографика недоступна
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Selection overlay and controls */}
+            {selectedInfographicsElement === elementId && (
+              <>
+                {/* Selection overlay */}
+                <div className="absolute inset-0 bg-[#BBA2FE] bg-opacity-10 pointer-events-none" />
+
+                {/* Delete button */}
+                <button
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteInfographicsElement(slideNumber, elementId);
+                    setSelectedInfographicsElement(null);
+                  }}
+                >
+                  ×
+                </button>
+
+                {/* Resize handles */}
+                <div className="absolute -top-1 -left-1 w-2 h-2 bg-[#BBA2FE] border border-white cursor-nw-resize" />
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-[#BBA2FE] border border-white cursor-ne-resize" />
+                <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-[#BBA2FE] border border-white cursor-sw-resize" />
+                <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-[#BBA2FE] border border-white cursor-se-resize" />
+              </>
+            )}
+          </div>
+        );
+      }
+    );
+  };
+
   // Render static alignment guides when any element is selected on current slide
   const renderAlignmentGuides = () => {
     // Check if any element is selected and belongs to current slide
@@ -446,11 +572,16 @@ export const SlideContent: React.FC<SlideContentProps> = ({
       selectedImageElement &&
       imageElements[slideNumber]?.[selectedImageElement];
 
+    const isInfographicsElementOnCurrentSlide =
+      selectedInfographicsElement &&
+      infographicsElements[slideNumber]?.[selectedInfographicsElement];
+
     // Show guides only if an element from current slide is selected
     if (
       !isTextElementOnCurrentSlide &&
       !isTableElementOnCurrentSlide &&
-      !isImageElementOnCurrentSlide
+      !isImageElementOnCurrentSlide &&
+      !isInfographicsElementOnCurrentSlide
     ) {
       return null;
     }
@@ -678,6 +809,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
 
             {renderImageElements()}
 
+            {renderInfographicsElements()}
+
             {renderAlignmentGuides()}
 
             {renderImageAreaSelection()}
@@ -727,6 +860,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             {renderTableElements()}
 
             {renderImageElements()}
+
+            {renderInfographicsElements()}
 
             {renderAlignmentGuides()}
 

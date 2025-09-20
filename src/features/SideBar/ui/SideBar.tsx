@@ -101,7 +101,11 @@ export default function Sidebar() {
             <>
               <div className="flex items-center gap-[12px]">
                 <div
-                  className="bg-[#BBA2FE] w-[40px] h-[40px] pt-0.5 cursor-pointer flex items-center justify-center rounded-full hover:bg-[#A689FD] transition-colors"
+                  className={` ${
+                    user?.avatar
+                      ? "bg-transparent"
+                      : "bg-[#BBA2FE] pt-0.5 hover:bg-[#A689FD] transition-colors"
+                  } w-[40px] h-[40px] cursor-pointer flex items-center justify-center rounded-full`}
                   onClick={openAccountSettings}
                   title="Настройки аккаунта"
                 >
@@ -133,7 +137,11 @@ export default function Sidebar() {
             </>
           ) : (
             <div
-              className="bg-[#BBA2FE] w-[40px] h-[40px] pt-0.5 cursor-pointer flex items-center justify-center rounded-full hover:bg-[#A689FD] transition-colors"
+              className={` ${
+                user?.avatar
+                  ? "bg-transparent"
+                  : "bg-[#BBA2FE] pt-0.5 hover:bg-[#A689FD] transition-colors"
+              } w-[40px] h-[40px] cursor-pointer flex items-center justify-center rounded-full`}
               title={displayEmail}
               onClick={openAccountSettings}
             >

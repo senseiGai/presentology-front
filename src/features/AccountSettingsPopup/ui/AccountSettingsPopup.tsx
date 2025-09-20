@@ -151,7 +151,6 @@ export default function AccountSettingsPopup() {
 
       try {
         await uploadAvatar(file);
-        toast.success("Аватар успешно обновлён");
       } catch (error: any) {
         setErrorMessage(
           error?.message || "Произошла ошибка при загрузке аватара"
@@ -168,7 +167,6 @@ export default function AccountSettingsPopup() {
   const handleDeleteAvatar = async () => {
     try {
       await deleteAvatar();
-      toast.success("Аватар успешно удалён");
     } catch (error: any) {
       toast.error(error?.message || "Произошла ошибка при удалении аватара");
     }

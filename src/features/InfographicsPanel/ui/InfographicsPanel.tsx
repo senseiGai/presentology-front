@@ -21,6 +21,9 @@ export const InfographicsPanel: React.FC = () => {
     clearInfographicsSelection,
     selectedInfographicsElement,
     setSelectedInfographicsElement,
+    currentSlide,
+    setInfographicsElement,
+    updateInfographicsElement,
   } = usePresentationStore();
 
   // Infographics generation mutation
@@ -179,20 +182,54 @@ export const InfographicsPanel: React.FC = () => {
       // Отправляем запрос
       const result = await infographicsMutation.mutateAsync(requestData);
 
-      if (result?.success && result.data?.slides?.[0]?.infographic?.dataUrl) {
-        const dataUrl = result.data.slides[0].infographic.dataUrl;
-        console.log("Infographic generated successfully:", dataUrl);
+      console.log("Full API response:", JSON.stringify(result, null, 2));
 
-        // Здесь можно добавить логику для обновления элемента инфографики на слайде
-        // if (selectedInfographicsElement) {
-        //   // Обновить элемент с новой инфографикой
-        // }
+      // Обновленная обработка результата с учетом нового формата ответа
+      if (result?.success && result.data?.items?.[0]?.svgDataUrl) {
+        const svgDataUrl = result.data.items[0].svgDataUrl;
+        console.log("Infographic generated successfully:", svgDataUrl);
+
+        // Добавляем инфографику на текущий слайд
+        const elementId =
+          selectedInfographicsElement || `infographic-${Date.now()}`;
+
+        setInfographicsElement(currentSlide, elementId, {
+          dataUrl: svgDataUrl,
+          svgContent: svgDataUrl, // SVG content в base64 формате
+          width: 400, // Размеры по умолчанию
+          height: 300,
+          position: { x: 100, y: 100 },
+          placeholder: false,
+        });
+
+        console.log(
+          "Infographic element added to store for slide:",
+          currentSlide,
+          "with elementId:",
+          elementId
+        );
+
+        // Если элемент был выбран, обновляем его
+        if (selectedInfographicsElement) {
+          setSelectedInfographicsElement(elementId);
+        }
 
         setIsGenerated(true);
         setIsDescriptionChanged(false);
         setIsFileChanged(false);
       } else {
         console.error("Invalid response format:", result);
+        console.log(
+          "Expected: result.success && result.data.items[0].svgDataUrl"
+        );
+        console.log("Got success:", result?.success);
+        console.log("Got data.items:", result?.data?.items);
+        if (result?.data?.items?.[0]) {
+          console.log(
+            "Got first item keys:",
+            Object.keys(result.data.items[0])
+          );
+        }
       }
     } catch (error) {
       console.error("Infographics generation failed:", error);

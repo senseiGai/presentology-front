@@ -139,6 +139,21 @@ export interface PresentationState {
 
   // Infographics editing statey
   selectedInfographicsElement: string | null;
+  infographicsElements: Record<
+    number,
+    Record<
+      string,
+      {
+        id: string;
+        svgContent?: string;
+        dataUrl?: string;
+        width: number;
+        height: number;
+        position: { x: number; y: number };
+        placeholder?: boolean;
+      }
+    >
+  >;
 
   // History for undo/redo
   history: HistoryAction[];
@@ -259,6 +274,32 @@ export interface PresentationState {
   // Infographics editing actions
   setSelectedInfographicsElement: (elementId: string | null) => void;
   clearInfographicsSelection: () => void;
+  setInfographicsElement: (
+    slideNumber: number,
+    elementId: string,
+    infographicsData: {
+      svgContent?: string;
+      dataUrl?: string;
+      width: number;
+      height: number;
+      position: { x: number; y: number };
+      placeholder?: boolean;
+    }
+  ) => void;
+  updateInfographicsElement: (
+    slideNumber: number,
+    elementId: string,
+    updates: Partial<{
+      svgContent: string;
+      dataUrl: string;
+      width: number;
+      height: number;
+      position: { x: number; y: number };
+      placeholder: boolean;
+    }>
+  ) => void;
+  getInfographicsElement: (slideNumber: number, elementId: string) => any;
+  deleteInfographicsElement: (slideNumber: number, elementId: string) => void;
 
   // Reset functions
   resetPresentation: () => void;
@@ -316,6 +357,7 @@ const initialState = {
 
   // Infographics editing state
   selectedInfographicsElement: null,
+  infographicsElements: {},
 
   // History for undo/redo
   history: [],
@@ -988,6 +1030,88 @@ export const usePresentationStore = create<PresentationState>()(
       set({
         selectedInfographicsElement: null,
       }),
+
+    setInfographicsElement: (
+      slideNumber: number,
+      elementId: string,
+      infographicsData: {
+        svgContent?: string;
+        dataUrl?: string;
+        width: number;
+        height: number;
+        position: { x: number; y: number };
+        placeholder?: boolean;
+      }
+    ) => {
+      set((state) => ({
+        infographicsElements: {
+          ...state.infographicsElements,
+          [slideNumber]: {
+            ...state.infographicsElements[slideNumber],
+            [elementId]: {
+              id: elementId,
+              ...infographicsData,
+            },
+          },
+        },
+      }));
+    },
+
+    updateInfographicsElement: (
+      slideNumber: number,
+      elementId: string,
+      updates: Partial<{
+        svgContent: string;
+        dataUrl: string;
+        width: number;
+        height: number;
+        position: { x: number; y: number };
+        placeholder: boolean;
+      }>
+    ) => {
+      set((state) => {
+        const currentElement =
+          state.infographicsElements[slideNumber]?.[elementId];
+        if (!currentElement) return state;
+
+        return {
+          infographicsElements: {
+            ...state.infographicsElements,
+            [slideNumber]: {
+              ...state.infographicsElements[slideNumber],
+              [elementId]: {
+                ...currentElement,
+                ...updates,
+              },
+            },
+          },
+        };
+      });
+    },
+
+    getInfographicsElement: (slideNumber: number, elementId: string) => {
+      const state = get();
+      return state.infographicsElements[slideNumber]?.[elementId] || null;
+    },
+
+    deleteInfographicsElement: (slideNumber: number, elementId: string) => {
+      set((state) => {
+        const slideElements = state.infographicsElements[slideNumber] || {};
+        const { [elementId]: removed, ...remainingInfographics } =
+          slideElements;
+
+        return {
+          infographicsElements: {
+            ...state.infographicsElements,
+            [slideNumber]: remainingInfographics,
+          },
+          selectedInfographicsElement:
+            state.selectedInfographicsElement === elementId
+              ? null
+              : state.selectedInfographicsElement,
+        };
+      });
+    },
 
     // Text element style management
     updateTextElementStyle: (

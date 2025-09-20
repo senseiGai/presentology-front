@@ -111,7 +111,7 @@ export const NewPasswordBlock = () => {
         </form>
       </div>
 
-      <div className="ml-auto relative h-[784px]">
+      <div className="ml-auto relative h-[700px] xl:h-[784px]">
         {topWidth ? (
           <Image
             src="/assets/registration_top_mask.png"
@@ -140,17 +140,17 @@ export const NewPasswordBlock = () => {
         <Link href="#" className="absolute right-4 bottom-[14px]">
           <Image
             src="/assets/logos_telegram.webp"
-            alt="Telegram"
-            className="ml-auto"
+            alt="Login Illustration"
+            className="ml-auto w-[45px] h-[45px] xl:w-[55px] xl:h-[55px]"
             width={55}
             height={55}
           />
         </Link>
-        <Link href="#" className="absolute right-24 bottom-[14px]">
+        <Link href="#" className="absolute right-18 xl:right-24 bottom-[14px]">
           <Image
             src="/assets/logos_vk.webp"
-            alt="VK"
-            className="ml-auto"
+            alt="Login Illustration"
+            className="ml-auto w-[45px] h-[45px] xl:w-[55px] xl:h-[55px]"
             width={55}
             height={55}
           />

@@ -67,14 +67,14 @@ export const RegistrationBlock = () => {
   };
 
   return (
-    <section className="pt-[24px] pl-[40px] flex flex-row gap-x-[51px] justify-between">
+    <section className="pt-[24px] pl-[40px] flex flex-row  gap-x-[30px] xl:gap-x-[51px] justify-between">
       <div className="flex flex-col w-[356px]">
         <div className="relative w-full">
           <LogoIcon />
         </div>
         <h2 className="mt-[48px]">Регистрация</h2>
 
-        <form className="mt-[40px] w-full" onSubmit={handleSubmit}>
+        <form className="mt-[36px] xl:mt-[40px] w-full" onSubmit={handleSubmit}>
           <InputField
             className="mt-[16px]"
             label="Электронная почта"
@@ -176,14 +176,14 @@ export const RegistrationBlock = () => {
           />
         </form>
 
-        <p className="mt-auto max-w-[356px] text-[12px] leading-[18px] tracking-[-0.2px] text-[#BEBEC0] font-normal">
+        <p className="mt-auto max-w-[356px] text-[10px] xl:text-[12px] xl:leading-[18px] tracking-[-0.2px] text-[#BEBEC0] font-normal">
           Продолжая регистрацию и вход, вы соглашаетесь с Пользовательским
           соглашением, Политикой конфиденциальности, Политикой
           возвратов и даёте Согласие на обработку персональных данных
         </p>
       </div>
 
-      <div className="ml-auto relative h-[784px]">
+      <div className="ml-auto relative h-[700px] xl:h-[784px]">
         {topWidth ? (
           <Image
             src="/assets/registration_top_mask.png"
@@ -212,17 +212,17 @@ export const RegistrationBlock = () => {
         <Link href="#" className="absolute right-4 bottom-[14px]">
           <Image
             src="/assets/logos_telegram.webp"
-            alt="Telegram"
-            className="ml-auto"
+            alt="Login Illustration"
+            className="ml-auto w-[45px] h-[45px] xl:w-[55px] xl:h-[55px]"
             width={55}
             height={55}
           />
         </Link>
-        <Link href="#" className="absolute right-24 bottom-[14px]">
+        <Link href="#" className="absolute right-18 xl:right-24 bottom-[14px]">
           <Image
             src="/assets/logos_vk.webp"
-            alt="VK"
-            className="ml-auto"
+            alt="Login Illustration"
+            className="ml-auto w-[45px] h-[45px] xl:w-[55px] xl:h-[55px]"
             width={55}
             height={55}
           />

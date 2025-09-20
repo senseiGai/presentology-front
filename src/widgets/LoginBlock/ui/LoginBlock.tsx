@@ -65,8 +65,8 @@ export const LoginBlock = () => {
   };
 
   return (
-    <section className="pt-[24px] pl-[40px] flex flex-row justify-between gap-x-[51px] w-full 2xl:pb-[24px]">
-      <div className="flex flex-col">
+    <section className="pt-[24px] pl-[40px] flex flex-row justify-between gap-x-[30px] xl:gap-x-[51px] w-full 2xl:pb-[24px]">
+      <div className="flex flex-col w-[356px]">
         <div className="relative w-full">
           <LogoIcon />
         </div>
@@ -123,7 +123,7 @@ export const LoginBlock = () => {
             корректный адрес или зарегистрируйтесь
           </p>
         )}
-        <div className="flex flex-row items-center mt-[158px]">
+        <div className="flex flex-row items-center mt-[80px] xl:mt-[158px]">
           <div className="h-[1px] w-[119.5px] bg-[#E9E9E9]" />
           <span className="text-[#BEBEC0] text-[14px] font-[500] mx-[8px] whitespace-nowrap">
             Еще не с нами?
@@ -142,7 +142,7 @@ export const LoginBlock = () => {
           </div>
         )}
       </div>
-      <div className="ml-auto relative h-[784px]">
+      <div className="ml-auto relative h-[700px] xl:h-[784px]">
         {topWidth ? (
           <Image
             src="/assets/login_top_mask.png"
@@ -172,16 +172,16 @@ export const LoginBlock = () => {
           <Image
             src="/assets/logos_telegram.webp"
             alt="Login Illustration"
-            className="ml-auto"
+            className="ml-auto w-[40px] h-[40px] xl:w-[55px] xl:h-[55px]"
             width={55}
             height={55}
           />
         </Link>
-        <Link href="#" className="absolute right-24 bottom-[14px]">
+        <Link href="#" className="absolute right-16 xl:right-24 bottom-[14px]">
           <Image
             src="/assets/logos_vk.webp"
             alt="Login Illustration"
-            className="ml-auto"
+            className="ml-auto w-[40px] h-[40px] xl:w-[55px] xl:h-[55px]"
             width={55}
             height={55}
           />

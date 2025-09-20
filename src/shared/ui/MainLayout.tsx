@@ -45,7 +45,7 @@ export const MainLayout = ({
                   ? "max-w-[1760px]"
                   : middleWidth
                   ? "max-w-[1560px]"
-                  : "max-w-[1280px]"
+                  : "max-w-[1000px] xl:max-w-[1280px]"
               }  mx-auto relative min-h-screen`
         }
       >

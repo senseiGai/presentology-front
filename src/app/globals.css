@@ -40,7 +40,7 @@ h1 {
 
 h2 {
   font-weight: 500;
-  font-size: 24px;
+  @apply text-[18px] xl:text-[24px];
 }
 
 /* Прячем сам скроллбар, но оставляем скролл */

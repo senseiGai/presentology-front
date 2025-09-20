@@ -42,12 +42,13 @@ export const ResizableInfographicsBox: React.FC<
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (!infographicsElement || !isSelected) {
-        if (infographicsElement) {
-          setSelectedInfographicsElement(elementId);
-          setShowToolbar(true);
-        }
-        return;
+      if (!infographicsElement) return;
+
+      // Если элемент не выбран, выбираем его
+      if (!isSelected) {
+        setSelectedInfographicsElement(elementId);
+        setShowToolbar(true);
+        return; // Возвращаемся, чтобы при следующем клике можно было перетаскивать
       }
 
       e.preventDefault();
@@ -407,6 +408,12 @@ export const ResizableInfographicsBox: React.FC<
           cursor: getCursor(),
         }}
         onMouseDown={handleMouseDown}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!isSelected) {
+            setSelectedInfographicsElement(elementId);
+          }
+        }}
         data-infographics-element={elementId}
       >
         {/* Content */}

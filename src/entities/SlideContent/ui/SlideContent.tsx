@@ -637,12 +637,14 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     const isTextElement = target.closest("[data-text-element]");
     const isTableElement = target.closest("[data-table-element]");
     const isImageElement = target.closest("[data-image-element]");
+    const isInfographicsElement = target.closest("[data-infographics-element]");
 
     if (
       !isToolbarClick &&
       !isTextElement &&
       !isTableElement &&
-      !isImageElement
+      !isImageElement &&
+      !isInfographicsElement
     ) {
       clearTextSelection();
       setSelectedTableElement(null);

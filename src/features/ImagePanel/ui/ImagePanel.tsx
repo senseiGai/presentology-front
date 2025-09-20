@@ -3,6 +3,7 @@ import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import {
   useFluxImageGeneration,
   useMixedImageGeneration,
+  useUnsplashImageSearch,
   getImageSizeForStyle,
   enhancePromptForStyle,
 } from "@/shared/api/images";
@@ -69,11 +70,14 @@ export const ImagePanel: React.FC = () => {
     "idle" | "loading" | "success" | "error" | "invalid"
   >("idle");
   const [urlError, setUrlError] = useState<string>("");
+  const [searchResults, setSearchResults] = useState<string[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Hook для генерации изображений
   const fluxImageMutation = useFluxImageGeneration();
   const mixedImageMutation = useMixedImageGeneration();
+  const unsplashSearchMutation = useUnsplashImageSearch();
   const fileUploadMutation = useFileUpload();
 
   // Убираем автоматическое активирование режима выделения области
@@ -134,6 +138,93 @@ export const ImagePanel: React.FC = () => {
       setUrlLoadingState("invalid");
       setUrlError("Неправильная ссылка");
     }
+  };
+
+  const handleSearchImages = async () => {
+    if (!prompt.trim()) return;
+
+    setIsSearching(true);
+    setSearchResults([]);
+
+    try {
+      const result = await unsplashSearchMutation.mutateAsync({
+        query: prompt.trim(),
+        count: 12, // Поищем 12 изображений
+        orientation: "landscape", // По умолчанию ландшафтная ориентация
+      });
+
+      if (
+        result.success &&
+        result.data?.images &&
+        result.data.images.length > 0
+      ) {
+        setSearchResults(result.data.images);
+        console.log("Found images:", result.data.images);
+      } else {
+        console.error("Search failed or no images found:", result);
+
+        if (
+          result.success &&
+          result.data?.images &&
+          result.data.images.length === 0
+        ) {
+          alert(
+            "По вашему запросу не найдено изображений. Попробуйте изменить запрос."
+          );
+        } else {
+          alert(
+            "Не удалось найти изображения: " +
+              (result.error || "Неизвестная ошибка")
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      alert("Ошибка поиска изображений");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectSearchResult = (imageUrl: string) => {
+    console.log("Selecting image:", imageUrl);
+    console.log("Current slide:", currentSlide);
+
+    // Добавляем выбранное изображение на слайд
+    const imageId = addImageElement(
+      currentSlide,
+      { x: 100, y: 100 }, // позиция
+      { width: 300, height: 200 } // размеры
+    );
+
+    console.log("Created image element with ID:", imageId);
+
+    if (imageId) {
+      // Обновляем элемент с URL изображения и убираем placeholder
+      updateImageElement(imageId, {
+        src: imageUrl,
+        alt: "Изображение из поиска",
+        placeholder: false, // Важно: убираем placeholder режим
+      });
+
+      console.log("Updated image element:", imageId, "with URL:", imageUrl);
+
+      // Автоматически выбираем добавленное изображение
+      setSelectedImageElement(imageId);
+
+      console.log(
+        "Image successfully added to slide:",
+        currentSlide,
+        "with ID:",
+        imageId
+      );
+    } else {
+      console.error("Failed to create image element");
+    }
+
+    // НЕ очищаем результаты поиска сразу - пользователь может захотеть добавить еще изображения
+    // setSearchResults([]);
+    // setPrompt("");
   };
 
   const handleGenerate = async () => {
@@ -460,7 +551,11 @@ export const ImagePanel: React.FC = () => {
                 onChange={handlePromptChange}
                 onFocus={() => setIsTextareaFocused(true)}
                 onBlur={() => setIsTextareaFocused(false)}
-                placeholder="Какое изображение сгенерировать?"
+                placeholder={
+                  selectedModel === "internet"
+                    ? "Что найти в интернете?"
+                    : "Какое изображение сгенерировать?"
+                }
                 className="w-full h-[73px] absolute top-3 left-4 pr-10 outline-none resize-none text-[14px] font-normal text-[#0B0911] tracking-[-0.42px] placeholder-[#BEBEC0]"
                 maxLength={500}
               />
@@ -471,28 +566,76 @@ export const ImagePanel: React.FC = () => {
           </div>
 
           <button
-            onClick={handleGenerate}
+            onClick={
+              selectedModel === "internet" ? handleSearchImages : handleGenerate
+            }
             disabled={
               !prompt.trim() ||
               !selectedStyle ||
               !selectedModel ||
               fluxImageMutation.isPending ||
-              mixedImageMutation.isPending
+              mixedImageMutation.isPending ||
+              isSearching
             }
             className={`w-[242px] mx-auto h-10 rounded-[8px] text-[18px] font-normal tracking-[-0.36px] transition-colors flex items-center justify-center ${
               prompt.trim() &&
               selectedStyle &&
               selectedModel &&
               !fluxImageMutation.isPending &&
-              !mixedImageMutation.isPending
+              !mixedImageMutation.isPending &&
+              !isSearching
                 ? "bg-[#BBA2FE] text-white hover:bg-[#A693FD]"
                 : "bg-[#DDD1FF] text-white cursor-not-allowed"
             }`}
           >
             {fluxImageMutation.isPending || mixedImageMutation.isPending
               ? "Генерируем..."
+              : isSearching
+              ? "Ищем..."
+              : selectedModel === "internet"
+              ? "Найти изображения"
               : "Сгенерировать"}
           </button>
+
+          {/* Search Results Section */}
+          {searchResults.length > 0 && (
+            <>
+              <div className="w-full h-[36px] bg-[#F4F4F4] flex items-center pl-4">
+                <span className="text-[#0B0911] text-[14px] font-medium block">
+                  Результаты поиска ({searchResults.length})
+                </span>
+              </div>
+
+              <div className="px-4 pb-4">
+                <div className="grid grid-cols-2 gap-2">
+                  {searchResults.map((imageUrl, index) => (
+                    <div
+                      key={index}
+                      className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#BBA2FE] transition-all"
+                      onClick={() => handleSelectSearchResult(imageUrl)}
+                    >
+                      <Image
+                        src={imageUrl}
+                        alt={`Результат поиска ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 140px) 100vw, 140px"
+                      />
+                      <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors" />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Clear Results Button */}
+                <button
+                  onClick={() => setSearchResults([])}
+                  className="w-full mt-2 h-8 bg-gray-100 hover:bg-gray-200 rounded-[6px] text-[14px] font-normal text-gray-600 transition-colors"
+                >
+                  Очистить результаты
+                </button>
+              </div>
+            </>
+          )}
 
           {/* Divider */}
           <div className="w-full h-[36px] bg-[#F4F4F4] flex items-center pl-4">

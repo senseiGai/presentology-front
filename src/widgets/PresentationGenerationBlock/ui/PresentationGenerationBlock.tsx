@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import React, { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { PresentationHeader } from "@/features/PresentationHeader";
 import { SlidesSidebar } from "@/features/SlidesSidebar";
 import { SlideCanvas } from "@/features/SlideCanvas";
@@ -10,18 +10,17 @@ import { SlideContent, getSlideType } from "@/entities/SlideContent";
 import { SlidePreviewContent } from "@/entities/SlidePreviewContent";
 import { type ElementOption } from "@/features/ElementSelector";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
-import { useSlideGeneration } from "@/shared/hooks/useSlideGeneration";
+import { useGenerateSlidesForStructureNew } from "@/shared/api/presentation-generation";
 
 import SideBarIcon from "../../../../public/icons/SideBarIcon";
 import AlphabetIcon from "../../../../public/icons/AlphabetIcon";
 import PictureIcon from "../../../../public/icons/PictureIcon";
 import GrayTableIcon from "../../../../public/icons/GrayTableIcon";
 import GraphIcon from "../../../../public/icons/GraphIcon";
-import Image from "next/image";
 import { Mascot } from "@/shared/ui/Mascot";
 
 export const PresentationGenerationBlock = () => {
-  const searchParams = useSearchParams();
+  const router = useRouter();
   const {
     currentSlide,
     generatedSlides,
@@ -29,23 +28,83 @@ export const PresentationGenerationBlock = () => {
     isSidebarCollapsed,
     isToolsPanelCollapsed,
     toggleSidebar,
+    setIsGenerating,
   } = usePresentationStore();
 
-  // Custom hook for slide generation logic
-  useSlideGeneration();
+  // API хук для генерации презентации
+  const generateSlidesMutation = useGenerateSlidesForStructureNew();
 
-  // Debug: log search params and localStorage
+  // Состояние для процесса генерации
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [generationStatus, setGenerationStatus] = useState<string>("");
+
+  // Ref для предотвращения повторного запуска генерации
+  const hasStartedGeneration = useRef(false);
+
+  // Получение и обработка данных при загрузке компонента
   useEffect(() => {
-    console.log("Search params:", searchParams.toString());
-    console.log("ID from URL:", searchParams.get("id"));
+    // Если генерация уже началась, не запускаем снова
+    if (hasStartedGeneration.current) {
+      return;
+    }
 
-    // Check localStorage for presentation data
-    const structureData = localStorage.getItem("presentationStructure");
-    const briefData = localStorage.getItem("presentationBrief");
+    const startGeneration = async () => {
+      try {
+        // Помечаем, что генерация началась
+        hasStartedGeneration.current = true;
+        // Получаем данные из localStorage
+        const presentationDataStr = localStorage.getItem(
+          "presentationGenerationData"
+        );
 
-    console.log("Structure data from localStorage:", structureData);
-    console.log("Brief data from localStorage:", briefData);
-  }, [searchParams]);
+        if (!presentationDataStr) {
+          console.error("No presentation data found in localStorage");
+          router.push("/presentation-creation-wizard");
+          return;
+        }
+
+        const presentationData = JSON.parse(presentationDataStr);
+        console.log(
+          "Starting presentation generation with data:",
+          presentationData
+        );
+
+        setIsGenerating(true);
+        setGenerationStatus("Генерация презентации...");
+        setGenerationProgress(50);
+
+        // Вызываем API генерации презентации
+        const result = await generateSlidesMutation.mutateAsync(
+          presentationData
+        );
+
+        console.log("Presentation generated successfully:", result);
+
+        // Сохраняем результат в localStorage для редактора
+        const generatedPresentation = {
+          templateIds: result.templateIds,
+          templatesMetaVersion: result.templatesMetaVersion,
+          deck: result.deck,
+          slides: result.slides,
+          deckTitle: presentationData.deckTitle,
+        };
+
+        localStorage.setItem(
+          "generatedPresentation",
+          JSON.stringify(generatedPresentation)
+        );
+
+        // Завершаем процесс генерации - показываем обычный интерфейс
+        setIsGenerating(false);
+      } catch (error) {
+        console.error("Error generating presentation:", error);
+        setGenerationStatus("Ошибка при генерации презентации");
+        setIsGenerating(false);
+      }
+    };
+
+    startGeneration();
+  }, []);
 
   const elementOptions: ElementOption[] = [
     {
@@ -70,6 +129,10 @@ export const PresentationGenerationBlock = () => {
     },
   ];
 
+  const handleBack = () => {
+    router.push("/presentation-creation-wizard");
+  };
+
   const handleDownload = () => {
     console.log("Download presentation");
     // Implement download logic
@@ -80,18 +143,13 @@ export const PresentationGenerationBlock = () => {
     // Implement share logic
   };
 
-  const handleBack = () => {
-    console.log("Navigate back");
-    // Implement navigation back
+  const handleChangeDesign = () => {
+    console.log("Change design");
+    // Implement design change
   };
 
   const handleToggleSidebar = () => {
     toggleSidebar();
-  };
-
-  const handleChangeDesign = () => {
-    console.log("Change design");
-    // Implement design change
   };
 
   const renderSlideContent = (slideNumber: number) => {

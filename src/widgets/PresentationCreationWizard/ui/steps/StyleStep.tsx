@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePresentationCreationStore } from "../../model/usePresentationCreationStore";
 import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
-import { useGenerateSlidesForStructureNew } from "@/shared/api/presentation-generation";
 import SquareCheckIcon from "../../../../../public/icons/SquareCheckIcon";
 import Image from "next/image";
 
@@ -27,16 +26,10 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
     selectedTemplate,
     setSelectedTheme,
     setSelectedTemplate,
-    setIsGenerating,
   } = usePresentationFlowStore();
-
-  // API хук для генерации презентации
-  const generateSlidesMutation = useGenerateSlidesForStructureNew();
 
   const [selectedTemplateIndex, setSelectedTemplateIndex] = useState(0);
   const [selectedStyleIndex, setSelectedStyleIndex] = useState(0);
-  const [isGeneratingPresentation, setIsGeneratingPresentation] =
-    useState(false);
   const templates = [
     {
       title: "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ",
@@ -82,62 +75,41 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
     setSelectedTheme(styleId);
   };
 
-  const handleCreatePresentation = async () => {
+  const handleCreatePresentation = () => {
     if (!brief || !deckTitle || !uiSlides || uiSlides.length === 0) {
       console.error("Missing required data for presentation generation");
       return;
     }
 
-    try {
-      setIsGeneratingPresentation(true);
-      setIsGenerating(true);
+    // Подготавливаем данные для передачи на страницу генерации
+    const presentationData = {
+      deckTitle,
+      uiSlides,
+      userData: {
+        topic: brief.topic,
+        goal: brief.goal,
+        audience: brief.audience,
+        expectedAction: brief.expectedAction,
+        keyIdea: brief.keyIdea,
+        tones: brief.tones || [],
+        files: extractedFiles || [],
+      },
+      volume: textVolume || "Средний",
+      imageSource: imageSource || "Смешанный",
+      seed: 42,
+      concurrency: 5,
+    };
 
-      // Подготавливаем данные для API
-      const requestData = {
-        deckTitle,
-        uiSlides,
-        userData: {
-          topic: brief.topic,
-          goal: brief.goal,
-          audience: brief.audience,
-          expectedAction: brief.expectedAction,
-          keyIdea: brief.keyIdea,
-          tones: brief.tones || [],
-          files: extractedFiles || [],
-        },
-        volume: textVolume || "Средний",
-        imageSource: imageSource || "Смешанный",
-        seed: 42,
-        concurrency: 5,
-      };
+    console.log("Preparing presentation data:", presentationData);
 
-      console.log("Generating presentation with data:", requestData);
+    // Сохраняем данные в localStorage для передачи на страницу генерации
+    localStorage.setItem(
+      "presentationGenerationData",
+      JSON.stringify(presentationData)
+    );
 
-      // Вызываем API генерации презентации
-      const result = await generateSlidesMutation.mutateAsync(requestData);
-
-      console.log("Presentation generated successfully:", result);
-
-      // Сохраняем результат в localStorage для передачи в редактор
-      localStorage.setItem(
-        "generatedPresentation",
-        JSON.stringify({
-          templateIds: result.templateIds,
-          templatesMetaVersion: result.templatesMetaVersion,
-          deck: result.deck,
-          slides: result.slides,
-          deckTitle,
-        })
-      );
-
-      // Переходим в редактор презентации
-      router.push("/presentation-creation");
-    } catch (error) {
-      console.error("Error generating presentation:", error);
-    } finally {
-      setIsGeneratingPresentation(false);
-      setIsGenerating(false);
-    }
+    // Переходим на страницу генерации презентации
+    router.push("/presentation-generation");
   };
 
   return (
@@ -243,19 +215,9 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
               </button>
               <button
                 onClick={handleCreatePresentation}
-                disabled={isGeneratingPresentation}
-                className={`w-[248px] h-[52px] bg-[#BBA2FE] rounded-[8px] text-[18px] font-normal text-white leading-[1.2] tracking-[-0.36px] hover:bg-[#A693FD] transition-colors flex items-center justify-center gap-2 ${
-                  isGeneratingPresentation
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }`}
+                className="w-[248px] h-[52px] bg-[#BBA2FE] rounded-[8px] text-[18px] font-normal text-white leading-[1.2] tracking-[-0.36px] hover:bg-[#A693FD] transition-colors"
               >
-                {isGeneratingPresentation && (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                )}
-                {isGeneratingPresentation
-                  ? "Создаём презентацию..."
-                  : "Создать презентацию"}
+                Создать презентацию
               </button>
             </div>
           </div>

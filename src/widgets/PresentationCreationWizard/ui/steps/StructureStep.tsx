@@ -48,6 +48,8 @@ export const StructureStep: React.FC<StructureStepProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasGeneratedStructure, setHasGeneratedStructure] = useState(false);
   const [visibleSlidesCount, setVisibleSlidesCount] = useState(0);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState("");
 
   // Используем данные из store
   const slides = uiSlides || [];
@@ -173,6 +175,31 @@ export const StructureStep: React.FC<StructureStepProps> = ({
     setUiSlides(slides.filter((_, index) => index !== slideIndex));
   };
 
+  const handleEditTitle = () => {
+    setTempTitle(presentationTitle);
+    setIsEditingTitle(true);
+  };
+
+  const handleSaveTitle = () => {
+    if (tempTitle.trim()) {
+      setDeckTitle(tempTitle.trim());
+    }
+    setIsEditingTitle(false);
+  };
+
+  const handleCancelTitle = () => {
+    setTempTitle("");
+    setIsEditingTitle(false);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSaveTitle();
+    } else if (e.key === "Escape") {
+      handleCancelTitle();
+    }
+  };
+
   return (
     <div className="w-full  bg-white">
       <div className="flex">
@@ -206,7 +233,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                         </span>
                         <DotsSixIcon width={32} height={32} />
                       </div>
-                      <div className="flex flex-col gap-1 w-[113px]">
+                      <div className="flex flex-col gap-1 min-w-[200px] flex-1">
                         <h3 className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px]">
                           {slide.title}
                         </h3>
@@ -230,23 +257,54 @@ export const StructureStep: React.FC<StructureStepProps> = ({
               <div className="flex items-center justify-between mb-6 pt-[138px]">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <h2 className="text-[24px] font-medium text-[#0B0911] leading-[1.3] tracking-[-0.48px]">
-                      {presentationTitle}
-                    </h2>
-                    <button className="w-8 h-8 rounded-lg flex items-center justify-center p-2 ">
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 13 13"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M12.207 3.586 9.414.793A1 1 0 0 0 8 .793L.293 8.5A1 1 0 0 0 0 9.207v2.794a1 1 0 0 0 1 1h2.793a1 1 0 0 0 .707-.294L12.207 5a1 1 0 0 0 0-1.414m-8.414 8.415H1V9.207l5.5-5.5L9.293 6.5zM10 5.793 7.207 3l1.5-1.5L11.5 4.293z"
-                          fill="#8F8F92"
+                    {isEditingTitle ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={tempTitle}
+                          onChange={(e) => setTempTitle(e.target.value)}
+                          onKeyDown={handleKeyPress}
+                          onBlur={handleSaveTitle}
+                          autoFocus
+                          className="text-[24px] font-medium text-[#0B0911] leading-[1.3] tracking-[-0.48px] bg-transparent border-b-2 border-[#BBA2FE] outline-none min-w-[300px]"
                         />
-                      </svg>
-                    </button>
+                        <button
+                          onClick={handleSaveTitle}
+                          className="w-6 h-6 rounded flex items-center justify-center text-green-600 hover:bg-green-50"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={handleCancelTitle}
+                          className="w-6 h-6 rounded flex items-center justify-center text-red-600 hover:bg-red-50"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <h2 className="text-[24px] font-medium text-[#0B0911] leading-[1.3] tracking-[-0.48px]">
+                          {presentationTitle}
+                        </h2>
+                        <button
+                          onClick={handleEditTitle}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center p-2 hover:bg-gray-100 transition-colors"
+                        >
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 13 13"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M12.207 3.586 9.414.793A1 1 0 0 0 8 .793L.293 8.5A1 1 0 0 0 0 9.207v2.794a1 1 0 0 0 1 1h2.793a1 1 0 0 0 .707-.294L12.207 5a1 1 0 0 0 0-1.414m-8.414 8.415H1V9.207l5.5-5.5L9.293 6.5zM10 5.793 7.207 3l1.5-1.5L11.5 4.293z"
+                              fill="#8F8F92"
+                            />
+                          </svg>
+                        </button>
+                      </>
+                    )}
                   </div>
                   <p className="text-[18px] font-normal text-[#0B0911] leading-[1.2] tracking-[-0.36px]">
                     {slides.length} слайдов
@@ -283,7 +341,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                         </span>
                         <DotsSixIcon width={32} height={32} />
                       </div>
-                      <div className="flex flex-col gap-1 w-[113px]">
+                      <div className="flex flex-col gap-1 min-w-[200px] flex-1">
                         <h3 className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px]">
                           {slide.title}
                         </h3>

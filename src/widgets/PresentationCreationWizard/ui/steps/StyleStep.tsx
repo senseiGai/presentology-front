@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { usePresentationCreationStore } from "../../model/usePresentationCreationStore";
 import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
 import SquareCheckIcon from "../../../../../public/icons/SquareCheckIcon";
@@ -9,6 +10,7 @@ interface StyleStepProps {
 }
 
 export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
+  const router = useRouter();
   const { presentationData, updatePresentationData } =
     usePresentationCreationStore();
 
@@ -106,9 +108,8 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
       JSON.stringify(presentationData)
     );
 
-    // Показываем сообщение об успешном создании
-    console.log("Presentation data prepared successfully:", presentationData);
-    alert("Презентация подготовлена! Данные сохранены.");
+    // Переходим на страницу редактора слайдов
+    router.push("/presentation-generation");
   };
 
   return (

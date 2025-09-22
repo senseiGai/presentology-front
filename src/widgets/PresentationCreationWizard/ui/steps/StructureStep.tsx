@@ -37,6 +37,8 @@ export const StructureStep: React.FC<StructureStepProps> = ({
     deckTitle,
     uiSlides,
     setSlideCountMode,
+    setUiSlides,
+    setDeckTitle,
   } = usePresentationFlowStore();
 
   // API хуки
@@ -46,10 +48,10 @@ export const StructureStep: React.FC<StructureStepProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasGeneratedStructure, setHasGeneratedStructure] = useState(false);
   const [visibleSlidesCount, setVisibleSlidesCount] = useState(0);
-  const [presentationTitle, setPresentationTitle] = useState(
-    "Название презентации"
-  );
-  const [slides, setSlides] = useState<SlideItem[]>([]);
+
+  // Используем данные из store
+  const slides = uiSlides || [];
+  const presentationTitle = deckTitle || "Название презентации";
 
   useEffect(() => {
     // Add custom CSS animation
@@ -77,21 +79,8 @@ export const StructureStep: React.FC<StructureStepProps> = ({
   useEffect(() => {
     const autoGenerateStructure = async () => {
       if (!brief || hasGeneratedStructure) {
-        if (!brief) {
-          console.warn("StructureStep: No brief data available");
-        }
-        if (hasGeneratedStructure) {
-          console.log("StructureStep: Structure already generated, skipping");
-        }
         return;
       }
-
-      console.log(
-        "StructureStep: Starting automatic structure selection with brief:",
-        brief
-      );
-      console.log("StructureStep: Slide count mode:", slideCountMode);
-      console.log("StructureStep: Extracted files:", extractedFiles);
 
       try {
         setIsLoading(true);
@@ -114,39 +103,38 @@ export const StructureStep: React.FC<StructureStepProps> = ({
             : {}),
         };
 
-        console.log(
-          "StructureStep: Calling selectStructure API with:",
-          structureRequest
-        );
         const structureResult = await selectStructureMutation.mutateAsync(
           structureRequest
         );
-        console.log(
-          "StructureStep: Structure selection result:",
-          structureResult
-        );
 
         // Парсим структуру и создаем слайды из chosenStructure
-        if (structureResult.chosenStructure) {
-          const structureLines = structureResult.chosenStructure
+        // API возвращает обертку {success, data, statusCode}, поэтому берем из data
+        const chosenStructure =
+          structureResult.chosenStructure ||
+          (structureResult as any).data?.chosenStructure;
+
+        if (chosenStructure) {
+          const structureLines = chosenStructure
             .split("\n")
-            .filter((line) => line.trim())
-            .filter((line) => /^\d+\./.test(line.trim())); // Только строки, начинающиеся с номера
+            .filter((line: string) => line.trim())
+            .filter((line: string) => /^\d+\./.test(line.trim())); // Только строки, начинающиеся с номера
 
-          const structureSlides = structureLines.map((line, index) => {
-            const title = line.replace(/^\d+\.\s*/, "").trim(); // Убираем номер
-            return {
-              id: index + 1,
-              title: title || "Заголовок",
-              description: "Содержимое будет сгенерировано",
-            };
-          });
-
-          setSlides(structureSlides);
-          console.log(
-            "StructureStep: Created slides from structure:",
-            structureSlides
+          const structureSlides = structureLines.map(
+            (line: string, index: number) => {
+              const title = line.replace(/^\d+\.\s*/, "").trim(); // Убираем номер
+              return {
+                title: title || "Заголовок",
+                summary: "Содержимое будет сгенерировано",
+              };
+            }
           );
+
+          setUiSlides(structureSlides);
+
+          // Принудительное обновление visibleSlidesCount для анимации
+          setTimeout(() => {
+            setVisibleSlidesCount(structureSlides.length);
+          }, 100);
         }
       } catch (error) {
         console.error(
@@ -181,8 +169,8 @@ export const StructureStep: React.FC<StructureStepProps> = ({
     updatePresentationData({ imageSource: source });
   };
 
-  const handleRemoveSlide = (slideId: number) => {
-    setSlides(slides.filter((slide) => slide.id !== slideId));
+  const handleRemoveSlide = (slideIndex: number) => {
+    setUiSlides(slides.filter((_, index) => index !== slideIndex));
   };
 
   return (
@@ -203,7 +191,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
               <div className="space-y-3 max-w-[772px] pt-8">
                 {slides.slice(0, visibleSlidesCount).map((slide, index) => (
                   <div
-                    key={slide.id}
+                    key={index}
                     className="bg-[#F4F4F4] rounded-[8px] px-6 py-3 flex items-center justify-between w-full opacity-0"
                     style={{
                       animation: `fadeInSlide 0.5s ease-in-out ${
@@ -214,7 +202,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                     <div className="flex items-center gap-6">
                       <div className="flex items-center gap-2">
                         <span className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] w-[19px]">
-                          {slide.id}
+                          {index + 1}
                         </span>
                         <DotsSixIcon width={32} height={32} />
                       </div>
@@ -223,7 +211,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                           {slide.title}
                         </h3>
                         <p className="text-[14px] font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px]">
-                          {slide.description}
+                          {slide.summary}
                         </p>
                       </div>
                     </div>
@@ -279,7 +267,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
               <div className="space-y-3 w-full max-h-[600px] pb-10 overflow-auto">
                 {slides.map((slide, index) => (
                   <div
-                    key={slide.id}
+                    key={index}
                     className={`bg-[#F4F4F4] rounded-[8px] px-6 py-3 flex items-center justify-between w-full ${
                       index === 1 ? "bg-[#E9E9E9]" : ""
                     } ${
@@ -291,7 +279,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                     <div className="flex items-center gap-6">
                       <div className="flex items-center gap-2">
                         <span className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] w-[19px]">
-                          {slide.id}
+                          {index + 1}
                         </span>
                         <DotsSixIcon width={32} height={32} />
                       </div>
@@ -300,12 +288,12 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                           {slide.title}
                         </h3>
                         <p className="text-[14px] font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px]">
-                          {slide.description}
+                          {slide.summary}
                         </p>
                       </div>
                     </div>
                     <button
-                      onClick={() => handleRemoveSlide(slide.id)}
+                      onClick={() => handleRemoveSlide(index)}
                       className="bg-white w-10 h-10 rounded-[8px] border border-[#C0C0C1] flex items-center justify-center hover:bg-gray-50 transition-colors"
                     >
                       <GrayTrashIcon width={18} height={20} />

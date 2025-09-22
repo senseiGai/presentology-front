@@ -107,6 +107,8 @@ export interface PresentationFlowState {
 
   // Результат
   setGenerationResult: (result: CreateDeckFromBriefResponse) => void;
+  setUiSlides: (slides: Array<{ title: string; summary: string }>) => void;
+  setDeckTitle: (title: string) => void;
 
   // Сброс состояния
   resetFlow: () => void;
@@ -241,6 +243,9 @@ export const usePresentationFlowStore = create<PresentationFlowState>()(
         generationProgress: 100,
         currentStep: "editor",
       }),
+
+    setUiSlides: (slides) => set({ uiSlides: slides }),
+    setDeckTitle: (title) => set({ deckTitle: title }),
 
     // === Сброс ===
     resetFlow: () => set(initialState),

@@ -50,6 +50,8 @@ export const StructureStep: React.FC<StructureStepProps> = ({
   const [visibleSlidesCount, setVisibleSlidesCount] = useState(0);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState("");
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // Используем данные из store
   const slides = uiSlides || [];
@@ -200,6 +202,52 @@ export const StructureStep: React.FC<StructureStepProps> = ({
     }
   };
 
+  // Drag & Drop handlers
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/html", e.currentTarget.outerHTML);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newSlides = [...slides];
+    const draggedSlide = newSlides[draggedIndex];
+
+    // Remove dragged slide
+    newSlides.splice(draggedIndex, 1);
+
+    // Insert at new position
+    const insertIndex = draggedIndex < dropIndex ? dropIndex - 1 : dropIndex;
+    newSlides.splice(insertIndex, 0, draggedSlide);
+
+    setUiSlides(newSlides);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
   return (
     <div className="w-full  bg-white">
       <div className="flex">
@@ -219,7 +267,19 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                 {slides.slice(0, visibleSlidesCount).map((slide, index) => (
                   <div
                     key={index}
-                    className="bg-[#F4F4F4] rounded-[8px] px-6 py-3 flex items-center justify-between w-full opacity-0"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className={`bg-[#F4F4F4] rounded-[8px] px-6 py-3 flex items-center justify-between w-full opacity-0 cursor-move transition-all duration-200 ${
+                      draggedIndex === index ? "opacity-50 scale-95" : ""
+                    } ${
+                      dragOverIndex === index
+                        ? "border-2 border-[#BBA2FE] border-dashed"
+                        : ""
+                    }`}
                     style={{
                       animation: `fadeInSlide 0.5s ease-in-out ${
                         index * 0.4
@@ -231,7 +291,9 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                         <span className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] w-[19px]">
                           {index + 1}
                         </span>
-                        <DotsSixIcon width={32} height={32} />
+                        <div className="p-1 rounded hover:bg-gray-200 cursor-grab active:cursor-grabbing transition-colors">
+                          <DotsSixIcon width={32} height={32} />
+                        </div>
                       </div>
                       <div className="flex flex-col gap-1 min-w-[200px] flex-1">
                         <h3 className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px]">
@@ -326,11 +388,21 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                 {slides.map((slide, index) => (
                   <div
                     key={index}
-                    className={`bg-[#F4F4F4] rounded-[8px] px-6 py-3 flex items-center justify-between w-full ${
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className={`bg-[#F4F4F4] rounded-[8px] px-6 py-3 flex items-center justify-between w-full cursor-move transition-all duration-200 ${
                       index === 1 ? "bg-[#E9E9E9]" : ""
                     } ${
                       index === 3
                         ? "bg-[#E9E9E9] shadow-[0px_0px_10px_0px_rgba(169,169,169,0.4)]"
+                        : ""
+                    } ${draggedIndex === index ? "opacity-50 scale-95" : ""} ${
+                      dragOverIndex === index
+                        ? "border-2 border-[#BBA2FE] border-dashed"
                         : ""
                     }`}
                   >
@@ -339,7 +411,9 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                         <span className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] w-[19px]">
                           {index + 1}
                         </span>
-                        <DotsSixIcon width={32} height={32} />
+                        <div className="p-1 rounded hover:bg-gray-200 cursor-grab active:cursor-grabbing transition-colors">
+                          <DotsSixIcon width={32} height={32} />
+                        </div>
                       </div>
                       <div className="flex flex-col gap-1 min-w-[200px] flex-1">
                         <h3 className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px]">

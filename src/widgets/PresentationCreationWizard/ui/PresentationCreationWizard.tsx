@@ -87,8 +87,6 @@ export const PresentationCreationWizard: React.FC = () => {
         <div className="absolute top-6 left-10 z-20">
           <LogoIllustration />
         </div>
-
-        {/* Progress Indicator */}
         <div
           className="absolute top-6 z-20"
           style={{
@@ -102,7 +100,6 @@ export const PresentationCreationWizard: React.FC = () => {
             isCompleted={isCompleted}
           />
         </div>
-
         <div className="w-full h-full">{renderCurrentStep()}</div>
       </div>
     );
@@ -115,8 +112,6 @@ export const PresentationCreationWizard: React.FC = () => {
         <div className="absolute top-6 left-10 z-20">
           <LogoIllustration />
         </div>
-
-        {/* Progress Indicator */}
         <div
           className="absolute top-6 z-20"
           style={{

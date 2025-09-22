@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { usePresentationCreationStore } from "../../model/usePresentationCreationStore";
+import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
+import { useExtractFiles } from "@/shared/api/presentation-generation";
 import { GoalOption } from "../../model/types";
 import BigFolderIcon from "../../../../../public/icons/BigFolderIcon";
 import FormatsIcons from "../../../../../public/icons/FormatsIcons";
@@ -16,6 +18,26 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
 }) => {
   const { presentationData, updatePresentationData } =
     usePresentationCreationStore();
+
+  // Новый store для flow
+  const {
+    brief,
+    setBrief,
+    slideCountMode,
+    setSlideCountMode,
+    slideCount: storeSlideCount,
+    setSlideCount: setStoreSlideCount,
+    extractedFiles,
+    setExtractedFiles,
+    isUploadingFiles,
+    setIsUploadingFiles,
+    uploadError,
+    setUploadError,
+  } = usePresentationFlowStore();
+
+  // API хук для загрузки файлов
+  const extractFilesMutation = useExtractFiles();
+
   const [customGoal, setCustomGoal] = useState("");
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [selectedAudience, setSelectedAudience] = useState<string[]>([]);
@@ -25,7 +47,7 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
   const [customAction, setCustomAction] = useState("");
   const [selectedNarrative, setSelectedNarrative] = useState<string[]>([]);
   const [customNarrative, setCustomNarrative] = useState("");
-  const [slideCount, setSlideCount] = useState<"ai" | "custom">("ai");
+  const [localSlideCount, setLocalSlideCount] = useState<"ai" | "custom">("ai");
   const [customSlideCount, setCustomSlideCount] = useState(3);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
@@ -58,6 +80,46 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
       document.removeEventListener("mouseup", handleGlobalMouseUp);
     };
   }, [isDragging]);
+
+  // Синхронизация данных с новым store
+  useEffect(() => {
+    // Собираем данные брифа из локального состояния
+    const currentBrief = {
+      topic: presentationData.topic,
+      goal: customGoal || selectedGoals.join(", "),
+      audience: customAudience || selectedAudience.join(", "),
+      keyIdea: keyIdea,
+      expectedAction: customAction || selectedActions.join(", "),
+      tones: customNarrative ? [customNarrative] : selectedNarrative,
+    };
+
+    // Обновляем store
+    setBrief(currentBrief);
+
+    // Обновляем режим слайдов
+    if (localSlideCount === "ai") {
+      setSlideCountMode("auto");
+    } else {
+      setSlideCountMode("fixed");
+      setStoreSlideCount(customSlideCount);
+    }
+  }, [
+    presentationData.topic,
+    customGoal,
+    selectedGoals,
+    customAudience,
+    selectedAudience,
+    keyIdea,
+    customAction,
+    selectedActions,
+    customNarrative,
+    selectedNarrative,
+    localSlideCount,
+    customSlideCount,
+    setBrief,
+    setSlideCountMode,
+    setStoreSlideCount,
+  ]);
 
   const goalOptions: GoalOption[] = [
     { id: "sell", label: "Продать продукт, товары или услуги" },
@@ -152,13 +214,89 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
     updatePresentationData({ goal: value });
   };
 
+  // Обработка загрузки файлов с API
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    setUploadedFiles((prev) => [...prev, ...files]);
+    if (files.length > 0) {
+      uploadFiles(files);
+    }
+  };
+
+  // Загрузка файлов через API
+  const uploadFiles = async (files: File[]) => {
+    setIsUploadingFiles(true);
+    setUploadError(null);
+
+    try {
+      const result = await extractFilesMutation.mutateAsync(files);
+
+      // Добавляем файлы в локальное состояние для UI
+      setUploadedFiles((prev) => [...prev, ...files]);
+
+      // Сохраняем извлеченные данные в store
+      setExtractedFiles(result.files);
+    } catch (error) {
+      console.error("Ошибка загрузки файлов:", error);
+      setUploadError("Ошибка при обработке файлов");
+    } finally {
+      setIsUploadingFiles(false);
+    }
+  };
+
+  // Drag and Drop обработчики
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const supportedTypes = [
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+      "text/csv", // .csv
+      "application/pdf", // .pdf
+      "text/plain", // .txt
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .pptx
+      "application/vnd.ms-excel", // .xls
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+      "image/jpeg", // .jpeg, .jpg
+      "image/png", // .png
+      "image/webp", // .webp
+    ];
+
+    const validFiles = files.filter(
+      (file) =>
+        supportedTypes.includes(file.type) ||
+        file.name.toLowerCase().endsWith(".jpg") ||
+        file.name.toLowerCase().endsWith(".jpeg")
+    );
+
+    if (validFiles.length > 0) {
+      uploadFiles(validFiles);
+    } else {
+      setUploadError(
+        "Поддерживаются только файлы: docx, csv, pdf, txt, pptx, xls, xlsx, jpeg, jpg, png, webp"
+      );
+    }
   };
 
   const removeFile = (index: number) => {
+    const removedFile = uploadedFiles[index];
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+
+    // Также удаляем из extractedFiles по имени файла
+    const updatedExtracted = extractedFiles.filter(
+      (ef) => ef.name !== removedFile.name
+    );
+    setExtractedFiles(updatedExtracted);
   };
 
   const handleSliderMouseDown = (e: React.MouseEvent) => {
@@ -194,7 +332,6 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
             <h2 className="text-[#0b0911] text-[24px] font-medium leading-[1.3] tracking-[-0.48px]">
               Тема
             </h2>
-
             <div className="flex flex-col gap-3">
               <textarea
                 value={presentationData.topic}
@@ -210,8 +347,6 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
               </div>
             </div>
           </div>
-
-          {/* Goal Section */}
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-1">
               <h2 className="text-[#0b0911] text-[24px] font-medium leading-[1.3] tracking-[-0.48px]">
@@ -335,8 +470,6 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
               </div>
             </div>
           </div>
-
-          {/* Target Audience Section */}
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-1">
               <h2 className="text-[#0b0911] text-[24px] font-medium leading-[1.3] tracking-[-0.48px]">
@@ -379,8 +512,6 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
               </div>
             </div>
           </div>
-
-          {/* Key Idea Section */}
           <div className="flex flex-col gap-6">
             <h2 className="text-[#0b0911] text-[24px] font-medium leading-[1.3] tracking-[-0.48px]">
               Ключевая идея
@@ -399,8 +530,6 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
               </div>
             </div>
           </div>
-
-          {/* Target Action Section */}
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-1">
               <h2 className="text-[#0b0911] text-[24px] font-medium leading-[1.3] tracking-[-0.48px]">
@@ -443,8 +572,6 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
               </div>
             </div>
           </div>
-
-          {/* Narrative Style Section */}
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-1">
               <h2 className="text-[#0b0911] text-[24px] font-medium leading-[1.3] tracking-[-0.48px]">
@@ -487,8 +614,6 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
               </div>
             </div>
           </div>
-
-          {/* Slide Count Section */}
           <div className="flex flex-col gap-6">
             <h2 className="text-[#0b0911] text-[24px] font-medium leading-[1.3] tracking-[-0.48px]">
               Количество слайдов
@@ -497,9 +622,9 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
             <div className="flex flex-col gap-20">
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => setSlideCount("ai")}
+                  onClick={() => setLocalSlideCount("ai")}
                   className={`h-[90px] px-4  rounded-lg text-[14px] font-medium leading-[1.2] tracking-[-0.42px] text-center transition-colors ${
-                    slideCount === "ai"
+                    localSlideCount === "ai"
                       ? "bg-[#bba2fe] text-white"
                       : "bg-[#f4f4f4] text-[#0b0911] hover:bg-[#e9e9e9]"
                   }`}
@@ -507,9 +632,9 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
                   На усмотрение ИИ
                 </button>
                 <button
-                  onClick={() => setSlideCount("custom")}
+                  onClick={() => setLocalSlideCount("custom")}
                   className={`h-[90px] px-4  rounded-lg text-[14px] font-medium leading-[1.2] tracking-[-0.42px] text-center transition-colors ${
-                    slideCount === "custom"
+                    localSlideCount === "custom"
                       ? "bg-[#bba2fe] text-white"
                       : "bg-[#f4f4f4] text-[#0b0911] hover:bg-[#e9e9e9]"
                   }`}
@@ -518,7 +643,7 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
                 </button>
               </div>
 
-              {slideCount === "custom" && (
+              {localSlideCount === "custom" && (
                 <div className="flex items-center gap-4">
                   <span className="text-[#bebec0] text-[14px] font-medium">
                     3
@@ -570,7 +695,6 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
               )}
             </div>
           </div>
-
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <h2 className="text-[#0b0911] text-[24px] font-medium leading-[1.3] tracking-[-0.48px]">
@@ -605,16 +729,52 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
               <div className="flex gap-1 flex-wrap">
                 <FormatsIcons />
               </div>
-              <div className="bg-[#F3F6FF] h-[150px] rounded-[8px] border border-dashed border-[#C0C0C1] flex flex-col items-center justify-center cursor-pointer hover:bg-[#EEF2FF] transition-colors relative">
-                <div className="flex flex-col gap-1.5 items-center justify-center w-[210px]">
+              <div
+                className={`bg-[#F3F6FF] h-[150px] rounded-[8px] border border-dashed transition-colors relative cursor-pointer ${
+                  isDragging
+                    ? "border-[#bba2fe] bg-[#EEF2FF]"
+                    : "border-[#C0C0C1] hover:bg-[#EEF2FF]"
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById("file-input")?.click()}
+              >
+                <div className="flex flex-col gap-1.5 items-center justify-center w-[210px] mx-auto h-full">
                   <BigFolderIcon />
                   <div className="text-[14px] font-normal text-[#8F8F92] text-center tracking-[-0.42px] leading-[1.2]">
-                    Перетащите сюда файлы
-                    <br />
-                    или нажмите для выбора
+                    {isUploadingFiles ? (
+                      "Обработка файлов..."
+                    ) : (
+                      <>
+                        Перетащите сюда файлы
+                        <br />
+                        или нажмите для выбора
+                      </>
+                    )}
                   </div>
                 </div>
+                <input
+                  id="file-input"
+                  type="file"
+                  multiple
+                  accept=".docx,.csv,.pdf,.txt,.pptx,.xls,.xlsx,.jpeg,.jpg,.png,.webp"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
               </div>
+
+              {/* Ошибка загрузки */}
+              {uploadError && (
+                <div className="text-red-500 text-sm mt-2">{uploadError}</div>
+              )}
+
+              {/* Показать информацию об извлеченных данных */}
+              {extractedFiles.length > 0 && (
+                <div className="mt-2 text-sm text-green-600">
+                  Извлечен текст из {extractedFiles.length} файла(ов)
+                </div>
+              )}
             </div>
           </div>
         </div>

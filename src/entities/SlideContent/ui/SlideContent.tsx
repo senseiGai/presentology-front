@@ -756,7 +756,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               onDelete={handleTextDelete}
               onCopy={() => handleTextCopy(`slide-${slideNumber}-title`)}
               onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-title`)}
-              onMoveDown={() => handleTextMoveDown(`slide-${slideNumber}-title`)}
+              onMoveDown={() =>
+                handleTextMoveDown(`slide-${slideNumber}-title`)
+              }
             >
               <EditableText
                 elementId={`slide-${slideNumber}-title`}
@@ -765,7 +767,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
                 onClick={(e) => {
                   handleTextClick(
                     `slide-${slideNumber}-title`,
-                    getTextElementContent(`slide-${slideNumber}-title`) || `Слайд ${slideNumber} - Заголовок`,
+                    getTextElementContent(`slide-${slideNumber}-title`) ||
+                      `Слайд ${slideNumber} - Заголовок`,
                     e
                   );
                 }}
@@ -781,7 +784,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               onDelete={handleTextDelete}
               onCopy={() => handleTextCopy(`slide-${slideNumber}-text1`)}
               onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-text1`)}
-              onMoveDown={() => handleTextMoveDown(`slide-${slideNumber}-text1`)}
+              onMoveDown={() =>
+                handleTextMoveDown(`slide-${slideNumber}-text1`)
+              }
             >
               <EditableText
                 elementId={`slide-${slideNumber}-text1`}
@@ -790,7 +795,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
                 onClick={(e) => {
                   handleTextClick(
                     `slide-${slideNumber}-text1`,
-                    getTextElementContent(`slide-${slideNumber}-text1`) || "Основной текст слайда",
+                    getTextElementContent(`slide-${slideNumber}-text1`) ||
+                      "Основной текст слайда",
                     e
                   );
                 }}
@@ -806,7 +812,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               onDelete={handleTextDelete}
               onCopy={() => handleTextCopy(`slide-${slideNumber}-text2`)}
               onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-text2`)}
-              onMoveDown={() => handleTextMoveDown(`slide-${slideNumber}-text2`)}
+              onMoveDown={() =>
+                handleTextMoveDown(`slide-${slideNumber}-text2`)
+              }
             >
               <EditableText
                 elementId={`slide-${slideNumber}-text2`}
@@ -815,7 +823,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
                 onClick={(e) => {
                   handleTextClick(
                     `slide-${slideNumber}-text2`,
-                    getTextElementContent(`slide-${slideNumber}-text2`) || "Дополнительный текст слайда",
+                    getTextElementContent(`slide-${slideNumber}-text2`) ||
+                      "Дополнительный текст слайда",
                     e
                   );
                 }}

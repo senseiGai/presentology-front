@@ -215,10 +215,6 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
           // In the future, this should come from actual slide data store
           const currentSlideNumber = currentSlideForTypeChange + 1; // Convert index to slide number
 
-          // Create slide title and summary for template selection
-          const slideTitle = `Слайд ${currentSlideNumber}`;
-          const slideSummary = `Содержимое слайда ${currentSlideNumber}`;
-
           // Get the appropriate template ID
           const protoId = await getProtoId(
             contentType,
@@ -314,7 +310,6 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
       }
     );
 
-  // Function to determine which slide is in the center of the viewport
   const findCenterSlide = useCallback(() => {
     if (!scrollContainerRef.current || isGenerating) return;
 
@@ -340,7 +335,6 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
       }
     });
 
-    // Only update if the slide has changed and the slide is generated
     if (
       closestSlide !== currentSlide &&
       generatedSlides.includes(closestSlide)

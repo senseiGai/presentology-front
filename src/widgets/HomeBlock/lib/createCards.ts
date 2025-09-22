@@ -6,7 +6,7 @@ export const createCards = (router: AppRouterInstance) => [
     description:
       "Опиши задачу, ИИ мгновенно соберёт презентацию, сгенерирует текст и дизайн",
     image: "/assets/home/home01.png",
-    onClick: () => router.push("/presentation-generation"),
+    onClick: () => router.push("/presentation-creation"),
   },
   {
     label: "Сделай дизайн",

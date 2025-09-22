@@ -392,8 +392,191 @@ const loadMockDataFromStorage = () => {
 const initializeTextContentFromMockData = (mockData: any) => {
   const textElementContents: Record<string, string> = {};
   const textElementStyles: Record<string, any> = {};
+  const imageElementsData: Record<number, Record<string, any>> = {};
+  const infographicsElementsData: Record<number, Record<string, any>> = {};
 
-  if (mockData?.slides && Array.isArray(mockData.slides)) {
+  console.log("🔍 Processing mock data:", mockData);
+
+  if (mockData?.data?.slides && Array.isArray(mockData.data.slides)) {
+    mockData.data.slides.forEach((slide: any, index: number) => {
+      const slideNumber = index + 1;
+      console.log(`📄 Processing slide ${slideNumber}:`, slide);
+
+      // Initialize slide title
+      if (slide.title) {
+        const titleElementId = `slide-${slideNumber}-title`;
+        textElementContents[titleElementId] = slide.title;
+        textElementStyles[titleElementId] = {
+          fontSize: slide._fontSizes?.title || 24,
+          fontWeight: "bold",
+          textAlign: "left" as const,
+          color: "#000000",
+          x: 40,
+          y: 40,
+          style: "normal" as const,
+        };
+      }
+
+      // Initialize slide subtitle
+      if (slide.subtitle) {
+        const subtitleElementId = `slide-${slideNumber}-subtitle`;
+        textElementContents[subtitleElementId] = slide.subtitle;
+        textElementStyles[subtitleElementId] = {
+          fontSize: slide._fontSizes?.subtitle || 20,
+          fontWeight: "normal",
+          textAlign: "left" as const,
+          color: "#333333",
+          x: 40,
+          y: 80,
+          style: "normal" as const,
+        };
+      }
+
+      // Initialize text1 (can be object with t1/t2 or string)
+      if (slide.text1) {
+        if (typeof slide.text1 === "object" && slide.text1.t1) {
+          const text1TitleElementId = `slide-${slideNumber}-text1-title`;
+          textElementContents[text1TitleElementId] = slide.text1.t1;
+          textElementStyles[text1TitleElementId] = {
+            fontSize: slide._fontSizes?.t1 || 18,
+            fontWeight: "bold",
+            textAlign: "left" as const,
+            color: "#000000",
+            x: 40,
+            y: 130,
+            style: "normal" as const,
+          };
+        }
+
+        if (typeof slide.text1 === "object" && slide.text1.t2) {
+          const text1ContentElementId = `slide-${slideNumber}-text1-content`;
+          textElementContents[text1ContentElementId] = slide.text1.t2;
+          textElementStyles[text1ContentElementId] = {
+            fontSize: slide._fontSizes?.t2 || 16,
+            fontWeight: "normal",
+            textAlign: "left" as const,
+            color: "#333333",
+            x: 40,
+            y: 160,
+            style: "normal" as const,
+          };
+        } else if (typeof slide.text1 === "string") {
+          // Handle text1 as plain string
+          const text1ElementId = `slide-${slideNumber}-text1`;
+          textElementContents[text1ElementId] = slide.text1;
+          textElementStyles[text1ElementId] = {
+            fontSize: slide._fontSizes?.t2 || 16,
+            fontWeight: "normal",
+            textAlign: "left" as const,
+            color: "#333333",
+            x: 40,
+            y: 130,
+            style: "normal" as const,
+          };
+        }
+      }
+
+      // Initialize text2 (can be object with t1/t2 or string)
+      if (slide.text2) {
+        if (typeof slide.text2 === "object" && slide.text2.t1) {
+          const text2TitleElementId = `slide-${slideNumber}-text2-title`;
+          textElementContents[text2TitleElementId] = slide.text2.t1;
+          textElementStyles[text2TitleElementId] = {
+            fontSize: slide._fontSizes?.t1 || 18,
+            fontWeight: "bold",
+            textAlign: "left" as const,
+            color: "#000000",
+            x: 40,
+            y: 220,
+            style: "normal" as const,
+          };
+        }
+
+        if (typeof slide.text2 === "object" && slide.text2.t2) {
+          const text2ContentElementId = `slide-${slideNumber}-text2-content`;
+          textElementContents[text2ContentElementId] = slide.text2.t2;
+          textElementStyles[text2ContentElementId] = {
+            fontSize: slide._fontSizes?.t2 || 16,
+            fontWeight: "normal",
+            textAlign: "left" as const,
+            color: "#333333",
+            x: 40,
+            y: 250,
+            style: "normal" as const,
+          };
+        } else if (typeof slide.text2 === "string") {
+          // Handle text2 as plain string
+          const text2ElementId = `slide-${slideNumber}-text2`;
+          textElementContents[text2ElementId] = slide.text2;
+          textElementStyles[text2ElementId] = {
+            fontSize: slide._fontSizes?.t2 || 16,
+            fontWeight: "normal",
+            textAlign: "left" as const,
+            color: "#333333",
+            x: 40,
+            y: 220,
+            style: "normal" as const,
+          };
+        }
+      }
+
+      // Initialize text3 (if it exists and has t1 and t2 properties)
+      if (slide.text3) {
+        if (slide.text3.t1) {
+          const text3TitleElementId = `slide-${slideNumber}-text3-title`;
+          textElementContents[text3TitleElementId] = slide.text3.t1;
+          textElementStyles[text3TitleElementId] = {
+            fontSize: slide._fontSizes?.t1 || 18,
+            fontWeight: "bold",
+            textAlign: "left" as const,
+            color: "#000000",
+            x: 40,
+            y: 310,
+            style: "normal" as const,
+          };
+        }
+
+        if (slide.text3.t2) {
+          const text3ContentElementId = `slide-${slideNumber}-text3-content`;
+          textElementContents[text3ContentElementId] = slide.text3.t2;
+          textElementStyles[text3ContentElementId] = {
+            fontSize: slide._fontSizes?.t2 || 16,
+            fontWeight: "normal",
+            textAlign: "left" as const,
+            color: "#333333",
+            x: 40,
+            y: 340,
+            style: "normal" as const,
+          };
+        }
+      }
+
+      // Initialize images from _images array
+      if (slide._images && Array.isArray(slide._images)) {
+        const slideImageElements: Record<string, any> = {};
+        slide._images.forEach((imageUrl: string, imageIndex: number) => {
+          const elementId = `slide-${slideNumber}-image-${imageIndex}`;
+
+          slideImageElements[elementId] = {
+            id: elementId,
+            src: imageUrl,
+            alt: `Slide ${slideNumber} Image ${imageIndex + 1}`,
+            width: 300,
+            height: 200,
+            position: {
+              x: 400 + imageIndex * 20, // Offset multiple images
+              y: 100 + imageIndex * 20,
+            },
+            placeholder: false,
+          };
+        });
+        if (Object.keys(slideImageElements).length > 0) {
+          imageElementsData[slideNumber] = slideImageElements;
+        }
+      }
+    });
+  } else if (mockData?.slides && Array.isArray(mockData.slides)) {
+    // Fallback for the old format
     mockData.slides.forEach((slide: any, index: number) => {
       const slideNumber = index + 1;
 
@@ -450,27 +633,54 @@ const initializeTextContentFromMockData = (mockData: any) => {
 
   console.log("📝 Initialized text contents:", textElementContents);
   console.log("🎨 Initialized text styles:", textElementStyles);
+  console.log("🖼️ Initialized image elements:", imageElementsData);
+  console.log(
+    "📊 Initialized infographics elements:",
+    infographicsElementsData
+  );
 
-  return { textElementContents, textElementStyles };
+  return {
+    textElementContents,
+    textElementStyles,
+    imageElements: imageElementsData,
+    infographicsElements: infographicsElementsData,
+  };
 };
 
 export const usePresentationStore = create<PresentationState>()(
   subscribeWithSelector((set, get) => {
     // Load mock data and initialize content on store creation
     const mockData = loadMockDataFromStorage();
-    const { textElementContents, textElementStyles } = mockData
-      ? initializeTextContentFromMockData(mockData)
-      : { textElementContents: {}, textElementStyles: {} };
-
-    // Update initial state with mock data if available
-    const initialStateWithMockData = {
-      ...initialState,
-      totalSlides: mockData?.slides?.length || initialState.totalSlides,
-      generatedSlides: mockData?.slides
-        ? Array.from({ length: mockData.slides.length }, (_, i) => i + 1)
-        : initialState.generatedSlides,
+    const {
       textElementContents,
       textElementStyles,
+      imageElements,
+      infographicsElements,
+    } = mockData
+      ? initializeTextContentFromMockData(mockData)
+      : {
+          textElementContents: {},
+          textElementStyles: {},
+          imageElements: {},
+          infographicsElements: {},
+        };
+
+    // Update initial state with mock data if available
+    const totalSlides =
+      mockData?.data?.slides?.length ||
+      mockData?.slides?.length ||
+      initialState.totalSlides;
+    const initialStateWithMockData = {
+      ...initialState,
+      totalSlides,
+      generatedSlides:
+        totalSlides > 0
+          ? Array.from({ length: totalSlides }, (_, i) => i + 1)
+          : initialState.generatedSlides,
+      textElementContents,
+      textElementStyles,
+      imageElements,
+      infographicsElements,
     };
 
     return {

@@ -79,12 +79,9 @@ export const PresentationGenerationBlock = () => {
 
         console.log("Presentation generated successfully:", result);
 
-        // Сохраняем результат в localStorage для редактора
+        // Сохраняем полный результат API в localStorage для редактора
         const generatedPresentation = {
-          templateIds: result.templateIds,
-          templatesMetaVersion: result.templatesMetaVersion,
-          deck: result.deck,
-          slides: result.slides,
+          ...result, // Save the complete API response
           deckTitle: presentationData.deckTitle,
         };
 

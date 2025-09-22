@@ -8,6 +8,7 @@ import { StructureStep } from "./steps/StructureStep";
 import { StyleStep } from "./steps/StyleStep";
 import { ProgressIndicator } from "./ProgressIndicator";
 import { usePresentationCreationStore } from "../model/usePresentationCreationStore";
+import { useWindowWidth } from "@/shared/hooks/useWindowWidth";
 import Image from "next/image";
 
 import HandWritingIcon from "../../../../public/icons/HandWritingIcon";
@@ -21,6 +22,12 @@ export const PresentationCreationWizard: React.FC = () => {
   const router = useRouter();
   const { currentStep, setCurrentStep, presentationData } =
     usePresentationCreationStore();
+
+  // Add responsive breakpoints
+  const windowWidth = useWindowWidth();
+  const isMobile = windowWidth < 768;
+  const isTablet = windowWidth >= 768 && windowWidth < 1024;
+  const isDesktop = windowWidth >= 1024;
 
   const steps: {
     key: PresentationCreationStep;
@@ -83,14 +90,16 @@ export const PresentationCreationWizard: React.FC = () => {
   if (currentStep === "style") {
     return (
       <div className="bg-white w-full h-screen overflow-hidden">
-        {/* Logo */}
-        <div className="absolute top-6 left-10 z-20">
+        {/* Logo - responsive positioning */}
+        <div
+          className={`absolute top-6 z-20 ${isMobile ? "left-4" : "left-10"}`}
+        >
           <LogoIllustration />
         </div>
         <div
           className="absolute top-6 z-20"
           style={{
-            left: "calc(33.333% + 1.833px)",
+            left: isMobile ? "50%" : "calc(33.333% + 1.833px)",
             transform: "translateX(-50%)",
           }}
         >
@@ -108,14 +117,16 @@ export const PresentationCreationWizard: React.FC = () => {
   if (currentStep === "structure") {
     return (
       <div className="bg-white w-full h-screen overflow-hidden">
-        {/* Logo */}
-        <div className="absolute top-6 left-10 z-20">
+        {/* Logo - responsive positioning */}
+        <div
+          className={`absolute top-6 z-20 ${isMobile ? "left-4" : "left-10"}`}
+        >
           <LogoIllustration />
         </div>
         <div
           className="absolute top-6 z-20"
           style={{
-            left: "calc(33.333% + 1.833px)",
+            left: isMobile ? "50%" : "calc(33.333% + 1.833px)",
             transform: "translateX(-50%)",
           }}
         >
@@ -133,15 +144,20 @@ export const PresentationCreationWizard: React.FC = () => {
   }
 
   return (
-    <div className="bg-white flex relative overflow-hidden">
-      <div className="absolute top-6 z-20">
+    <div
+      className={`bg-white relative overflow-hidden ${
+        isMobile ? "flex-col" : "flex"
+      }`}
+    >
+      {/* Logo - responsive positioning */}
+      <div className={`absolute top-6 z-20 ${isMobile ? "left-4" : "left-0"}`}>
         <LogoIllustration />
       </div>
 
       <div
         className="absolute top-6 z-20"
         style={{
-          left: "calc(33.333% + 1.833px)",
+          left: isMobile ? "50%" : "calc(33.333% + 1.833px)",
           transform: "translateX(-50%)",
         }}
       >
@@ -152,24 +168,32 @@ export const PresentationCreationWizard: React.FC = () => {
         />
       </div>
 
-      <div className="relative flex-1">
-        <div className="relative w-full h-[686px] overflow-hidden  left-1/2 transform -translate-x-1/2 top-[122px]">
-          <Image
-            src="/assets/brief_mask_bg.png"
-            width={809}
-            height={686}
-            alt="Presentation"
-            className="absolute w-full h-full select-none"
-          />
-          <div className="relative">
-            <PresentationMascot className="!absolute w-[429px] !h-[475px] bottom-[-780px] left-[630px] transform -translate-x-1/2 rotate-[-30deg]" />
+      {/* Background Image - hide on mobile for better UX */}
+      {!isMobile && (
+        <div className="relative flex-1">
+          <div className="relative w-full h-[686px] overflow-hidden left-1/2 transform -translate-x-1/2 top-[122px]">
+            <Image
+              src="/assets/brief_mask_bg.png"
+              width={809}
+              height={686}
+              alt="Presentation"
+              className="absolute w-full h-full select-none"
+            />
+            <div className="relative">
+              <PresentationMascot className="!absolute w-[429px] !h-[475px] bottom-[-780px] left-[630px] transform -translate-x-1/2 rotate-[-30deg]" />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div
-        className="bg-white relative overflow-hidden"
-        style={{ width: "436px", maxHeight: "832px" }}
+        className={`bg-white relative overflow-hidden ${
+          isMobile
+            ? "w-full pt-20"
+            : isTablet
+            ? "w-96 max-h-[832px]"
+            : "w-[436px] max-h-[832px]"
+        }`}
       >
         {renderCurrentStep()}
       </div>

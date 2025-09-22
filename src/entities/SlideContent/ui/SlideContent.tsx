@@ -133,10 +133,35 @@ export const SlideContent: React.FC<SlideContentProps> = ({
         }
         break;
       default:
-        // Initialize positions for slide title, text1, and text2
+        // Initialize positions for slide elements from API data structure
         initializeElementPosition(`slide-${slideNumber}-title`, 40, 40);
-        initializeElementPosition(`slide-${slideNumber}-text1`, 40, 100);
-        initializeElementPosition(`slide-${slideNumber}-text2`, 40, 180);
+        initializeElementPosition(`slide-${slideNumber}-subtitle`, 40, 80);
+
+        // Initialize text1 elements (both object and string formats)
+        initializeElementPosition(`slide-${slideNumber}-text1-title`, 40, 130);
+        initializeElementPosition(
+          `slide-${slideNumber}-text1-content`,
+          40,
+          160
+        );
+        initializeElementPosition(`slide-${slideNumber}-text1`, 40, 130);
+
+        // Initialize text2 elements (both object and string formats)
+        initializeElementPosition(`slide-${slideNumber}-text2-title`, 40, 220);
+        initializeElementPosition(
+          `slide-${slideNumber}-text2-content`,
+          40,
+          250
+        );
+        initializeElementPosition(`slide-${slideNumber}-text2`, 40, 220);
+
+        // Initialize text3 elements
+        initializeElementPosition(`slide-${slideNumber}-text3-title`, 40, 310);
+        initializeElementPosition(
+          `slide-${slideNumber}-text3-content`,
+          40,
+          340
+        );
         break;
     }
   }, [slideType, slideNumber, textElementStyles, updateTextElementStyle]);
@@ -154,8 +179,15 @@ export const SlideContent: React.FC<SlideContentProps> = ({
       default:
         slideElementIds.push(
           `slide-${slideNumber}-title`,
+          `slide-${slideNumber}-subtitle`,
+          `slide-${slideNumber}-text1-title`,
+          `slide-${slideNumber}-text1-content`,
           `slide-${slideNumber}-text1`,
-          `slide-${slideNumber}-text2`
+          `slide-${slideNumber}-text2-title`,
+          `slide-${slideNumber}-text2-content`,
+          `slide-${slideNumber}-text2`,
+          `slide-${slideNumber}-text3-title`,
+          `slide-${slideNumber}-text3-content`
         );
         break;
     }
@@ -291,16 +323,15 @@ export const SlideContent: React.FC<SlideContentProps> = ({
       "title-sub",
       "content-main",
       "content-sub",
-      `slide-${slideNumber}-text`,
     ];
 
     console.log("renderDynamicTextElements - slideNumber:", slideNumber);
-    console.log(
-      "renderDynamicTextElements - textElementPositions:",
-      textElementPositions
-    );
+    console.log("textElementPositions:", textElementPositions);
+    console.log("textElementContents:", textElementContents);
+    console.log("textElementStyles:", textElementStyles);
 
-    const filteredElements = Object.entries(textElementPositions).filter(
+    // Use textElementStyles instead of textElementPositions to get all elements with styles
+    const allElementsWithStyles = Object.entries(textElementStyles).filter(
       ([elementId]) => {
         // Filter out static elements
         if (staticElementIds.includes(elementId)) {
@@ -322,16 +353,23 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     );
 
     console.log(
-      "Filtered elements for slide",
+      "Elements with styles for slide",
       slideNumber,
       ":",
-      filteredElements
+      allElementsWithStyles
     );
 
-    return filteredElements.map(([elementId, position]) => {
+    return allElementsWithStyles.map(([elementId, style]) => {
       const content = textElementContents[elementId] || "New text element";
 
-      console.log("Rendering element:", elementId, "with content:", content);
+      console.log(
+        "Rendering element:",
+        elementId,
+        "with content:",
+        content,
+        "style:",
+        style
+      );
 
       return (
         <ResizableTextBox
@@ -769,62 +807,6 @@ export const SlideContent: React.FC<SlideContentProps> = ({
                     `slide-${slideNumber}-title`,
                     getTextElementContent(`slide-${slideNumber}-title`) ||
                       `Слайд ${slideNumber} - Заголовок`,
-                    e
-                  );
-                }}
-              />
-            </ResizableTextBox>
-
-            {/* Render slide text1 if exists */}
-            <ResizableTextBox
-              isSelected={selectedTextElements.includes(
-                `slide-${slideNumber}-text1`
-              )}
-              elementId={`slide-${slideNumber}-text1`}
-              onDelete={handleTextDelete}
-              onCopy={() => handleTextCopy(`slide-${slideNumber}-text1`)}
-              onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-text1`)}
-              onMoveDown={() =>
-                handleTextMoveDown(`slide-${slideNumber}-text1`)
-              }
-            >
-              <EditableText
-                elementId={`slide-${slideNumber}-text1`}
-                initialText="Основной текст слайда"
-                className="text-[#374151] text-[16px] cursor-pointer transition-colors"
-                onClick={(e) => {
-                  handleTextClick(
-                    `slide-${slideNumber}-text1`,
-                    getTextElementContent(`slide-${slideNumber}-text1`) ||
-                      "Основной текст слайда",
-                    e
-                  );
-                }}
-              />
-            </ResizableTextBox>
-
-            {/* Render slide text2 if exists */}
-            <ResizableTextBox
-              isSelected={selectedTextElements.includes(
-                `slide-${slideNumber}-text2`
-              )}
-              elementId={`slide-${slideNumber}-text2`}
-              onDelete={handleTextDelete}
-              onCopy={() => handleTextCopy(`slide-${slideNumber}-text2`)}
-              onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-text2`)}
-              onMoveDown={() =>
-                handleTextMoveDown(`slide-${slideNumber}-text2`)
-              }
-            >
-              <EditableText
-                elementId={`slide-${slideNumber}-text2`}
-                initialText="Дополнительный текст слайда"
-                className="text-[#6B7280] text-[14px] cursor-pointer transition-colors"
-                onClick={(e) => {
-                  handleTextClick(
-                    `slide-${slideNumber}-text2`,
-                    getTextElementContent(`slide-${slideNumber}-text2`) ||
-                      "Дополнительный текст слайда",
                     e
                   );
                 }}

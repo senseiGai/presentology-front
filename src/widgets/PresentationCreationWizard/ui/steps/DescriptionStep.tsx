@@ -38,6 +38,19 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
   // API хук для загрузки файлов
   const extractFilesMutation = useExtractFiles();
 
+  // Логирование состояния store при инициализации
+  console.log(
+    "🚀 [DescriptionStep] Инициализация компонента. Состояние store:",
+    {
+      brief,
+      slideCountMode,
+      storeSlideCount,
+      extractedFilesCount: extractedFiles?.length || 0,
+      isUploadingFiles,
+      uploadError,
+    }
+  );
+
   const [customGoal, setCustomGoal] = useState("");
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [selectedAudience, setSelectedAudience] = useState<string[]>([]);
@@ -93,15 +106,27 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
       tones: customNarrative ? [customNarrative] : selectedNarrative,
     };
 
+    console.log("🔄 [DescriptionStep] Синхронизация с store:", {
+      currentBrief,
+      slideCountMode: localSlideCount === "ai" ? "auto" : "fixed",
+      slideCount: localSlideCount === "custom" ? customSlideCount : undefined,
+      extractedFilesCount: extractedFiles?.length || 0,
+    });
+
     // Обновляем store
     setBrief(currentBrief);
 
     // Обновляем режим слайдов
     if (localSlideCount === "ai") {
       setSlideCountMode("auto");
+      console.log("📊 [DescriptionStep] Установлен режим слайдов: auto");
     } else {
       setSlideCountMode("fixed");
       setStoreSlideCount(customSlideCount);
+      console.log(
+        "📊 [DescriptionStep] Установлен режим слайдов: fixed, количество:",
+        customSlideCount
+      );
     }
   }, [
     presentationData.topic,
@@ -172,10 +197,22 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
       // Remove goal if already selected
       const newGoals = selectedGoals.filter((id) => id !== goalId);
       setSelectedGoals(newGoals);
+      console.log(
+        "🎯 [DescriptionStep] Цель удалена:",
+        goalId,
+        "Осталось:",
+        newGoals
+      );
     } else if (selectedGoals.length < 3) {
       // Add goal if under 3 limit
       const newGoals = [...selectedGoals, goalId];
       setSelectedGoals(newGoals);
+      console.log(
+        "🎯 [DescriptionStep] Цель добавлена:",
+        goalId,
+        "Всего:",
+        newGoals
+      );
     }
   };
 
@@ -224,22 +261,39 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
 
   // Загрузка файлов через API
   const uploadFiles = async (files: File[]) => {
+    console.log(
+      "📁 [DescriptionStep] Начало загрузки файлов:",
+      files.map((f) => ({
+        name: f.name,
+        size: f.size,
+        type: f.type,
+      }))
+    );
+
     setIsUploadingFiles(true);
     setUploadError(null);
 
     try {
       const result = await extractFilesMutation.mutateAsync(files);
 
+      console.log("✅ [DescriptionStep] Файлы успешно обработаны:", result);
+
       // Добавляем файлы в локальное состояние для UI
       setUploadedFiles((prev) => [...prev, ...files]);
 
       // Сохраняем извлеченные данные в store
       setExtractedFiles(result.files);
+
+      console.log(
+        "💾 [DescriptionStep] Файлы сохранены в store. Общее количество:",
+        result.files.length
+      );
     } catch (error) {
-      console.error("Ошибка загрузки файлов:", error);
+      console.error("❌ [DescriptionStep] Ошибка загрузки файлов:", error);
       setUploadError("Ошибка при обработке файлов");
     } finally {
       setIsUploadingFiles(false);
+      console.log("🏁 [DescriptionStep] Загрузка файлов завершена");
     }
   };
 
@@ -290,6 +344,8 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
 
   const removeFile = (index: number) => {
     const removedFile = uploadedFiles[index];
+    console.log("🗑️ [DescriptionStep] Удаление файла:", removedFile.name);
+
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
 
     // Также удаляем из extractedFiles по имени файла
@@ -298,6 +354,10 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
         (ef) => ef.name !== removedFile.name
       );
       setExtractedFiles(updatedExtracted);
+      console.log(
+        "💾 [DescriptionStep] Файл удален из store. Осталось:",
+        updatedExtracted.length
+      );
     }
   };
 
@@ -337,9 +397,13 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
             <div className="flex flex-col gap-3">
               <textarea
                 value={presentationData.topic}
-                onChange={(e) =>
-                  updatePresentationData({ topic: e.target.value })
-                }
+                onChange={(e) => {
+                  updatePresentationData({ topic: e.target.value });
+                  console.log(
+                    "📝 [DescriptionStep] Тема изменена:",
+                    e.target.value.substring(0, 50) + "..."
+                  );
+                }}
                 placeholder="Стратегия развития компании на 2024 год"
                 className="w-full h-[112px] px-4 py-3 border border-[#e9e9e9] rounded-lg resize-none text-[14px] font-normal text-[#0b0911] placeholder-[#bebec0] leading-[1.2] tracking-[-0.42px] focus:outline-none focus:border-[#bba2fe]"
                 maxLength={500}
@@ -522,7 +586,13 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
             <div className="flex flex-col">
               <textarea
                 value={keyIdea}
-                onChange={(e) => setKeyIdea(e.target.value)}
+                onChange={(e) => {
+                  setKeyIdea(e.target.value);
+                  console.log(
+                    "💡 [DescriptionStep] Ключевая идея изменена:",
+                    e.target.value.substring(0, 50) + "..."
+                  );
+                }}
                 placeholder="Наш продукт решает проблему X быстрее и дешевле"
                 className="w-full h-[112px] px-4 py-3 border border-[#e9e9e9] rounded-lg resize-none text-[14px] font-normal text-[#0b0911] placeholder-[#bebec0] leading-[1.2] tracking-[-0.42px] focus:outline-none focus:border-[#bba2fe]"
                 maxLength={500}
@@ -624,7 +694,12 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
             <div className="flex flex-col gap-20">
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => setLocalSlideCount("ai")}
+                  onClick={() => {
+                    setLocalSlideCount("ai");
+                    console.log(
+                      "🤖 [DescriptionStep] Выбран режим слайдов: AI"
+                    );
+                  }}
                   className={`h-[90px] px-4  rounded-lg text-[14px] font-medium leading-[1.2] tracking-[-0.42px] text-center transition-colors ${
                     localSlideCount === "ai"
                       ? "bg-[#bba2fe] text-white"
@@ -634,7 +709,12 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
                   На усмотрение ИИ
                 </button>
                 <button
-                  onClick={() => setLocalSlideCount("custom")}
+                  onClick={() => {
+                    setLocalSlideCount("custom");
+                    console.log(
+                      "⚙️ [DescriptionStep] Выбран режим слайдов: Custom"
+                    );
+                  }}
                   className={`h-[90px] px-4  rounded-lg text-[14px] font-medium leading-[1.2] tracking-[-0.42px] text-center transition-colors ${
                     localSlideCount === "custom"
                       ? "bg-[#bba2fe] text-white"
@@ -791,7 +871,19 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
             Назад
           </button>
           <button
-            onClick={onNext}
+            onClick={() => {
+              console.log(
+                "➡️ [DescriptionStep] Переход к следующему шагу. Финальное состояние:",
+                {
+                  brief,
+                  slideCountMode,
+                  slideCount: storeSlideCount,
+                  extractedFilesCount: extractedFiles?.length || 0,
+                  canProceed,
+                }
+              );
+              onNext();
+            }}
             disabled={!canProceed}
             className={`flex-1 h-[52px] rounded-lg flex items-center justify-center text-[18px] leading-[1.2] tracking-[-0.36px] font-normal transition-colors ${
               canProceed

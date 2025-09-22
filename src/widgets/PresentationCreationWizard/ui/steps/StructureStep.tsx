@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { usePresentationCreationStore } from "../../model/usePresentationCreationStore";
+import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
+import {
+  useSelectStructureNew,
+  useCreateTitleAndSlidesNew,
+} from "@/shared/api/presentation-generation";
 import DotsSixIcon from "../../../../../public/icons/DotsSixIcon";
 import GrayTrashIcon from "../../../../../public/icons/GrayTrashIcon";
 import PlusIcon from "../../../../../public/icons/PlusIcon";
@@ -16,7 +21,24 @@ export const StructureStep: React.FC<StructureStepProps> = ({
 }) => {
   const { presentationData, updatePresentationData, setAddSlideModalOpen } =
     usePresentationCreationStore();
+
+  // Новое store для workflow
+  const {
+    brief,
+    slideCountMode,
+    slideCount,
+    extractedFiles,
+    deckTitle,
+    uiSlides,
+    setSlideCountMode,
+  } = usePresentationFlowStore();
+
+  // API хуки
+  const selectStructureMutation = useSelectStructureNew();
+  const createTitleAndSlidesMutation = useCreateTitleAndSlidesNew();
+
   const [isLoading, setIsLoading] = useState(true);
+  const [hasGeneratedStructure, setHasGeneratedStructure] = useState(false);
   const [visibleSlidesCount, setVisibleSlidesCount] = useState(0);
   const [slides, setSlides] = useState([
     { id: 1, title: "Заголовок", description: "Описание слайда" },
@@ -49,6 +71,119 @@ export const StructureStep: React.FC<StructureStepProps> = ({
       document.head.removeChild(style);
     };
   }, []);
+
+  // Автоматический вызов API для выбора структуры при загрузке компонента
+  useEffect(() => {
+    const autoGenerateStructure = async () => {
+      if (!brief || hasGeneratedStructure) {
+        if (!brief) {
+          console.warn("StructureStep: No brief data available");
+        }
+        if (hasGeneratedStructure) {
+          console.log("StructureStep: Structure already generated, skipping");
+        }
+        return;
+      }
+
+      console.log(
+        "StructureStep: Starting automatic structure selection with brief:",
+        brief
+      );
+      console.log("StructureStep: Slide count mode:", slideCountMode);
+      console.log("StructureStep: Extracted files:", extractedFiles);
+
+      try {
+        setIsLoading(true);
+        setHasGeneratedStructure(true);
+
+        // Шаг 1: Выбор структуры
+        const structureRequest = {
+          mode: slideCountMode || "auto",
+          userData: {
+            topic: brief.topic,
+            goal: brief.goal,
+            audience: brief.audience,
+            keyIdea: brief.keyIdea,
+            expectedAction: brief.expectedAction,
+            tones: brief.tones,
+            files: extractedFiles || [],
+          },
+          ...(slideCountMode === "fixed" && slideCount
+            ? { slideCount: slideCount }
+            : {}),
+        };
+
+        console.log(
+          "StructureStep: Calling selectStructure API with:",
+          structureRequest
+        );
+        const structureResult = await selectStructureMutation.mutateAsync(
+          structureRequest
+        );
+        console.log(
+          "StructureStep: Structure selection result:",
+          structureResult
+        );
+
+        // Шаг 2: Создание заголовка и слайдов
+        const titleAndSlidesRequest = {
+          userData: {
+            topic: brief.topic,
+            goal: brief.goal,
+            audience: brief.audience,
+            keyIdea: brief.keyIdea,
+            expectedAction: brief.expectedAction,
+            tones: brief.tones,
+            files: extractedFiles || [],
+          },
+          chosenStructure: structureResult.chosenStructure,
+        };
+
+        console.log(
+          "StructureStep: Calling createTitleAndSlides API with:",
+          titleAndSlidesRequest
+        );
+        const titleAndSlidesResult =
+          await createTitleAndSlidesMutation.mutateAsync(titleAndSlidesRequest);
+        console.log(
+          "StructureStep: Title and slides result:",
+          titleAndSlidesResult
+        );
+
+        // Обновляем слайды из API результата
+        if (titleAndSlidesResult.slides) {
+          const formattedSlides = titleAndSlidesResult.slides.map(
+            (slide: any, index: number) => ({
+              id: index + 1,
+              title: slide.title || "Заголовок",
+              description: slide.summary || "Описание слайда",
+            })
+          );
+          setSlides(formattedSlides);
+          console.log(
+            "StructureStep: Updated slides with API data:",
+            formattedSlides
+          );
+        }
+      } catch (error) {
+        console.error(
+          "StructureStep: Error during automatic structure generation:",
+          error
+        );
+        setHasGeneratedStructure(false); // Сбрасываем флаг при ошибке
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    autoGenerateStructure();
+  }, [
+    brief,
+    slideCountMode,
+    extractedFiles,
+    slideCount,
+    hasGeneratedStructure,
+  ]);
 
   useEffect(() => {
     // Simulate slides appearing one by one during loading

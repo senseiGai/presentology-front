@@ -92,16 +92,10 @@ export const SlideGenerationButton: React.FC<SlideGenerationButtonProps> = ({
     generateSlidesMutation.mutate({
       deckTitle: "Презентация из текста",
       uiSlides,
-      brief: {
+      userData: {
         topic: "Генерация из текста",
         goal: "Создать презентацию на основе текста пользователя",
         audience: "Общая аудитория",
-        context: prompt.trim(),
-      },
-      stylePreferences: {
-        tone: "professional",
-        complexity: "medium",
-        format: "standard",
       },
     });
   };

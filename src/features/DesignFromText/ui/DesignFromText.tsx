@@ -195,8 +195,8 @@ export const DesignFromText: React.FC<DesignFromTextProps> = ({
             </h2>
 
             <p className="text-gray-600">
-              Ваша презентация "{createdPresentation.title}" успешно создана и
-              сохранена
+              Ваша презентация &quot;{createdPresentation.title}&quot; успешно
+              создана и сохранена
             </p>
           </div>
 

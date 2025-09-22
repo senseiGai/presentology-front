@@ -709,7 +709,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
 
       {/* Модальное окно для добавления нового слайда */}
       {isAddSlideModalOpen && (
-        <div className="fixed inset-0 bg-black/60 absolute backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-[16px] p-8 w-[600px] max-w-[90vw] shadow-2xl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-[24px] font-medium text-[#0B0911] leading-[1.3] tracking-[-0.48px]">

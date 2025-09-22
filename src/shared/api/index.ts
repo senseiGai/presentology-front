@@ -18,8 +18,29 @@ export * from "./infographics";
 export { apiClient, API_BASE_URL, API_ENDPOINTS } from "./config";
 
 // Types exports
-export type * from "./types";
+export type {
+  LoginRequest,
+  RegisterRequest,
+  AuthResponse,
+  RefreshTokenRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+  ForgotPasswordResponse,
+  SocialAuthResponse,
+  User,
+  UserResponse,
+  UpdateProfileRequest,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
+  SendEmailVerificationRequest,
+  VerifyEmailChangeRequest,
+  EmailVerificationResponse,
+  Presentation,
+  CreatePresentationRequest,
+  UpdatePresentationRequest,
+  SurveyRequest,
+  SurveyResponse,
+} from "./types";
 
 // Hooks exports
 export * from "../hooks/useAuth";
-export * from "../hooks/usePresentations";

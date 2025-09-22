@@ -34,12 +34,6 @@ export const ResizableInfographicsBox: React.FC<
 
   const infographicsElement = getInfographicsElement(slideNumber, elementId);
 
-  if (!infographicsElement) {
-    return null;
-  }
-
-  const { dataUrl, svgContent, position, width, height } = infographicsElement;
-
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (!infographicsElement) return;
@@ -272,6 +266,13 @@ export const ResizableInfographicsBox: React.FC<
       };
     }
   }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
+
+  // Early return after all hooks
+  if (!infographicsElement) {
+    return null;
+  }
+
+  const { dataUrl, svgContent, position, width, height } = infographicsElement;
 
   const getCursor = () => {
     if (isDragging) return "grabbing";

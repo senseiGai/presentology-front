@@ -205,6 +205,67 @@ export interface CreateDeckFromBriefResponse {
   };
 }
 
+// 7.1. Генерация слайдов для структуры (новый основной API)
+export interface GenerateSlidesForStructureRequest {
+  deckTitle: string;
+  uiSlides: Array<{
+    title: string;
+    summary: string;
+  }>;
+  userData: {
+    topic: string;
+    goal: string;
+    audience: string;
+    expectedAction?: string;
+    keyIdea?: string;
+    tones?: string[];
+    files?: Array<{
+      name: string;
+      type: string;
+      size: number;
+      text: string;
+    }>;
+  };
+  volume: "Минимальный" | "Средний" | "Большой";
+  imageSource: "Flux" | "Из интернета" | "Смешанный";
+  seed?: number;
+  concurrency?: number;
+}
+
+export interface GenerateSlidesForStructureResponse {
+  templateIds: string[];
+  templatesMetaVersion: string;
+  deck: {
+    _globalFonts: {
+      _fontScale: number;
+      _fontSizes: {
+        title: number;
+        subtitle: number;
+        t1: number;
+        t2: number;
+        badge: number;
+      };
+      _fontCaps: {
+        title: number;
+        subtitle: number;
+        t1: number;
+        t2: number;
+        badge: number;
+      };
+    };
+  };
+  slides: Array<{
+    title: string;
+    text1?: string | { t1: string; t2: string };
+    table?: string[][];
+    _images?: Array<{
+      url: string;
+      kind: string;
+    }>;
+    [key: string]: any;
+  }>;
+}
+
 // 8. Подбор шаблонов
 export interface PickTemplatesRequest {
   uiSlides: Array<{
@@ -976,6 +1037,16 @@ export const createDeckFromBrief = async (
   );
 };
 
+// 7.1. Генерация слайдов для структуры (новый основной API)
+export const generateSlidesForStructureNew = async (
+  data: GenerateSlidesForStructureRequest
+): Promise<GenerateSlidesForStructureResponse> => {
+  return makeApiRequest<GenerateSlidesForStructureResponse>(
+    "api/v1/create/structure/generate-slides",
+    data
+  );
+};
+
 // ==================== React Query хуки для новых API ====================
 
 // Хук для извлечения файлов
@@ -1054,6 +1125,21 @@ export const useCreateDeckFromBrief = () => {
     },
     onError: (error) => {
       console.error("Error creating deck from brief:", error);
+    },
+  });
+};
+
+// Хук для генерации слайдов для структуры (новый основной API)
+export const useGenerateSlidesForStructureNew = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: generateSlidesForStructureNew,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["presentations"] });
+    },
+    onError: (error) => {
+      console.error("Error generating slides for structure:", error);
     },
   });
 };

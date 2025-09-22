@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePresentationCreationStore } from "../../model/usePresentationCreationStore";
+import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
+import { useGenerateSlidesForStructureNew } from "@/shared/api/presentation-generation";
 import SquareCheckIcon from "../../../../../public/icons/SquareCheckIcon";
 import Image from "next/image";
 
@@ -12,8 +14,29 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
   const router = useRouter();
   const { presentationData, updatePresentationData } =
     usePresentationCreationStore();
-  const [selectedTemplate, setSelectedTemplate] = useState(0);
-  const [selectedStyle, setSelectedStyle] = useState(0);
+
+  // Новое store для workflow
+  const {
+    brief,
+    deckTitle,
+    uiSlides,
+    textVolume,
+    imageSource,
+    extractedFiles,
+    selectedTheme,
+    selectedTemplate,
+    setSelectedTheme,
+    setSelectedTemplate,
+    setIsGenerating,
+  } = usePresentationFlowStore();
+
+  // API хук для генерации презентации
+  const generateSlidesMutation = useGenerateSlidesForStructureNew();
+
+  const [selectedTemplateIndex, setSelectedTemplateIndex] = useState(0);
+  const [selectedStyleIndex, setSelectedStyleIndex] = useState(0);
+  const [isGeneratingPresentation, setIsGeneratingPresentation] =
+    useState(false);
   const templates = [
     {
       title: "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ",
@@ -50,21 +73,71 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
       image: "/assets/visual_style03.png",
     },
   ];
+
   const handleTemplateSelect = (templateId: string) => {
-    updatePresentationData({ selectedTemplate: templateId });
+    setSelectedTemplate(templateId);
   };
 
-  const handleStyleSelect = (styleId: "modern" | "corporate" | "creative") => {
-    updatePresentationData({ selectedStyle: styleId });
+  const handleStyleSelect = (styleId: string) => {
+    setSelectedTheme(styleId);
   };
 
-  const handleCreatePresentation = () => {
-    // Here you would typically call the API to create the presentation
-    // using all the collected data from presentationData
-    console.log("Creating presentation with data:", presentationData);
+  const handleCreatePresentation = async () => {
+    if (!brief || !deckTitle || !uiSlides || uiSlides.length === 0) {
+      console.error("Missing required data for presentation generation");
+      return;
+    }
 
-    // For now, redirect to the presentation generation page
-    router.push("/presentation-generation");
+    try {
+      setIsGeneratingPresentation(true);
+      setIsGenerating(true);
+
+      // Подготавливаем данные для API
+      const requestData = {
+        deckTitle,
+        uiSlides,
+        userData: {
+          topic: brief.topic,
+          goal: brief.goal,
+          audience: brief.audience,
+          expectedAction: brief.expectedAction,
+          keyIdea: brief.keyIdea,
+          tones: brief.tones || [],
+          files: extractedFiles || [],
+        },
+        volume: textVolume || "Средний",
+        imageSource: imageSource || "Смешанный",
+        seed: 42,
+        concurrency: 5,
+      };
+
+      console.log("Generating presentation with data:", requestData);
+
+      // Вызываем API генерации презентации
+      const result = await generateSlidesMutation.mutateAsync(requestData);
+
+      console.log("Presentation generated successfully:", result);
+
+      // Сохраняем результат в localStorage для передачи в редактор
+      localStorage.setItem(
+        "generatedPresentation",
+        JSON.stringify({
+          templateIds: result.templateIds,
+          templatesMetaVersion: result.templatesMetaVersion,
+          deck: result.deck,
+          slides: result.slides,
+          deckTitle,
+        })
+      );
+
+      // Переходим в редактор презентации
+      router.push("/presentation-creation");
+    } catch (error) {
+      console.error("Error generating presentation:", error);
+    } finally {
+      setIsGeneratingPresentation(false);
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -79,14 +152,14 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
               {templates.map((template, index) => (
                 <div
                   key={index}
-                  onClick={() => setSelectedTemplate(index)}
+                  onClick={() => setSelectedTemplateIndex(index)}
                   className={`relative w-[397px] h-[223px] cursor-pointer rounded-[12px] transition-all ${
-                    selectedTemplate === index
+                    selectedTemplateIndex === index
                       ? "ring-[8px] ring-[#A78BFA]"
                       : "border-[1px] border-[#EBEBEB]"
                   }`}
                 >
-                  {selectedTemplate === index && (
+                  {selectedTemplateIndex === index && (
                     <div className="absolute top-0 right-0 z-[99999] shadow-2xl">
                       <SquareCheckIcon />
                     </div>
@@ -115,14 +188,14 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
                   {styles.map((style, index) => (
                     <div
                       key={index}
-                      onClick={() => setSelectedStyle(index)}
+                      onClick={() => setSelectedStyleIndex(index)}
                       className={`relative cursor-pointer w-[356px] h-[222px] p-4 rounded-[8px] transition-all ${
-                        selectedStyle === index
+                        selectedStyleIndex === index
                           ? "bg-[#BBA2FE]"
                           : "bg-[#F4F4F4]"
                       }`}
                     >
-                      {selectedStyle === index && (
+                      {selectedStyleIndex === index && (
                         <div className="absolute top-1 right-1">
                           <SquareCheckIcon />
                         </div>
@@ -130,7 +203,7 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
                       <div className="relative">
                         <h4
                           className={`text-[18px] font-medium  mb-1 ${
-                            selectedStyle === index
+                            selectedStyleIndex === index
                               ? "text-white"
                               : "text-[#0B0911]"
                           }`}
@@ -139,7 +212,7 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
                         </h4>
                         <p
                           className={`text-[13px] tracking-[-3%] ${
-                            selectedStyle === index
+                            selectedStyleIndex === index
                               ? "text-white"
                               : "text-[#6B7280]"
                           }`}
@@ -169,11 +242,20 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
                 Назад
               </button>
               <button
-                // onClick={onNext}
-                // disabled={isLoading}
-                className={`w-[248px] h-[52px] bg-[#BBA2FE] rounded-[8px] text-[18px] font-normal text-white leading-[1.2] tracking-[-0.36px] hover:bg-[#A693FD] transition-colors `}
+                onClick={handleCreatePresentation}
+                disabled={isGeneratingPresentation}
+                className={`w-[248px] h-[52px] bg-[#BBA2FE] rounded-[8px] text-[18px] font-normal text-white leading-[1.2] tracking-[-0.36px] hover:bg-[#A693FD] transition-colors flex items-center justify-center gap-2 ${
+                  isGeneratingPresentation
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
               >
-                Создать презентацию
+                {isGeneratingPresentation && (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
+                {isGeneratingPresentation
+                  ? "Создаём презентацию..."
+                  : "Создать презентацию"}
               </button>
             </div>
           </div>

@@ -159,6 +159,15 @@ export interface AddSlideToStructureResponse {
   title: string;
   summary: string;
 }
+slides: Array<{
+  title: string;
+  summary: string;
+}>;
+
+export interface AddSlideToStructureResponse {
+  title: string;
+  summary: string;
+}
 
 // 7. Генерация полной презентации из брифа (ГЛАВНЫЙ ENDPOINT)
 export interface CreateDeckFromBriefRequest {

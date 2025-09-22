@@ -4,6 +4,7 @@ import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowSto
 import {
   useSelectStructureNew,
   useCreateTitleAndSlidesNew,
+  useAddSlideToStructureNew,
 } from "@/shared/api/presentation-generation";
 import DotsSixIcon from "../../../../../public/icons/DotsSixIcon";
 import GrayTrashIcon from "../../../../../public/icons/GrayTrashIcon";
@@ -36,14 +37,19 @@ export const StructureStep: React.FC<StructureStepProps> = ({
     extractedFiles,
     deckTitle,
     uiSlides,
+    textVolume,
+    imageSource,
     setSlideCountMode,
     setUiSlides,
     setDeckTitle,
+    setTextVolume,
+    setImageSource,
   } = usePresentationFlowStore();
 
   // API хуки
   const selectStructureMutation = useSelectStructureNew();
   const createTitleAndSlidesMutation = useCreateTitleAndSlidesNew();
+  const addSlideMutation = useAddSlideToStructureNew();
 
   const [isLoading, setIsLoading] = useState(true);
   const [hasGeneratedStructure, setHasGeneratedStructure] = useState(false);
@@ -52,6 +58,11 @@ export const StructureStep: React.FC<StructureStepProps> = ({
   const [tempTitle, setTempTitle] = useState("");
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Состояние для добавления нового слайда
+  const [isAddSlideModalOpen, setIsAddSlideModalOpen] = useState(false);
+  const [newSlidePrompt, setNewSlidePrompt] = useState("");
+  const [isAddingSlide, setIsAddingSlide] = useState(false);
 
   // Ref для предотвращения повторных вызовов API
   const hasCalledApi = useRef(false);
@@ -178,21 +189,26 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                 titleAndSlidesRequest
               );
 
+            // API возвращает обертку {success, data, statusCode}, поэтому берем из data
+            const titleData =
+              titleAndSlidesResult.title ||
+              (titleAndSlidesResult as any).data?.title;
+            const slidesData =
+              titleAndSlidesResult.slides ||
+              (titleAndSlidesResult as any).data?.slides;
+
             // Обновляем название презентации
-            if (titleAndSlidesResult.title) {
-              setDeckTitle(titleAndSlidesResult.title);
+            if (titleData) {
+              setDeckTitle(titleData);
             }
 
             // Обновляем слайды с детальными данными
-            if (
-              titleAndSlidesResult.slides &&
-              titleAndSlidesResult.slides.length > 0
-            ) {
-              setUiSlides(titleAndSlidesResult.slides);
+            if (slidesData && slidesData.length > 0) {
+              setUiSlides(slidesData);
 
               // Обновляем visibleSlidesCount для новых слайдов
               setTimeout(() => {
-                setVisibleSlidesCount(titleAndSlidesResult.slides.length);
+                setVisibleSlidesCount(slidesData.length);
               }, 200);
             }
           } catch (titleError) {
@@ -224,11 +240,23 @@ export const StructureStep: React.FC<StructureStepProps> = ({
   }, [slides.length]);
 
   const handleTextVolumeChange = (volume: "minimal" | "medium" | "large") => {
-    updatePresentationData({ textVolume: volume });
+    const mappedVolume =
+      volume === "minimal"
+        ? "Минимальный"
+        : volume === "medium"
+        ? "Средний"
+        : "Большой";
+    setTextVolume(mappedVolume);
   };
 
   const handleImageSourceChange = (source: "flux" | "internet" | "mixed") => {
-    updatePresentationData({ imageSource: source });
+    const mappedSource =
+      source === "flux"
+        ? "Flux"
+        : source === "internet"
+        ? "Из интернета"
+        : "Смешанный";
+    setImageSource(mappedSource);
   };
 
   const handleRemoveSlide = (slideIndex: number) => {
@@ -257,6 +285,60 @@ export const StructureStep: React.FC<StructureStepProps> = ({
       handleSaveTitle();
     } else if (e.key === "Escape") {
       handleCancelTitle();
+    }
+  };
+
+  // Функция для добавления нового слайда
+  const handleAddSlide = async () => {
+    if (!newSlidePrompt.trim() || !brief || !slides.length || isAddingSlide) {
+      return;
+    }
+
+    try {
+      setIsAddingSlide(true);
+
+      // Подготавливаем данные для API
+      const addSlideRequest = {
+        newSlidePrompt: newSlidePrompt.trim(),
+        brief: {
+          topic: brief.topic,
+          goal: brief.goal,
+          audience: brief.audience,
+          expectedAction: brief.expectedAction,
+          tones: brief.tones || [],
+        },
+        slides: slides.map((slide) => ({
+          title: slide.title,
+          summary: slide.summary,
+        })),
+      };
+
+      // Вызываем API
+      const newSlide = await addSlideMutation.mutateAsync(addSlideRequest);
+
+      // Добавляем новый слайд в конец списка
+      const updatedSlides = [
+        ...slides,
+        {
+          title: newSlide.title,
+          summary: newSlide.summary,
+        },
+      ];
+
+      setUiSlides(updatedSlides);
+
+      // Закрываем модальное окно и очищаем форму
+      setIsAddSlideModalOpen(false);
+      setNewSlidePrompt("");
+
+      // Обновляем количество видимых слайдов
+      setTimeout(() => {
+        setVisibleSlidesCount(updatedSlides.length);
+      }, 200);
+    } catch (error) {
+      console.error("Error adding slide:", error);
+    } finally {
+      setIsAddingSlide(false);
     }
   };
 
@@ -432,7 +514,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                 </div>
 
                 <button
-                  onClick={() => setAddSlideModalOpen(true)}
+                  onClick={() => setIsAddSlideModalOpen(true)}
                   className="bg-[#BBA2FE] h-[52px] px-6 pr-4 rounded-[8px] flex items-center gap-2 text-[18px] font-normal text-white leading-[1.2] tracking-[-0.36px] hover:bg-[#A693FD] transition-colors"
                 >
                   Добавить слайд
@@ -511,7 +593,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                     onClick={() => handleTextVolumeChange("minimal")}
                     disabled={isLoading}
                     className={`w-[174px] h-[90px] rounded-[8px] px-4 py-8 text-[14px] font-medium leading-[1.2] tracking-[-0.42px] text-center transition-colors ${
-                      presentationData.textVolume === "minimal"
+                      textVolume === "Минимальный"
                         ? "bg-[#BBA2FE] text-white"
                         : "bg-[#F4F4F4] text-[#0B0911] hover:bg-gray-200"
                     } ${isLoading ? "cursor-not-allowed" : ""}`}
@@ -522,7 +604,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                     onClick={() => handleTextVolumeChange("medium")}
                     disabled={isLoading}
                     className={`w-[174px] h-[90px] rounded-[8px] px-4 py-8 text-[14px] font-medium leading-[1.2] tracking-[-0.42px] text-center transition-colors ${
-                      presentationData.textVolume === "medium"
+                      textVolume === "Средний"
                         ? "bg-[#BBA2FE] text-white"
                         : "bg-[#F4F4F4] text-[#0B0911] hover:bg-gray-200"
                     } ${isLoading ? "cursor-not-allowed" : ""}`}
@@ -535,7 +617,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                     onClick={() => handleTextVolumeChange("large")}
                     disabled={isLoading}
                     className={`w-[174px] h-[90px] rounded-[8px] px-4 py-8 text-[14px] font-medium leading-[1.2] tracking-[-0.42px] text-center transition-colors ${
-                      presentationData.textVolume === "large"
+                      textVolume === "Большой"
                         ? "bg-[#BBA2FE] text-white"
                         : "bg-[#F4F4F4] text-[#0B0911] hover:bg-gray-200"
                     } ${isLoading ? "cursor-not-allowed" : ""}`}
@@ -557,7 +639,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                     onClick={() => handleImageSourceChange("flux")}
                     disabled={isLoading}
                     className={`w-[174px] h-[90px] rounded-[8px] px-4 py-8 text-[14px] font-medium leading-[1.2] tracking-[-0.42px] text-center transition-colors ${
-                      presentationData.imageSource === "flux"
+                      imageSource === "Flux"
                         ? "bg-[#BBA2FE] text-white"
                         : "bg-[#F4F4F4] text-[#0B0911] hover:bg-gray-200"
                     } ${isLoading ? "cursor-not-allowed" : ""}`}
@@ -570,7 +652,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                     onClick={() => handleImageSourceChange("internet")}
                     disabled={isLoading}
                     className={`w-[174px] h-[90px] rounded-[8px] px-4 py-8 text-[14px] font-medium leading-[1.2] tracking-[-0.42px] text-center transition-colors ${
-                      presentationData.imageSource === "internet"
+                      imageSource === "Из интернета"
                         ? "bg-[#BBA2FE] text-white"
                         : "bg-[#F4F4F4] text-[#0B0911] hover:bg-gray-200"
                     } ${isLoading ? "cursor-not-allowed" : ""}`}
@@ -584,7 +666,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                     onClick={() => handleImageSourceChange("mixed")}
                     disabled={isLoading}
                     className={`w-[174px] h-[90px] rounded-[8px] px-4 py-8 text-[14px] font-medium leading-[1.2] tracking-[-0.42px] text-center transition-colors ${
-                      presentationData.imageSource === "mixed"
+                      imageSource === "Смешанный"
                         ? "bg-[#BBA2FE] text-white"
                         : "bg-[#F4F4F4] text-[#0B0911] hover:bg-gray-200"
                     } ${isLoading ? "cursor-not-allowed" : ""}`}
@@ -624,6 +706,63 @@ export const StructureStep: React.FC<StructureStepProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Модальное окно для добавления нового слайда */}
+      {isAddSlideModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-[16px] p-8 w-[600px] max-w-[90vw]">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[24px] font-medium text-[#0B0911] leading-[1.3] tracking-[-0.48px]">
+                Добавить новый слайд
+              </h3>
+              <button
+                onClick={() => {
+                  setIsAddSlideModalOpen(false);
+                  setNewSlidePrompt("");
+                }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center p-2 hover:bg-gray-100 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-[16px] font-medium text-[#0B0911] leading-[1.2] tracking-[-0.32px] mb-3">
+                Описание нового слайда
+              </label>
+              <textarea
+                value={newSlidePrompt}
+                onChange={(e) => setNewSlidePrompt(e.target.value)}
+                placeholder="Например: Добавь кейс клиента с примером использования продукта..."
+                className="w-full h-[120px] p-4 border border-[#E9E9E9] rounded-[8px] text-[16px] font-normal text-[#0B0911] leading-[1.4] tracking-[-0.32px] resize-none focus:outline-none focus:border-[#BBA2FE]"
+              />
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setIsAddSlideModalOpen(false);
+                  setNewSlidePrompt("");
+                }}
+                disabled={isAddingSlide}
+                className="px-6 py-3 bg-white border border-[#C0C0C1] rounded-[8px] text-[16px] font-normal text-[#0B0911] leading-[1.2] tracking-[-0.32px] hover:bg-gray-50 transition-colors disabled:cursor-not-allowed"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleAddSlide}
+                disabled={!newSlidePrompt.trim() || isAddingSlide}
+                className="px-6 py-3 bg-[#BBA2FE] rounded-[8px] text-[16px] font-normal text-white leading-[1.2] tracking-[-0.32px] hover:bg-[#A693FD] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isAddingSlide && (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
+                {isAddingSlide ? "Добавляем..." : "Добавить слайд"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

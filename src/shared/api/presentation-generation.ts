@@ -1,6 +1,225 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/shared/stores/auth.store";
 
+// ==================== Базовые типы ====================
+
+// Извлеченный файл (результат /api/files/extract)
+export interface ExtractedFile {
+  name: string;
+  type: string;
+  size: number;
+  text: string;
+}
+
+// Легкий формат файла для брифа
+export interface FileLiteIn {
+  name: string;
+  type: string;
+  size: number;
+  text: string;
+}
+
+// Расширенный формат файла для анализа структуры
+export interface ExtractedFileIn {
+  name: string;
+  type: string;
+  size: number;
+  text: string;
+}
+
+// Полный бриф презентации
+export interface Brief {
+  topic: string;
+  goal: string;
+  audience: string;
+  keyIdea?: string;
+  expectedAction?: string;
+  tones?: string[];
+}
+
+// Обнаруженная структура
+export interface DetectedStructure {
+  hasStructure: boolean;
+  slideCount: number;
+  slides: Array<{
+    title: string;
+    summary: string;
+  }>;
+}
+
+// Глобальные шрифты
+export interface GlobalFonts {
+  _fontScale?: number;
+  _fontSizes?: {
+    title: number;
+    subtitle: number;
+    t1: number;
+    t2: number;
+    badge: number;
+  };
+  _fontCaps?: Record<string, number>;
+}
+
+// ==================== API Requests/Responses ====================
+
+// 1. Извлечение файлов
+export interface ExtractFilesRequest {
+  files: FileList | File[];
+}
+
+export interface ExtractFilesResponse {
+  files: ExtractedFile[];
+}
+
+// 2. Генерация брифа
+export interface GenerateBriefRequest {
+  files: FileLiteIn[];
+}
+
+export interface GenerateBriefResponse {
+  result: Brief;
+}
+
+// 3. Анализ структуры
+export interface AnalyzeStructureRequest {
+  files: ExtractedFileIn[];
+}
+
+export interface AnalyzeStructureResponse {
+  hasStructure: boolean;
+  slideCount: number;
+  slides: Array<{
+    title: string;
+    summary: string;
+  }>;
+}
+
+// 4. Выбор структуры
+export interface SelectStructureRequest {
+  mode: "auto" | "fixed";
+  slideCount?: number;
+  userData: {
+    topic: string;
+    goal: string;
+    audience: string;
+    keyIdea?: string;
+    expectedAction?: string;
+    tones?: string[];
+    files?: ExtractedFile[];
+  };
+}
+
+export interface SelectStructureResponse {
+  ok: boolean;
+  mode: "auto" | "fixed";
+  slideCount: number;
+  structureText: string;
+  chosenStructure: string;
+}
+
+// 5. Создание названия и черновых слайдов
+export interface CreateTitleAndSlidesRequestNew {
+  userData: {
+    topic: string;
+    goal: string;
+    audience: string;
+    keyIdea?: string;
+    expectedAction?: string;
+    tones?: string[];
+    files?: ExtractedFile[];
+  };
+  chosenStructure: string;
+}
+
+export interface CreateTitleAndSlidesResponseNew {
+  title: string;
+  slides: Array<{
+    title: string;
+    summary: string;
+  }>;
+}
+
+// 6. Добавление слайда к структуре
+export interface AddSlideToStructureRequest {
+  newSlidePrompt: string;
+  brief: {
+    topic: string;
+    goal: string;
+    audience: string;
+    expectedAction?: string;
+    tones?: string[];
+  };
+  slides: Array<{
+    title: string;
+    summary: string;
+  }>;
+}
+
+export interface AddSlideToStructureResponse {
+  title: string;
+  summary: string;
+}
+
+// 7. Генерация полной презентации из брифа (ГЛАВНЫЙ ENDPOINT)
+export interface CreateDeckFromBriefRequest {
+  brief: Brief;
+  rewrite: "preserve" | "mixed" | "generate";
+  textVolume: "Минимальный" | "Средний" | "Большой";
+  imageSource: "Flux" | "Из интернета" | "Смешанный";
+  autoSlideCount?: boolean;
+  slideCount?: number;
+  extraInstructions?: string;
+  detected?: DetectedStructure;
+  files: ExtractedFile[];
+  seed?: number;
+  concurrency?: number;
+}
+
+export interface CreateDeckFromBriefResponse {
+  deckTitle: string;
+  uiSlides: Array<{
+    title: string;
+    summary: string;
+  }>;
+  templateIds: string[];
+  templatesMetaVersion: string;
+  deck: {
+    _globalFonts: GlobalFonts;
+    [key: string]: any;
+  };
+  slides: any[];
+  meta: {
+    source: string;
+    rewrite: string;
+    textVolume: string;
+    imageSource: string;
+  };
+}
+
+// 8. Подбор шаблонов
+export interface PickTemplatesRequest {
+  uiSlides: Array<{
+    title: string;
+    summary: string;
+  }>;
+  volume?: string;
+  seed?: number;
+}
+
+export interface PickTemplatesResponse {
+  success: boolean;
+  data?: {
+    uiSlides: Array<{
+      title: string;
+      summary: string;
+      protoId?: string;
+    }>;
+  };
+  error?: string;
+}
+
+// ==================== Старые типы (для совместимости) ====================
+
 // Типы для создания структуры презентации
 export interface UserData {
   topic: string;
@@ -110,19 +329,8 @@ export interface PreviewStructureResponse {
   error?: string;
 }
 
-// Запросы для выбора структуры
-export interface SelectStructureRequest {
-  userData: UserData;
-  mode: "auto" | "fixed";
-  slideCount: number;
-  preferences?: {
-    includeIntroduction?: boolean;
-    includeConclusion?: boolean;
-    detailLevel?: "brief" | "detailed" | "comprehensive";
-  };
-}
-
-export interface SelectStructureResponse {
+// Запросы для выбора структуры (используем новый тип выше)
+export interface SelectStructureResponseOld {
   success: boolean;
   data?: {
     structure: {
@@ -429,30 +637,6 @@ export const changeSlideTemplate = async (
   );
 };
 
-// Типы для подбора шаблонов
-export interface PickTemplatesRequest {
-  uiSlides: Array<{
-    title: string;
-    summary: string;
-  }>;
-  volume?: string;
-  seed?: number;
-}
-
-export interface PickTemplatesResponse {
-  success: boolean;
-  data?: {
-    slides: Array<{
-      title: string;
-      summary: string;
-      protoId: string;
-      volume?: string;
-      seed?: number;
-    }>;
-  };
-  error?: string;
-}
-
 export const pickSlideTemplates = async (
   data: PickTemplatesRequest
 ): Promise<PickTemplatesResponse> => {
@@ -670,3 +854,197 @@ export const TONE_OPTIONS = [
   "academic",
   "creative",
 ] as const;
+
+// ==================== Новые API функции ====================
+
+// Базовая функция для multipart запросов
+const makeMultipartRequest = async <T>(
+  endpoint: string,
+  files: FileList | File[]
+): Promise<T> => {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://presentology-back-production.up.railway.app";
+  const token = getAuthToken();
+
+  if (!token) {
+    throw new Error("Требуется авторизация");
+  }
+
+  const formData = new FormData();
+
+  // Добавляем все файлы
+  if (files instanceof FileList) {
+    for (let i = 0; i < files.length; i++) {
+      formData.append("files", files[i]);
+    }
+  } else {
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+  }
+
+  const response = await fetch(`${baseUrl}/ai-proxy/${endpoint}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.message ||
+        `API Error: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return response.json();
+};
+
+// 1. Извлечение файлов
+export const extractFiles = async (
+  files: FileList | File[]
+): Promise<ExtractFilesResponse> => {
+  return makeMultipartRequest<ExtractFilesResponse>("files/extract", files);
+};
+
+// 2. Генерация брифа
+export const generateBrief = async (
+  data: GenerateBriefRequest
+): Promise<GenerateBriefResponse> => {
+  return makeApiRequest<GenerateBriefResponse>("openai/brief", data);
+};
+
+// 3. Анализ структуры
+export const analyzeStructure = async (
+  data: AnalyzeStructureRequest
+): Promise<AnalyzeStructureResponse> => {
+  return makeApiRequest<AnalyzeStructureResponse>(
+    "openai/analyze-structure",
+    data
+  );
+};
+
+// 4. Выбор структуры
+export const selectStructureNew = async (
+  data: SelectStructureRequest
+): Promise<SelectStructureResponse> => {
+  return makeApiRequest<SelectStructureResponse>(
+    "v1/create/structure/select",
+    data
+  );
+};
+
+// 5. Создание названия и черновых слайдов
+export const createTitleAndSlidesNew = async (
+  data: CreateTitleAndSlidesRequestNew
+): Promise<CreateTitleAndSlidesResponseNew> => {
+  return makeApiRequest<CreateTitleAndSlidesResponseNew>(
+    "v1/create/title-and-slides",
+    data
+  );
+};
+
+// 6. Добавление слайда к структуре
+export const addSlideToStructureNew = async (
+  data: AddSlideToStructureRequest
+): Promise<AddSlideToStructureResponse> => {
+  return makeApiRequest<AddSlideToStructureResponse>(
+    "v1/create/structure/add-slide",
+    data
+  );
+};
+
+// 7. ГЛАВНАЯ ФУНКЦИЯ: Создание презентации из брифа
+export const createDeckFromBrief = async (
+  data: CreateDeckFromBriefRequest
+): Promise<CreateDeckFromBriefResponse> => {
+  return makeApiRequest<CreateDeckFromBriefResponse>(
+    "v1/create/deck-from-brief",
+    data
+  );
+};
+
+// ==================== React Query хуки для новых API ====================
+
+// Хук для извлечения файлов
+export const useExtractFiles = () => {
+  return useMutation({
+    mutationFn: extractFiles,
+    onError: (error) => {
+      console.error("Error extracting files:", error);
+    },
+  });
+};
+
+// Хук для генерации брифа
+export const useGenerateBrief = () => {
+  return useMutation({
+    mutationFn: generateBrief,
+    onError: (error) => {
+      console.error("Error generating brief:", error);
+    },
+  });
+};
+
+// Хук для анализа структуры
+export const useAnalyzeStructure = () => {
+  return useMutation({
+    mutationFn: analyzeStructure,
+    onError: (error) => {
+      console.error("Error analyzing structure:", error);
+    },
+  });
+};
+
+// Хук для выбора структуры
+export const useSelectStructureNew = () => {
+  return useMutation({
+    mutationFn: selectStructureNew,
+    onError: (error) => {
+      console.error("Error selecting structure:", error);
+    },
+  });
+};
+
+// Хук для создания названия и черновых слайдов
+export const useCreateTitleAndSlidesNew = () => {
+  return useMutation({
+    mutationFn: createTitleAndSlidesNew,
+    onError: (error) => {
+      console.error("Error creating title and slides:", error);
+    },
+  });
+};
+
+// Хук для добавления слайда к структуре
+export const useAddSlideToStructureNew = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: addSlideToStructureNew,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["structure"] });
+    },
+    onError: (error) => {
+      console.error("Error adding slide to structure:", error);
+    },
+  });
+};
+
+// ГЛАВНЫЙ ХУК: Создание презентации из брифа
+export const useCreateDeckFromBrief = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createDeckFromBrief,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["presentations"] });
+    },
+    onError: (error) => {
+      console.error("Error creating deck from brief:", error);
+    },
+  });
+};

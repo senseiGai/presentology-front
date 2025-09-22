@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { usePresentationCreationStore } from "../../model/usePresentationCreationStore";
 import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
 import {
@@ -53,6 +53,9 @@ export const StructureStep: React.FC<StructureStepProps> = ({
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
+  // Ref для предотвращения повторных вызовов API
+  const hasCalledApi = useRef(false);
+
   // Используем данные из store
   const slides = uiSlides || [];
   const presentationTitle = deckTitle || "Название презентации";
@@ -82,9 +85,11 @@ export const StructureStep: React.FC<StructureStepProps> = ({
   // Автоматический вызов API для выбора структуры при загрузке компонента
   useEffect(() => {
     const autoGenerateStructure = async () => {
-      if (!brief || hasGeneratedStructure) {
+      if (!brief || hasCalledApi.current) {
         return;
       }
+
+      hasCalledApi.current = true;
 
       try {
         setIsLoading(true);
@@ -103,7 +108,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
             files: extractedFiles || [],
           },
           ...(slideCountMode === "fixed" && slideCount
-            ? { slideCount: slideCount }
+            ? { slideCount: slideCount.toString() }
             : {}),
         };
 
@@ -116,6 +121,19 @@ export const StructureStep: React.FC<StructureStepProps> = ({
         const chosenStructure =
           structureResult.chosenStructure ||
           (structureResult as any).data?.chosenStructure;
+
+        const structureText =
+          structureResult.structureText ||
+          (structureResult as any).data?.structureText;
+
+        // Извлекаем название презентации из structureText
+        if (structureText) {
+          const titleMatch = structureText.match(/^(.+?)\s*\(/);
+          if (titleMatch) {
+            const presentationTitle = titleMatch[1].trim();
+            setDeckTitle(presentationTitle);
+          }
+        }
 
         if (chosenStructure) {
           const structureLines = chosenStructure
@@ -139,26 +157,66 @@ export const StructureStep: React.FC<StructureStepProps> = ({
           setTimeout(() => {
             setVisibleSlidesCount(structureSlides.length);
           }, 100);
+
+          // Шаг 2: Генерация названия и детальных слайдов (title+summary)
+          try {
+            const titleAndSlidesRequest = {
+              userData: {
+                topic: brief.topic,
+                goal: brief.goal,
+                audience: brief.audience,
+                keyIdea: brief.keyIdea,
+                expectedAction: brief.expectedAction,
+                tones: brief.tones,
+                files: extractedFiles || [],
+              },
+              chosenStructure: chosenStructure,
+            };
+
+            const titleAndSlidesResult =
+              await createTitleAndSlidesMutation.mutateAsync(
+                titleAndSlidesRequest
+              );
+
+            // Обновляем название презентации
+            if (titleAndSlidesResult.title) {
+              setDeckTitle(titleAndSlidesResult.title);
+            }
+
+            // Обновляем слайды с детальными данными
+            if (
+              titleAndSlidesResult.slides &&
+              titleAndSlidesResult.slides.length > 0
+            ) {
+              setUiSlides(titleAndSlidesResult.slides);
+
+              // Обновляем visibleSlidesCount для новых слайдов
+              setTimeout(() => {
+                setVisibleSlidesCount(titleAndSlidesResult.slides.length);
+              }, 200);
+            }
+          } catch (titleError) {
+            console.error(
+              "StructureStep: Error generating title and slides:",
+              titleError
+            );
+            // Оставляем структурные слайды в случае ошибки
+          }
         }
       } catch (error) {
         console.error(
           "StructureStep: Error during automatic structure generation:",
           error
         );
-        setHasGeneratedStructure(false); // Сбрасываем флаг при ошибке
+        hasCalledApi.current = false; // Сбрасываем флаг при ошибке, чтобы можно было повторить
+        setHasGeneratedStructure(false);
       } finally {
         setIsLoading(false);
       }
     };
 
     autoGenerateStructure();
-  }, [
-    brief,
-    slideCountMode,
-    extractedFiles,
-    slideCount,
-    hasGeneratedStructure,
-  ]);
+  }, [brief]); // Только brief в зависимостях
 
   useEffect(() => {
     // Показываем все слайды сразу после их загрузки

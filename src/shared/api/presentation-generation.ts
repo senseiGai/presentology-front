@@ -97,7 +97,7 @@ export interface AnalyzeStructureResponse {
 // 4. Выбор структуры
 export interface SelectStructureRequest {
   mode: "auto" | "fixed";
-  slideCount?: number;
+  slideCount?: string; // API ожидает строку
   userData: {
     topic: string;
     goal: string;

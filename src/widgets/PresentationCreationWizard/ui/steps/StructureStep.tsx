@@ -15,6 +15,12 @@ interface StructureStepProps {
   onBack: () => void;
 }
 
+interface SlideItem {
+  id: number;
+  title: string;
+  description: string;
+}
+
 export const StructureStep: React.FC<StructureStepProps> = ({
   onNext,
   onBack,
@@ -40,15 +46,10 @@ export const StructureStep: React.FC<StructureStepProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasGeneratedStructure, setHasGeneratedStructure] = useState(false);
   const [visibleSlidesCount, setVisibleSlidesCount] = useState(0);
-  const [slides, setSlides] = useState([
-    { id: 1, title: "Заголовок", description: "Описание слайда" },
-    { id: 2, title: "Заголовок", description: "Описание слайда" },
-    { id: 3, title: "Заголовок", description: "Описание слайда" },
-    { id: 4, title: "Заголовок", description: "Описание слайда" },
-    { id: 5, title: "Заголовок", description: "Описание слайда" },
-    { id: 6, title: "Заголовок", description: "Описание слайда" },
-    { id: 7, title: "Заголовок", description: "Описание слайда" },
-  ]);
+  const [presentationTitle, setPresentationTitle] = useState(
+    "Название презентации"
+  );
+  const [slides, setSlides] = useState<SlideItem[]>([]);
 
   useEffect(() => {
     // Add custom CSS animation
@@ -125,44 +126,26 @@ export const StructureStep: React.FC<StructureStepProps> = ({
           structureResult
         );
 
-        // Шаг 2: Создание заголовка и слайдов
-        const titleAndSlidesRequest = {
-          userData: {
-            topic: brief.topic,
-            goal: brief.goal,
-            audience: brief.audience,
-            keyIdea: brief.keyIdea,
-            expectedAction: brief.expectedAction,
-            tones: brief.tones,
-            files: extractedFiles || [],
-          },
-          chosenStructure: structureResult.chosenStructure,
-        };
+        // Парсим структуру и создаем слайды из chosenStructure
+        if (structureResult.chosenStructure) {
+          const structureLines = structureResult.chosenStructure
+            .split("\n")
+            .filter((line) => line.trim())
+            .filter((line) => /^\d+\./.test(line.trim())); // Только строки, начинающиеся с номера
 
-        console.log(
-          "StructureStep: Calling createTitleAndSlides API with:",
-          titleAndSlidesRequest
-        );
-        const titleAndSlidesResult =
-          await createTitleAndSlidesMutation.mutateAsync(titleAndSlidesRequest);
-        console.log(
-          "StructureStep: Title and slides result:",
-          titleAndSlidesResult
-        );
-
-        // Обновляем слайды из API результата
-        if (titleAndSlidesResult.slides) {
-          const formattedSlides = titleAndSlidesResult.slides.map(
-            (slide: any, index: number) => ({
+          const structureSlides = structureLines.map((line, index) => {
+            const title = line.replace(/^\d+\.\s*/, "").trim(); // Убираем номер
+            return {
               id: index + 1,
-              title: slide.title || "Заголовок",
-              description: slide.summary || "Описание слайда",
-            })
-          );
-          setSlides(formattedSlides);
+              title: title || "Заголовок",
+              description: "Содержимое будет сгенерировано",
+            };
+          });
+
+          setSlides(structureSlides);
           console.log(
-            "StructureStep: Updated slides with API data:",
-            formattedSlides
+            "StructureStep: Created slides from structure:",
+            structureSlides
           );
         }
       } catch (error) {
@@ -186,25 +169,8 @@ export const StructureStep: React.FC<StructureStepProps> = ({
   ]);
 
   useEffect(() => {
-    // Simulate slides appearing one by one during loading
-    const slideInterval = setInterval(() => {
-      setVisibleSlidesCount((prev) => {
-        if (prev < slides.length) {
-          return prev + 1;
-        }
-        return prev;
-      });
-    }, 400); // Each slide appears after 400ms
-
-    // Complete loading after all slides appear
-    const loadingTimer = setTimeout(() => {
-      setIsLoading(false);
-    }, slides.length * 400 + 1000); // Extra 1 second after last slide
-
-    return () => {
-      clearInterval(slideInterval);
-      clearTimeout(loadingTimer);
-    };
+    // Показываем все слайды сразу после их загрузки
+    setVisibleSlidesCount(slides.length);
   }, [slides.length]);
 
   const handleTextVolumeChange = (volume: "minimal" | "medium" | "large") => {
@@ -277,7 +243,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <h2 className="text-[24px] font-medium text-[#0B0911] leading-[1.3] tracking-[-0.48px]">
-                      Название презы
+                      {presentationTitle}
                     </h2>
                     <button className="w-8 h-8 rounded-lg flex items-center justify-center p-2 ">
                       <svg

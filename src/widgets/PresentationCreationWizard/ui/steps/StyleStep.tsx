@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { usePresentationCreationStore } from "../../model/usePresentationCreationStore";
 import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
 import SquareCheckIcon from "../../../../../public/icons/SquareCheckIcon";
@@ -10,7 +9,6 @@ interface StyleStepProps {
 }
 
 export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
-  const router = useRouter();
   const { presentationData, updatePresentationData } =
     usePresentationCreationStore();
 

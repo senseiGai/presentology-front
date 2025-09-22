@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { PresentationHeader } from "@/features/PresentationHeader";
 import { SlidesSidebar } from "@/features/SlidesSidebar";
 import { SlideCanvas } from "@/features/SlideCanvas";
@@ -20,7 +19,6 @@ import GraphIcon from "../../../../public/icons/GraphIcon";
 import { Mascot } from "@/shared/ui/Mascot";
 
 export const PresentationGenerationBlock = () => {
-  const router = useRouter();
   const {
     currentSlide,
     generatedSlides,
@@ -59,7 +57,8 @@ export const PresentationGenerationBlock = () => {
 
         if (!presentationDataStr) {
           console.error("No presentation data found in localStorage");
-          router.push("/presentation-creation-wizard");
+          // Просто показываем пустой редактор вместо редиректа
+          setIsGenerating(false);
           return;
         }
 
@@ -130,7 +129,8 @@ export const PresentationGenerationBlock = () => {
   ];
 
   const handleBack = () => {
-    router.push("/presentation-creation-wizard");
+    // Убираем редирект, просто логируем
+    console.log("Back button clicked - staying on current page");
   };
 
   const handleDownload = () => {

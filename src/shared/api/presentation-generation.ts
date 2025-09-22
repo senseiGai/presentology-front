@@ -547,7 +547,7 @@ export const addSlideToStructure = async (
   data: AddSlideRequest
 ): Promise<AddSlideResponse> => {
   return makeApiRequest<AddSlideResponse>(
-    "v1/create/structure/add-slide",
+    "api/v1/create/structure/add-slide",
     data
   );
 };
@@ -596,7 +596,7 @@ export const generateSlidesForStructure = async (
   data: GenerateSlidesRequest
 ): Promise<GenerateSlidesResponse> => {
   return makeApiRequest<GenerateSlidesResponse>(
-    "v1/create/structure/generate-slides",
+    "api/v1/create/structure/generate-slides",
     data
   );
 };

@@ -932,7 +932,7 @@ export const selectStructureNew = async (
   data: SelectStructureRequest
 ): Promise<SelectStructureResponse> => {
   return makeApiRequest<SelectStructureResponse>(
-    "v1/create/structure/select",
+    "api/v1/create/structure/select",
     data
   );
 };
@@ -942,7 +942,7 @@ export const createTitleAndSlidesNew = async (
   data: CreateTitleAndSlidesRequestNew
 ): Promise<CreateTitleAndSlidesResponseNew> => {
   return makeApiRequest<CreateTitleAndSlidesResponseNew>(
-    "v1/create/title-and-slides",
+    "api/v1/create/title-and-slides",
     data
   );
 };
@@ -952,7 +952,7 @@ export const addSlideToStructureNew = async (
   data: AddSlideToStructureRequest
 ): Promise<AddSlideToStructureResponse> => {
   return makeApiRequest<AddSlideToStructureResponse>(
-    "v1/create/structure/add-slide",
+    "api/v1/create/structure/add-slide",
     data
   );
 };
@@ -962,7 +962,7 @@ export const createDeckFromBrief = async (
   data: CreateDeckFromBriefRequest
 ): Promise<CreateDeckFromBriefResponse> => {
   return makeApiRequest<CreateDeckFromBriefResponse>(
-    "v1/create/deck-from-brief",
+    "api/v1/create/deck-from-brief",
     data
   );
 };

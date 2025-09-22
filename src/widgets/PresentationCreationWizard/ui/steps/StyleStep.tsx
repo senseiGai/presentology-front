@@ -108,8 +108,9 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
       JSON.stringify(presentationData)
     );
 
-    // Переходим на страницу генерации презентации
-    router.push("/presentation-generation");
+    // Показываем сообщение об успешном создании
+    console.log("Presentation data prepared successfully:", presentationData);
+    alert("Презентация подготовлена! Данные сохранены.");
   };
 
   return (

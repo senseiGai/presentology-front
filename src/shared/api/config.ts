@@ -1,6 +1,6 @@
 "use client";
 import axios from "axios";
-import { useAuthStore } from "@/shared/stores";
+import { useAuthStore, forceLogout } from "@/shared/stores";
 
 export const API_BASE_URL =
   "https://presentology-back-production.up.railway.app/";
@@ -58,16 +58,26 @@ apiClient.interceptors.response.use(
 
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      console.log("🔄 [API Response] 401 error, attempting token refresh...");
-      originalRequest._retry = true;
+    // Если ошибка 401 (токен устарел)
+    if (error.response?.status === 401) {
+      console.log("🔄 [API Response] 401 error detected - token expired");
 
+      // Если это не первая попытка refresh
+      if (originalRequest._retry) {
+        console.log(
+          "❌ [API Response] Token refresh already failed, logging out"
+        );
+        forceLogout("Token refresh retry failed");
+        return Promise.reject(error);
+      }
+
+      originalRequest._retry = true;
       const authStore = useAuthStore.getState();
       const refreshToken = authStore.refreshToken;
 
       if (refreshToken) {
         try {
-          console.log("🔄 [API Response] Refreshing token...");
+          console.log("🔄 [API Response] Attempting token refresh...");
           const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
             refreshToken,
           });
@@ -75,9 +85,10 @@ apiClient.interceptors.response.use(
           const { access_token, refresh_token } = response.data;
 
           // Обновляем токены в Zustand store
-          authStore.setTokens(access_token, refresh_token || "");
+          authStore.setTokens(access_token, refresh_token || refreshToken);
           console.log("✅ [API Response] Token refreshed successfully");
 
+          // Повторяем оригинальный запрос с новым токеном
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
           return apiClient(originalRequest);
         } catch (refreshError) {
@@ -85,17 +96,27 @@ apiClient.interceptors.response.use(
             "❌ [API Response] Token refresh failed:",
             refreshError
           );
-          // Очищаем store при ошибке обновления токена
-          authStore.logout();
-          window.location.href = "/login";
+
+          // Используем централизованную функцию logout
+          forceLogout("Token refresh failed");
           return Promise.reject(refreshError);
         }
       } else {
-        console.log("❌ [API Response] No refresh token, logging out");
-        // Нет refresh токена - разлогиниваем
-        authStore.logout();
-        window.location.href = "/login";
+        console.log(
+          "❌ [API Response] No refresh token available, logging out"
+        );
+
+        // Используем централизованную функцию logout
+        forceLogout("No refresh token available");
+        return Promise.reject(error);
       }
+    }
+
+    // Если ошибка 403 (токен недействителен)
+    if (error.response?.status === 403) {
+      console.log("❌ [API Response] 403 error - token invalid, logging out");
+      forceLogout("Token invalid (403)");
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);

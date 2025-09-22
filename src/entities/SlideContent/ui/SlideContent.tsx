@@ -133,9 +133,10 @@ export const SlideContent: React.FC<SlideContentProps> = ({
         }
         break;
       default:
-        // Center the text in the slide (759x427)
-        // Approximate center position accounting for text size
-        initializeElementPosition(`slide-${slideNumber}-text`, 350, 200);
+        // Initialize positions for slide title, text1, and text2
+        initializeElementPosition(`slide-${slideNumber}-title`, 40, 40);
+        initializeElementPosition(`slide-${slideNumber}-text1`, 40, 100);
+        initializeElementPosition(`slide-${slideNumber}-text2`, 40, 180);
         break;
     }
   }, [slideType, slideNumber, textElementStyles, updateTextElementStyle]);
@@ -151,7 +152,11 @@ export const SlideContent: React.FC<SlideContentProps> = ({
         slideElementIds.push("title-main", "title-sub");
         break;
       default:
-        slideElementIds.push(`slide-${slideNumber}-text`);
+        slideElementIds.push(
+          `slide-${slideNumber}-title`,
+          `slide-${slideNumber}-text1`,
+          `slide-${slideNumber}-text2`
+        );
         break;
     }
 
@@ -742,24 +747,75 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             onMouseLeave={handleMouseLeave}
             style={{ position: "relative" }}
           >
+            {/* Render slide title if exists */}
             <ResizableTextBox
               isSelected={selectedTextElements.includes(
-                `slide-${slideNumber}-text`
+                `slide-${slideNumber}-title`
               )}
-              elementId={`slide-${slideNumber}-text`}
+              elementId={`slide-${slideNumber}-title`}
               onDelete={handleTextDelete}
-              onCopy={() => handleTextCopy(`slide-${slideNumber}-text`)}
-              onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-text`)}
-              onMoveDown={() => handleTextMoveDown(`slide-${slideNumber}-text`)}
+              onCopy={() => handleTextCopy(`slide-${slideNumber}-title`)}
+              onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-title`)}
+              onMoveDown={() => handleTextMoveDown(`slide-${slideNumber}-title`)}
             >
               <EditableText
-                elementId={`slide-${slideNumber}-text`}
-                initialText={`Слайд ${slideNumber}`}
-                className="text-[#6B7280] text-[18px] cursor-pointer transition-colors text-center"
+                elementId={`slide-${slideNumber}-title`}
+                initialText={`Слайд ${slideNumber} - Заголовок`}
+                className="text-[#1F2937] text-[24px] font-bold cursor-pointer transition-colors"
                 onClick={(e) => {
                   handleTextClick(
-                    `slide-${slideNumber}-text`,
-                    `Слайд ${slideNumber}`,
+                    `slide-${slideNumber}-title`,
+                    getTextElementContent(`slide-${slideNumber}-title`) || `Слайд ${slideNumber} - Заголовок`,
+                    e
+                  );
+                }}
+              />
+            </ResizableTextBox>
+
+            {/* Render slide text1 if exists */}
+            <ResizableTextBox
+              isSelected={selectedTextElements.includes(
+                `slide-${slideNumber}-text1`
+              )}
+              elementId={`slide-${slideNumber}-text1`}
+              onDelete={handleTextDelete}
+              onCopy={() => handleTextCopy(`slide-${slideNumber}-text1`)}
+              onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-text1`)}
+              onMoveDown={() => handleTextMoveDown(`slide-${slideNumber}-text1`)}
+            >
+              <EditableText
+                elementId={`slide-${slideNumber}-text1`}
+                initialText="Основной текст слайда"
+                className="text-[#374151] text-[16px] cursor-pointer transition-colors"
+                onClick={(e) => {
+                  handleTextClick(
+                    `slide-${slideNumber}-text1`,
+                    getTextElementContent(`slide-${slideNumber}-text1`) || "Основной текст слайда",
+                    e
+                  );
+                }}
+              />
+            </ResizableTextBox>
+
+            {/* Render slide text2 if exists */}
+            <ResizableTextBox
+              isSelected={selectedTextElements.includes(
+                `slide-${slideNumber}-text2`
+              )}
+              elementId={`slide-${slideNumber}-text2`}
+              onDelete={handleTextDelete}
+              onCopy={() => handleTextCopy(`slide-${slideNumber}-text2`)}
+              onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-text2`)}
+              onMoveDown={() => handleTextMoveDown(`slide-${slideNumber}-text2`)}
+            >
+              <EditableText
+                elementId={`slide-${slideNumber}-text2`}
+                initialText="Дополнительный текст слайда"
+                className="text-[#6B7280] text-[14px] cursor-pointer transition-colors"
+                onClick={(e) => {
+                  handleTextClick(
+                    `slide-${slideNumber}-text2`,
+                    getTextElementContent(`slide-${slideNumber}-text2`) || "Дополнительный текст слайда",
                     e
                   );
                 }}

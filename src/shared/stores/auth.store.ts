@@ -86,6 +86,20 @@ export const useAuthStore = create<AuthStore>()(
         } finally {
           // Очищаем все данные
           get().clearAuth();
+
+          // Дополнительная очистка localStorage
+          if (typeof window !== "undefined") {
+            // Полная очистка localStorage
+            localStorage.clear();
+
+            // Или селективная очистка (закомментировано):
+            // const keysToKeep = ['theme', 'language']; // ключи, которые хотим сохранить
+            // Object.keys(localStorage).forEach(key => {
+            //   if (!keysToKeep.includes(key)) {
+            //     localStorage.removeItem(key);
+            //   }
+            // });
+          }
         }
       },
 
@@ -154,9 +168,29 @@ export const useAuthStore = create<AuthStore>()(
 
         // Очищаем localStorage
         if (typeof window !== "undefined") {
+          // Удаляем конкретные ключи auth данных
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("user");
+
+          // Удаляем данные Zustand persist
+          localStorage.removeItem("auth-storage");
+
+          // Удаляем данные презентаций (если нужно)
+          localStorage.removeItem("presentationGenerationData");
+
+          // Удаляем другие связанные данные
+          Object.keys(localStorage).forEach((key) => {
+            if (
+              key.includes("token") ||
+              key.includes("auth") ||
+              key.includes("presentation")
+            ) {
+              localStorage.removeItem(key);
+            }
+          });
+
+          console.log("🧹 [Auth] localStorage cleared on token expiration");
         }
       },
 
@@ -188,4 +222,20 @@ export const useAuthStore = create<AuthStore>()(
 export const getAuthToken = (): string | null => {
   const state = useAuthStore.getState();
   return state.accessToken;
+};
+
+// Helper функция для принудительного logout при ошибках токена
+export const forceLogout = (reason = "Token expired") => {
+  console.log(`🚪 [Auth] Force logout: ${reason}`);
+
+  const authStore = useAuthStore.getState();
+  authStore.clearAuth();
+
+  // Полная очистка localStorage
+  if (typeof window !== "undefined") {
+    localStorage.clear();
+
+    // Перенаправляем на страницу входа
+    window.location.href = "/login";
+  }
 };

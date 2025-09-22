@@ -293,10 +293,12 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
 
     // Также удаляем из extractedFiles по имени файла
-    const updatedExtracted = extractedFiles.filter(
-      (ef) => ef.name !== removedFile.name
-    );
-    setExtractedFiles(updatedExtracted);
+    if (extractedFiles) {
+      const updatedExtracted = extractedFiles.filter(
+        (ef) => ef.name !== removedFile.name
+      );
+      setExtractedFiles(updatedExtracted);
+    }
   };
 
   const handleSliderMouseDown = (e: React.MouseEvent) => {
@@ -770,7 +772,7 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
               )}
 
               {/* Показать информацию об извлеченных данных */}
-              {extractedFiles.length > 0 && (
+              {extractedFiles && extractedFiles.length > 0 && (
                 <div className="mt-2 text-sm text-green-600">
                   Извлечен текст из {extractedFiles.length} файла(ов)
                 </div>

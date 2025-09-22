@@ -78,16 +78,18 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
 
       if (
         response.success &&
-        response.data?.slides &&
-        response.data.slides.length > 0
+        response.data?.uiSlides &&
+        response.data.uiSlides.length > 0
       ) {
-        const protoId = response.data.slides[0].protoId;
-        console.log(`✅ Got template for slide: ${protoId}`);
-        return [protoId];
-      } else {
-        console.warn(`⚠️ No templates found for slide: ${title}`);
-        return ["proto_118"]; // fallback
+        const protoId = response.data.uiSlides[0].protoId;
+        if (protoId) {
+          console.log(`✅ Got template for slide: ${protoId}`);
+          return [protoId];
+        }
       }
+
+      console.warn(`⚠️ No templates found for slide: ${title}`);
+      return ["proto_118"]; // fallback
     } catch (error) {
       console.error(`❌ Error getting templates for slide: ${title}`, error);
       return ["proto_118"]; // fallback

@@ -160,6 +160,9 @@ export interface PresentationState {
   historyIndex: number;
   maxHistorySize: number;
 
+  // Template HTML storage
+  slideTemplates: Record<string, string>; // Store HTML templates by template ID
+
   // Actions
   setCurrentSlide: (slide: number) => void;
   setTotalSlides: (total: number) => void;
@@ -312,6 +315,10 @@ export interface PresentationState {
   canRedo: () => boolean;
   saveToHistory: () => void;
   addToHistory: (action: HistoryAction) => void;
+
+  // Template actions
+  setSlideTemplates: (templates: Record<string, string>) => void;
+  setSlideTemplate: (templateId: string, html: string) => void;
 }
 
 const initialState = {
@@ -363,6 +370,9 @@ const initialState = {
   history: [],
   historyIndex: -1,
   maxHistorySize: 50,
+
+  // Template HTML storage
+  slideTemplates: {},
 
   // Navigation functions
   scrollToSlideInCanvas: undefined,
@@ -1900,6 +1910,24 @@ export const usePresentationStore = create<PresentationState>()(
       canRedo: () => {
         const state = get();
         return state.historyIndex < state.history.length - 1;
+      },
+
+      // Template actions
+      setSlideTemplates: (templates: Record<string, string>) => {
+        set((state) => ({
+          ...state,
+          slideTemplates: templates,
+        }));
+      },
+
+      setSlideTemplate: (templateId: string, html: string) => {
+        set((state) => ({
+          ...state,
+          slideTemplates: {
+            ...state.slideTemplates,
+            [templateId]: html,
+          },
+        }));
       },
     };
   })

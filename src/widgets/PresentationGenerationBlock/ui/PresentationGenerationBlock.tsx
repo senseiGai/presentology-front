@@ -9,7 +9,10 @@ import { SlideContent, getSlideType } from "@/entities/SlideContent";
 import { SlidePreviewContent } from "@/entities/SlidePreviewContent";
 import { type ElementOption } from "@/features/ElementSelector";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
-import { useGenerateSlidesForStructureNew } from "@/shared/api/presentation-generation";
+import {
+  useGenerateSlidesForStructureNew,
+  getMultipleTemplates,
+} from "@/shared/api/presentation-generation";
 
 import SideBarIcon from "../../../../public/icons/SideBarIcon";
 import AlphabetIcon from "../../../../public/icons/AlphabetIcon";
@@ -27,6 +30,7 @@ export const PresentationGenerationBlock = () => {
     isToolsPanelCollapsed,
     toggleSidebar,
     setIsGenerating,
+    setSlideTemplates,
   } = usePresentationStore();
 
   // API хук для генерации презентации
@@ -79,6 +83,25 @@ export const PresentationGenerationBlock = () => {
 
         console.log("Presentation generated successfully:", result);
 
+        // Получаем templateIds из результата
+        const templateIds = result.templateIds || [];
+        console.log("Template IDs from API:", templateIds);
+
+        // Загружаем HTML шаблоны, если есть templateIds
+        if (templateIds.length > 0) {
+          setGenerationStatus("Загрузка шаблонов...");
+          setGenerationProgress(75);
+
+          try {
+            const templates = await getMultipleTemplates(templateIds);
+            console.log("Templates loaded:", Object.keys(templates));
+            setSlideTemplates(templates);
+          } catch (templateError) {
+            console.error("Error loading templates:", templateError);
+            // Продолжаем даже если шаблоны не загрузились
+          }
+        }
+
         // Сохраняем полный результат API в localStorage для редактора
         const generatedPresentation = {
           ...result, // Save the complete API response
@@ -90,6 +113,7 @@ export const PresentationGenerationBlock = () => {
           JSON.stringify(generatedPresentation)
         );
 
+        setGenerationProgress(100);
         // Завершаем процесс генерации - показываем обычный интерфейс
         setIsGenerating(false);
       } catch (error) {

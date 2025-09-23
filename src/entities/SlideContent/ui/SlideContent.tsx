@@ -6,6 +6,7 @@ import { ResizableTable } from "@/shared/ui/ResizableTable";
 import { EditableTable } from "@/features/TablePanel/ui/EditableTable";
 import { ResizableImageBox } from "@/shared/ui/ResizableImageBox";
 import { ResizableInfographicsBox } from "@/shared/ui/ResizableInfographicsBox";
+import { TemplateRenderer } from "@/entities/TemplateRenderer";
 
 interface SlideContentProps {
   slideNumber: number;
@@ -61,6 +62,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     setSelectedInfographicsElement,
     deleteInfographicsElement,
     copyTableElement,
+    // Template state
+    slideTemplates,
   } = usePresentationStore();
 
   // Get image area selection for current slide
@@ -706,6 +709,45 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   };
 
   const renderSlideByType = () => {
+    // Проверяем, есть ли HTML шаблон для текущего слайда
+    const slideTemplateKey = Object.keys(slideTemplates).find((templateId) => {
+      // Попробуем найти шаблон по разным возможным именам
+      return (
+        templateId === `slide_${slideNumber.toString().padStart(3, "0")}` ||
+        templateId === `proto_${slideNumber.toString().padStart(3, "0")}` ||
+        templateId === `slide_${slideNumber}` ||
+        templateId === `proto_${slideNumber}`
+      );
+    });
+
+    if (slideTemplateKey && slideTemplates[slideTemplateKey]) {
+      console.log(
+        `Rendering HTML template for slide ${slideNumber}:`,
+        slideTemplateKey
+      );
+      return (
+        <div
+          className={`slide-container mx-auto w-[759px] h-[427px] bg-white rounded-[12px] overflow-hidden ${
+            isImageAreaSelectionMode ? "cursor-crosshair" : ""
+          }`}
+          onClick={handleSlideClick}
+          onDoubleClick={handleDoubleClick}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          style={{ position: "relative" }}
+        >
+          <TemplateRenderer
+            html={slideTemplates[slideTemplateKey]}
+            templateId={slideTemplateKey}
+            className="w-full h-full"
+          />
+        </div>
+      );
+    }
+
+    // Если нет HTML шаблона, рендерим обычный слайд
     switch (slideType) {
       case "title":
         return (

@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { getAuthToken } from "@/shared/stores/auth.store";
 
 // ==================== Базовые типы ====================
@@ -1141,5 +1141,117 @@ export const useGenerateSlidesForStructureNew = () => {
     onError: (error) => {
       console.error("Error generating slides for structure:", error);
     },
+  });
+};
+
+// ==================== Template API Functions ====================
+
+// Получение HTML шаблона по ID
+export const getTemplateHtml = async (templateId: string): Promise<string> => {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://presentology-back-production.up.railway.app";
+
+  const token = getAuthToken();
+
+  if (!token) {
+    throw new Error("Требуется авторизация для выполнения запроса");
+  }
+
+  const response = await fetch(`${baseUrl}/api/v1/templates/${templateId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch template ${templateId}: ${response.statusText}`
+    );
+  }
+
+  return response.text(); // Возвращаем HTML как строку
+};
+
+// Заполнение шаблона данными
+export const fillTemplate = async (
+  templateId: string,
+  data: Record<string, any>
+): Promise<string> => {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://presentology-back-production.up.railway.app";
+
+  const token = getAuthToken();
+
+  if (!token) {
+    throw new Error("Требуется авторизация для выполнения запроса");
+  }
+
+  const response = await fetch(
+    `${baseUrl}/api/v1/templates/${templateId}/fill`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fill template ${templateId}: ${response.statusText}`
+    );
+  }
+
+  return response.text(); // Возвращаем заполненный HTML как строку
+};
+
+// Пакетное получение шаблонов
+export const getMultipleTemplates = async (
+  templateIds: string[]
+): Promise<Record<string, string>> => {
+  const templatePromises = templateIds.map(async (id) => {
+    try {
+      const html = await getTemplateHtml(id);
+      return { id, html };
+    } catch (error) {
+      console.error(`Failed to fetch template ${id}:`, error);
+      return { id, html: null };
+    }
+  });
+
+  const results = await Promise.all(templatePromises);
+
+  return results.reduce((acc, { id, html }) => {
+    if (html) {
+      acc[id] = html;
+    }
+    return acc;
+  }, {} as Record<string, string>);
+};
+
+// React Query хуки для шаблонов
+export const useGetTemplateHtml = (templateId: string) => {
+  return useQuery({
+    queryKey: ["template", templateId],
+    queryFn: () => getTemplateHtml(templateId),
+    enabled: !!templateId,
+  });
+};
+
+export const useFillTemplate = () => {
+  return useMutation({
+    mutationFn: ({
+      templateId,
+      data,
+    }: {
+      templateId: string;
+      data: Record<string, any>;
+    }) => fillTemplate(templateId, data),
   });
 };

@@ -1158,7 +1158,7 @@ export const getTemplateHtml = async (templateId: string): Promise<string> => {
     throw new Error("Требуется авторизация для выполнения запроса");
   }
 
-  const response = await fetch(`${baseUrl}/api/v1/templates/${templateId}`, {
+  const response = await fetch(`${baseUrl}/templates/${templateId}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -1190,17 +1190,14 @@ export const fillTemplate = async (
     throw new Error("Требуется авторизация для выполнения запроса");
   }
 
-  const response = await fetch(
-    `${baseUrl}/api/v1/templates/${templateId}/fill`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(data),
-    }
-  );
+  const response = await fetch(`${baseUrl}/templates/${templateId}/fill`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
 
   if (!response.ok) {
     throw new Error(
@@ -1253,5 +1250,84 @@ export const useFillTemplate = () => {
       templateId: string;
       data: Record<string, any>;
     }) => fillTemplate(templateId, data),
+  });
+};
+
+// ==================== Рендер слайдов с данными ====================
+
+export interface SlideRenderData {
+  title?: string;
+  subtitle?: string;
+  text1?: { t1?: string; t2?: string };
+  text2?: { t1?: string; t2?: string };
+  text3?: { t1?: string; t2?: string };
+  _images?: string[];
+}
+
+export interface RenderedSlide {
+  slideNumber: number;
+  templateId: string;
+  html: string;
+}
+
+export const renderSlidesWithData = async (data: {
+  slides: SlideRenderData[];
+  templateIds: string[];
+}): Promise<RenderedSlide[]> => {
+  const token = getAuthToken();
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://presentology-back-production.up.railway.app";
+
+  console.log("🎨 [API] Rendering slides with data", {
+    slidesCount: data.slides?.length,
+    templateIds: data.templateIds,
+    baseUrl,
+  });
+
+  const response = await fetch(`${baseUrl}/ai-proxy/slides/render-with-data`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.text();
+    console.error("❌ [API] Failed to render slides", {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorData,
+    });
+    throw new Error(`Failed to render slides: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  console.log("✅ [API] Slides rendered successfully", {
+    success: result.success,
+    renderedCount: result.renderedSlides?.length,
+    fullResult: result,
+  });
+
+  if (!result.success || !result.renderedSlides) {
+    console.error("❌ [API] Invalid response structure", result);
+    throw new Error("Invalid response from render slides API");
+  }
+
+  if (result.renderedSlides.length === 0) {
+    console.warn("⚠️ [API] No slides were rendered", {
+      requestData: data,
+      response: result,
+    });
+  }
+
+  return result.renderedSlides;
+};
+
+export const useRenderSlidesWithData = () => {
+  return useMutation({
+    mutationFn: renderSlidesWithData,
   });
 };

@@ -54,6 +54,66 @@ export const PresentationGenerationBlock = () => {
       try {
         // Помечаем, что генерация началась
         hasStartedGeneration.current = true;
+
+        // Сначала проверяем, есть ли уже готовая презентация с templateIds в localStorage
+        const existingPresentationStr = localStorage.getItem(
+          "generatedPresentation"
+        );
+        if (existingPresentationStr) {
+          const existingPresentation = JSON.parse(existingPresentationStr);
+          console.log(
+            "Found existing presentation in localStorage:",
+            existingPresentation
+          );
+
+          // Проверяем, есть ли templateIds в существующих данных
+          const existingTemplateIds =
+            existingPresentation?.data?.templateIds ||
+            existingPresentation?.templateIds;
+          if (existingTemplateIds && existingTemplateIds.length > 0) {
+            console.log("Found existing templateIds:", existingTemplateIds);
+
+            setGenerationStatus("Загрузка шаблонов из сохраненных данных...");
+            setGenerationProgress(50);
+
+            try {
+              const templates = await getMultipleTemplates(existingTemplateIds);
+              console.log(
+                "Templates loaded from existing data:",
+                Object.keys(templates)
+              );
+
+              // Создаем маппинг между templateIds и номерами слайдов
+              const slideTemplateMapping: Record<string, string> = {};
+              existingTemplateIds.forEach(
+                (templateId: string, index: number) => {
+                  const slideNumber = index + 1;
+                  const slideKey = `slide_${slideNumber}`;
+                  if (templates[templateId]) {
+                    slideTemplateMapping[slideKey] = templates[templateId];
+                  }
+                }
+              );
+
+              console.log(
+                "Slide template mapping from existing data:",
+                Object.keys(slideTemplateMapping)
+              );
+              setSlideTemplates(slideTemplateMapping);
+              setGenerationProgress(100);
+              setIsGenerating(false);
+              return; // Выходим, так как у нас уже есть все данные
+            } catch (templateError) {
+              console.error(
+                "Error loading templates from existing data:",
+                templateError
+              );
+              // Продолжаем с обычной генерацией
+            }
+          }
+        }
+
+        // Если нет готовых данных с templateIds, продолжаем обычную генерацию
         // Получаем данные из localStorage
         const presentationDataStr = localStorage.getItem(
           "presentationGenerationData"
@@ -84,31 +144,40 @@ export const PresentationGenerationBlock = () => {
         console.log("Presentation generated successfully:", result);
 
         // Получаем templateIds из результата
-        const templateIds = result.templateIds || [];
+        const templateIds =
+          (result as any).data?.templateIds || result.templateIds || [];
         console.log("Template IDs from API:", templateIds);
+        console.log("templateIds.length:", templateIds.length);
 
         // Загружаем HTML шаблоны, если есть templateIds
         if (templateIds.length > 0) {
+          console.log("Starting template loading process...");
           setGenerationStatus("Загрузка шаблонов...");
           setGenerationProgress(75);
 
           try {
+            console.log("Calling getMultipleTemplates with:", templateIds);
             const templates = await getMultipleTemplates(templateIds);
-            console.log("Templates loaded:", Object.keys(templates));
+            console.log(
+              "Templates loaded successfully:",
+              Object.keys(templates)
+            );
+            console.log("Template data:", templates);
 
             // Создаем маппинг между templateIds и номерами слайдов
             // templateIds[0] -> slide 1, templateIds[1] -> slide 2, etc.
             const slideTemplateMapping: Record<string, string> = {};
-            templateIds.forEach((templateId, index) => {
+            templateIds.forEach((templateId: string, index: number) => {
               const slideNumber = index + 1;
               const slideKey = `slide_${slideNumber}`;
               if (templates[templateId]) {
                 slideTemplateMapping[slideKey] = templates[templateId];
+                console.log(`Mapped ${templateId} -> ${slideKey}`);
               }
             });
 
             console.log(
-              "Slide template mapping:",
+              "Final slide template mapping:",
               Object.keys(slideTemplateMapping)
             );
             setSlideTemplates(slideTemplateMapping);
@@ -116,6 +185,8 @@ export const PresentationGenerationBlock = () => {
             console.error("Error loading templates:", templateError);
             // Продолжаем даже если шаблоны не загрузились
           }
+        } else {
+          console.log("No templateIds found in response");
         }
 
         // Сохраняем полный результат API в localStorage для редактора

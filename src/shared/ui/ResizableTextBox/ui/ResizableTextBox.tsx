@@ -283,13 +283,6 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
         setTimeout(() => {
           if (boxRef.current) {
             const rect = boxRef.current.getBoundingClientRect();
-            console.log(
-              `ResizableTextBox ${elementId}: Setting content-based dimensions:`,
-              {
-                contentWidth: rect.width,
-                contentHeight: rect.height,
-              }
-            );
 
             // Use content dimensions or reasonable minimums
             const contentWidth = Math.max(50, rect.width || 100);

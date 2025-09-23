@@ -7,6 +7,7 @@ import { EditableTable } from "@/features/TablePanel/ui/EditableTable";
 import { ResizableImageBox } from "@/shared/ui/ResizableImageBox";
 import { ResizableInfographicsBox } from "@/shared/ui/ResizableInfographicsBox";
 import { TemplateRenderer } from "@/entities/TemplateRenderer";
+import { useRenderSlidesWithData } from "@/shared/api/presentation-generation";
 
 interface SlideContentProps {
   slideNumber: number;
@@ -22,6 +23,13 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   const [editingTableElement, setEditingTableElement] = React.useState<
     string | null
   >(null);
+  const [renderedHtml, setRenderedHtml] = React.useState<string | null>(null);
+  const [isLoadingRender, setIsLoadingRender] = React.useState(false);
+  const [renderedSlides, setRenderedSlides] = React.useState<
+    Record<number, string>
+  >({});
+
+  const renderSlidesWithDataMutation = useRenderSlidesWithData();
 
   const {
     setSelectedTextElement,
@@ -80,6 +88,100 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     console.log("Current textElementStyles:", textElementStyles);
     console.log("selectedTextElement:", selectedTextElement);
   }, [slideNumber, slideType, textElementStyles, selectedTextElement]);
+
+  // Эффект для автоматического рендеринга слайдов с бэкенда
+  React.useEffect(() => {
+    // Проверяем, есть ли уже отрендеренный HTML для этого слайда
+    if (renderedSlides[slideNumber]) {
+      console.log(
+        `🎯 [SlideContent] Using cached HTML for slide ${slideNumber}`
+      );
+      setRenderedHtml(renderedSlides[slideNumber]);
+      return;
+    }
+
+    // Избегаем повторных запросов
+    if (isLoadingRender) {
+      console.log("🔄 [SlideContent] Already loading slides");
+      return;
+    }
+
+    const loadAndRenderSlides = async () => {
+      const generatedPresentationStr = localStorage.getItem(
+        "generatedPresentation"
+      );
+      if (!generatedPresentationStr) {
+        console.log("No presentation data found in localStorage");
+        return;
+      }
+
+      try {
+        const generatedPresentation = JSON.parse(generatedPresentationStr);
+        const slides = generatedPresentation.data?.slides;
+        const templateIds = generatedPresentation.data?.templateIds;
+
+        if (
+          !slides ||
+          !templateIds ||
+          slides.length === 0 ||
+          templateIds.length === 0
+        ) {
+          console.log("No slides or templateIds found in presentation data");
+          return;
+        }
+
+        console.log("🎨 [SlideContent] Starting slide rendering", {
+          slidesCount: slides.length,
+          templateIds,
+          currentSlide: slideNumber,
+        });
+
+        setIsLoadingRender(true);
+
+        // Вызываем API для рендеринга всех слайдов
+        const renderedSlidesResult =
+          await renderSlidesWithDataMutation.mutateAsync({
+            slides,
+            templateIds,
+          });
+
+        console.log(
+          "✅ [SlideContent] Slides rendered successfully",
+          renderedSlidesResult
+        );
+
+        // Сохраняем все отрендеренные слайды в кэш
+        const slidesCache: Record<number, string> = {};
+        renderedSlidesResult.forEach((slide) => {
+          slidesCache[slide.slideNumber] = slide.html;
+        });
+        setRenderedSlides(slidesCache);
+
+        // Находим HTML для текущего слайда
+        const currentSlideHtml = renderedSlidesResult.find(
+          (slide) => slide.slideNumber === slideNumber
+        );
+
+        if (currentSlideHtml) {
+          console.log(`🎯 [SlideContent] Found HTML for slide ${slideNumber}`, {
+            templateId: currentSlideHtml.templateId,
+            htmlLength: currentSlideHtml.html.length,
+          });
+          setRenderedHtml(currentSlideHtml.html);
+        } else {
+          console.warn(
+            `⚠️ [SlideContent] No HTML found for slide ${slideNumber}`
+          );
+        }
+      } catch (error) {
+        console.error("❌ [SlideContent] Failed to render slides", error);
+      } finally {
+        setIsLoadingRender(false);
+      }
+    };
+
+    loadAndRenderSlides();
+  }, [slideNumber]); // Убираем renderSlidesWithDataMutation из зависимостей
 
   // Initialize default positions for elements if they don't exist
   React.useEffect(() => {
@@ -709,22 +811,12 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   };
 
   const renderSlideByType = () => {
-    // Проверяем, есть ли HTML шаблон для текущего слайда
-    const slideTemplateKey = Object.keys(slideTemplates).find((templateId) => {
-      // Попробуем найти шаблон по разным возможным именам
-      return (
-        templateId === `slide_${slideNumber}` ||
-        templateId === `slide_${slideNumber.toString().padStart(3, "0")}` ||
-        templateId === `proto_${slideNumber.toString().padStart(3, "0")}` ||
-        templateId === `proto_${slideNumber}`
-      );
-    });
-
-    if (slideTemplateKey && slideTemplates[slideTemplateKey]) {
+    // Приоритет 1: Проверяем, есть ли готовый HTML с бэкенда
+    if (renderedHtml) {
       console.log(
-        `Rendering HTML template for slide ${slideNumber}:`,
-        slideTemplateKey
+        `🎯 [SlideContent] Rendering slide ${slideNumber} with backend HTML`
       );
+
       return (
         <div
           className={`slide-container mx-auto w-[759px] h-[427px] bg-white rounded-[12px] overflow-hidden ${
@@ -739,7 +831,176 @@ export const SlideContent: React.FC<SlideContentProps> = ({
           style={{ position: "relative" }}
         >
           <TemplateRenderer
-            html={slideTemplates[slideTemplateKey]}
+            html={renderedHtml}
+            templateId={`slide_${slideNumber}`}
+            className="w-full h-full"
+          />
+        </div>
+      );
+    }
+
+    // Приоритет 2: Показываем лоадер, если HTML загружается
+    if (isLoadingRender) {
+      return (
+        <div
+          className="slide-container mx-auto w-[759px] h-[427px] bg-white rounded-[12px] flex items-center justify-center"
+          style={{ position: "relative" }}
+        >
+          <div className="text-gray-500">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-2"></div>
+            Загрузка слайда {slideNumber}...
+          </div>
+        </div>
+      );
+    }
+
+    // Приоритет 3: Fallback к старой логике (локальные шаблоны)
+    console.log("🔄 [SlideContent] Falling back to local template logic");
+
+    // Получаем данные презентации из localStorage
+    const generatedPresentationStr = localStorage.getItem(
+      "generatedPresentation"
+    );
+    console.log(
+      "localStorage generatedPresentation:",
+      generatedPresentationStr
+    );
+
+    // Debug: показываем все ключи в localStorage
+    console.log("All localStorage keys:", Object.keys(localStorage));
+
+    // Debug: показываем доступные шаблоны
+    console.log("Available slideTemplates:", Object.keys(slideTemplates));
+    console.log("slideTemplates data:", slideTemplates);
+
+    // Debug: показываем все что есть в localStorage
+    const allLocalStorageData: Record<string, string | null> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        allLocalStorageData[key] = localStorage.getItem(key);
+      }
+    }
+    console.log("All localStorage data:", allLocalStorageData);
+    let slideData = null;
+
+    if (generatedPresentationStr) {
+      try {
+        const generatedPresentation = JSON.parse(generatedPresentationStr);
+        console.log("Parsed generatedPresentation:", generatedPresentation);
+        console.log("Available slides:", generatedPresentation.data?.slides);
+
+        // Получаем данные для текущего слайда (slideNumber - 1, так как массив начинается с 0)
+        slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
+        console.log(`Slide data for slide ${slideNumber}:`, slideData);
+      } catch (error) {
+        console.error("Error parsing generated presentation:", error);
+      }
+    }
+
+    // Проверяем, есть ли HTML шаблон для текущего слайда
+    console.log(`Looking for template for slide ${slideNumber}`);
+    console.log("Available template keys:", Object.keys(slideTemplates));
+
+    const slideTemplateKey = Object.keys(slideTemplates).find((templateId) => {
+      // Попробуем найти шаблон по разным возможным именам
+      const matches =
+        templateId === `slide_${slideNumber}` ||
+        templateId === `slide_${slideNumber.toString().padStart(3, "0")}` ||
+        templateId === `proto_${slideNumber.toString().padStart(3, "0")}` ||
+        templateId === `proto_${slideNumber}`;
+      console.log(
+        `Checking template ${templateId} for slide ${slideNumber}: ${matches}`
+      );
+      return matches;
+    });
+
+    console.log(`Found template key: ${slideTemplateKey}`);
+
+    if (slideTemplateKey && slideTemplates[slideTemplateKey] && slideData) {
+      console.log(
+        `Rendering HTML template for slide ${slideNumber}:`,
+        slideTemplateKey
+      );
+
+      // Заполняем шаблон данными слайда
+      let filledHtml = slideTemplates[slideTemplateKey];
+      console.log("Original template HTML length:", filledHtml.length);
+      console.log("Template preview:", filledHtml.substring(0, 200) + "...");
+
+      // Заменяем плейсхолдеры данными слайда
+      if (slideData.title) {
+        console.log("Replacing {{title}} with:", slideData.title);
+        filledHtml = filledHtml.replace(/\{\{title\}\}/g, slideData.title);
+      }
+      if (slideData.subtitle) {
+        console.log("Replacing {{subtitle}} with:", slideData.subtitle);
+        filledHtml = filledHtml.replace(
+          /\{\{subtitle\}\}/g,
+          slideData.subtitle
+        );
+      }
+      if (slideData.text1?.t1) {
+        console.log("Replacing {{text1_title}} with:", slideData.text1.t1);
+        filledHtml = filledHtml.replace(
+          /\{\{text1_title\}\}/g,
+          slideData.text1.t1
+        );
+      }
+      if (slideData.text1?.t2) {
+        console.log("Replacing {{text1_content}} with:", slideData.text1.t2);
+        filledHtml = filledHtml.replace(
+          /\{\{text1_content\}\}/g,
+          slideData.text1.t2
+        );
+      }
+      if (slideData.text2?.t1) {
+        filledHtml = filledHtml.replace(
+          /\{\{text2_title\}\}/g,
+          slideData.text2.t1
+        );
+      }
+      if (slideData.text2?.t2) {
+        filledHtml = filledHtml.replace(
+          /\{\{text2_content\}\}/g,
+          slideData.text2.t2
+        );
+      }
+      if (slideData.text3?.t1) {
+        filledHtml = filledHtml.replace(
+          /\{\{text3_title\}\}/g,
+          slideData.text3.t1
+        );
+      }
+      if (slideData.text3?.t2) {
+        filledHtml = filledHtml.replace(
+          /\{\{text3_content\}\}/g,
+          slideData.text3.t2
+        );
+      }
+      if (slideData._images?.[0]) {
+        console.log("Replacing {{image}} with:", slideData._images[0]);
+        filledHtml = filledHtml.replace(/\{\{image\}\}/g, slideData._images[0]);
+      }
+
+      console.log("Final filled HTML length:", filledHtml.length);
+      console.log("Final HTML preview:", filledHtml.substring(0, 500) + "...");
+
+      return (
+        <div
+          className={`slide-container mx-auto w-[759px] h-[427px] bg-white rounded-[12px] overflow-hidden ${
+            isImageAreaSelectionMode ? "cursor-crosshair" : ""
+          }`}
+          onClick={handleSlideClick}
+          onDoubleClick={handleDoubleClick}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          style={{ position: "relative" }}
+        >
+          <TemplateRenderer
+            html={filledHtml}
             templateId={slideTemplateKey}
             className="w-full h-full"
           />

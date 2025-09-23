@@ -25,9 +25,16 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   >(null);
   const [renderedHtml, setRenderedHtml] = React.useState<string | null>(null);
   const [isLoadingRender, setIsLoadingRender] = React.useState(false);
+  const [isTemplateMode, setIsTemplateMode] = React.useState(true); // Режим шаблона включен по умолчанию
   const [renderedSlides, setRenderedSlides] = React.useState<
     Record<number, string>
   >({});
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  // Предотвращаем hydration errors
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const renderSlidesWithDataMutation = useRenderSlidesWithData();
 
@@ -47,6 +54,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     textElementPositions,
     textElementStyles,
     textElementContents,
+    setTextElementPosition,
+    getTextElementPosition,
     isImageAreaSelectionMode,
     startImageAreaSelection,
     updateImageAreaSelection,
@@ -91,6 +100,11 @@ export const SlideContent: React.FC<SlideContentProps> = ({
 
   // Эффект для автоматического рендеринга слайдов с бэкенда
   React.useEffect(() => {
+    // Ждем клиентского рендеринга для предотвращения hydration errors
+    if (!isMounted) {
+      return;
+    }
+
     // Проверяем, есть ли уже отрендеренный HTML для этого слайда
     if (renderedSlides[slideNumber]) {
       console.log(
@@ -181,7 +195,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     };
 
     loadAndRenderSlides();
-  }, [slideNumber]); // Убираем renderSlidesWithDataMutation из зависимостей
+  }, [slideNumber, isMounted]); // Добавляем isMounted в зависимости
 
   // Initialize default positions for elements if they don't exist
   React.useEffect(() => {
@@ -270,6 +284,42 @@ export const SlideContent: React.FC<SlideContentProps> = ({
         break;
     }
   }, [slideType, slideNumber, textElementStyles, updateTextElementStyle]);
+
+  // Initialize positions for template elements when rendering with backend HTML
+  React.useEffect(() => {
+    if (renderedHtml) {
+      const titleElementId = `slide-${slideNumber}-title`;
+      const subtitleElementId = `slide-${slideNumber}-subtitle`;
+      const text1ElementId = `slide-${slideNumber}-text1`;
+      const text2ElementId = `slide-${slideNumber}-text2`;
+
+      const positions = [
+        {
+          id: titleElementId,
+          pos: {
+            x: slideNumber === 1 ? 50 : 40,
+            y: slideNumber === 1 ? 150 : 30,
+          },
+        },
+        {
+          id: subtitleElementId,
+          pos: {
+            x: slideNumber === 1 ? 50 : 40,
+            y: slideNumber === 1 ? 240 : 90,
+          },
+        },
+        { id: text1ElementId, pos: { x: 40, y: 160 } },
+        { id: text2ElementId, pos: { x: 40, y: 280 } },
+      ];
+
+      positions.forEach(({ id, pos }) => {
+        const currentPos = getTextElementPosition(id);
+        if (currentPos.x === 0 && currentPos.y === 0) {
+          setTextElementPosition(id, pos);
+        }
+      });
+    }
+  }, [renderedHtml, slideNumber, getTextElementPosition, setTextElementPosition]);
 
   // Re-initialize positions when slide changes
   React.useEffect(() => {
@@ -811,11 +861,44 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   };
 
   const renderSlideByType = () => {
+    // Предотвращаем hydration errors - ждем клиентского рендеринга
+    if (!isMounted) {
+      return (
+        <div
+          className="slide-container mx-auto w-[759px] h-[427px] bg-white rounded-[12px] overflow-hidden flex items-center justify-center"
+          style={{ position: "relative" }}
+        >
+          <div className="text-gray-500">Загрузка...</div>
+        </div>
+      );
+    }
+
     // Приоритет 1: Проверяем, есть ли готовый HTML с бэкенда
     if (renderedHtml) {
       console.log(
         `🎯 [SlideContent] Rendering slide ${slideNumber} with backend HTML`
       );
+
+      // Получаем данные слайда для редактируемых элементов
+      const generatedPresentationStr = localStorage.getItem(
+        "generatedPresentation"
+      );
+      let slideData = null;
+
+      if (generatedPresentationStr) {
+        try {
+          const generatedPresentation = JSON.parse(generatedPresentationStr);
+          slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
+        } catch (error) {
+          console.error("Error parsing generated presentation:", error);
+        }
+      }
+
+      // Подготавливаем начальные позиции для элементов в store
+      const titleElementId = `slide-${slideNumber}-title`;
+      const subtitleElementId = `slide-${slideNumber}-subtitle`;
+      const text1ElementId = `slide-${slideNumber}-text1`;
+      const text2ElementId = `slide-${slideNumber}-text2`;
 
       return (
         <div
@@ -830,11 +913,193 @@ export const SlideContent: React.FC<SlideContentProps> = ({
           onMouseLeave={handleMouseLeave}
           style={{ position: "relative" }}
         >
-          <TemplateRenderer
-            html={renderedHtml}
-            templateId={`slide_${slideNumber}`}
-            className="w-full h-full"
-          />
+          {/* Кнопка переключения режимов */}
+          <div className="absolute top-2 right-2 z-50">
+            <button
+              onClick={() => setIsTemplateMode(!isTemplateMode)}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+              title={isTemplateMode ? "Отключить шаблон" : "Включить шаблон"}
+            >
+              {isTemplateMode ? "Шаблон ВКЛ" : "Шаблон ВЫКЛ"}
+            </button>
+          </div>
+
+          {/* Фоновый HTML шаблон */}
+          {isTemplateMode && (
+            <div
+              className="template-background absolute inset-0 pointer-events-none"
+              style={{
+                zIndex: 0,
+                opacity: 0.3, // Делаем фон полупрозрачным
+                filter: "grayscale(0.5)", // Слегка обесцвечиваем фон
+              }}
+            >
+              <TemplateRenderer
+                html={renderedHtml}
+                templateId={`slide_${slideNumber}`}
+                className="w-full h-full"
+              />
+            </div>
+          )}
+
+          {/* Редактируемые элементы поверх шаблона */}
+          <div
+            className="editable-layer absolute inset-0"
+            style={{ zIndex: 10 }}
+          >
+            {/* Заголовок */}
+            <ResizableTextBox
+              isSelected={selectedTextElements.includes(titleElementId)}
+              elementId={titleElementId}
+              onDelete={handleTextDelete}
+              onCopy={() => handleTextCopy(titleElementId)}
+              onMoveUp={() => handleTextMoveUp(titleElementId)}
+              onMoveDown={() => handleTextMoveDown(titleElementId)}
+            >
+              <EditableText
+                elementId={titleElementId}
+                initialText={
+                  slideData?.title || `Заголовок слайда ${slideNumber}`
+                }
+                className="text-[32px] font-bold text-black cursor-pointer transition-colors"
+                style={{
+                  backgroundColor: isTemplateMode
+                    ? "rgba(255, 255, 255, 0.9)"
+                    : "transparent",
+                  padding: isTemplateMode ? "4px 8px" : "0",
+                  borderRadius: isTemplateMode ? "4px" : "0",
+                  textShadow: isTemplateMode
+                    ? "1px 1px 2px rgba(0,0,0,0.3)"
+                    : "none",
+                }}
+                onClick={(e) => {
+                  handleTextClick(
+                    titleElementId,
+                    getTextElementContent(titleElementId) ||
+                      slideData?.title ||
+                      `Заголовок слайда ${slideNumber}`,
+                    e
+                  );
+                }}
+              />
+            </ResizableTextBox>
+
+            {/* Подзаголовок */}
+            {slideData?.subtitle && (
+              <ResizableTextBox
+                isSelected={selectedTextElements.includes(subtitleElementId)}
+                elementId={subtitleElementId}
+                onDelete={handleTextDelete}
+                onCopy={() => handleTextCopy(subtitleElementId)}
+                onMoveUp={() => handleTextMoveUp(subtitleElementId)}
+                onMoveDown={() => handleTextMoveDown(subtitleElementId)}
+              >
+                <EditableText
+                  elementId={subtitleElementId}
+                  initialText={slideData.subtitle}
+                  className="text-[20px] font-normal text-gray-700 cursor-pointer transition-colors"
+                  style={{
+                    backgroundColor: isTemplateMode
+                      ? "rgba(255, 255, 255, 0.8)"
+                      : "transparent",
+                    padding: isTemplateMode ? "4px 8px" : "0",
+                    borderRadius: isTemplateMode ? "4px" : "0",
+                    textShadow: isTemplateMode
+                      ? "1px 1px 2px rgba(0,0,0,0.3)"
+                      : "none",
+                  }}
+                  onClick={(e) => {
+                    handleTextClick(
+                      subtitleElementId,
+                      getTextElementContent(subtitleElementId) ||
+                        slideData.subtitle,
+                      e
+                    );
+                  }}
+                />
+              </ResizableTextBox>
+            )}
+
+            {/* Первый текстовый блок */}
+            {slideData?.text1?.t2 && (
+              <ResizableTextBox
+                isSelected={selectedTextElements.includes(text1ElementId)}
+                elementId={text1ElementId}
+                onDelete={handleTextDelete}
+                onCopy={() => handleTextCopy(text1ElementId)}
+                onMoveUp={() => handleTextMoveUp(text1ElementId)}
+                onMoveDown={() => handleTextMoveDown(text1ElementId)}
+              >
+                <EditableText
+                  elementId={text1ElementId}
+                  initialText={slideData.text1.t2}
+                  className="text-[16px] font-normal text-gray-800 cursor-pointer transition-colors"
+                  style={{
+                    backgroundColor: isTemplateMode
+                      ? "rgba(255, 255, 255, 0.8)"
+                      : "transparent",
+                    padding: isTemplateMode ? "4px 8px" : "0",
+                    borderRadius: isTemplateMode ? "4px" : "0",
+                    textShadow: isTemplateMode
+                      ? "1px 1px 2px rgba(0,0,0,0.3)"
+                      : "none",
+                  }}
+                  onClick={(e) => {
+                    handleTextClick(
+                      text1ElementId,
+                      getTextElementContent(text1ElementId) ||
+                        slideData.text1.t2,
+                      e
+                    );
+                  }}
+                />
+              </ResizableTextBox>
+            )}
+
+            {/* Второй текстовый блок */}
+            {slideData?.text2?.t2 && (
+              <ResizableTextBox
+                isSelected={selectedTextElements.includes(text2ElementId)}
+                elementId={text2ElementId}
+                onDelete={handleTextDelete}
+                onCopy={() => handleTextCopy(text2ElementId)}
+                onMoveUp={() => handleTextMoveUp(text2ElementId)}
+                onMoveDown={() => handleTextMoveDown(text2ElementId)}
+              >
+                <EditableText
+                  elementId={text2ElementId}
+                  initialText={slideData.text2.t2}
+                  className="text-[16px] font-normal text-gray-800 cursor-pointer transition-colors"
+                  style={{
+                    backgroundColor: isTemplateMode
+                      ? "rgba(255, 255, 255, 0.8)"
+                      : "transparent",
+                    padding: isTemplateMode ? "4px 8px" : "0",
+                    borderRadius: isTemplateMode ? "4px" : "0",
+                    textShadow: isTemplateMode
+                      ? "1px 1px 2px rgba(0,0,0,0.3)"
+                      : "none",
+                  }}
+                  onClick={(e) => {
+                    handleTextClick(
+                      text2ElementId,
+                      getTextElementContent(text2ElementId) ||
+                        slideData.text2.t2,
+                      e
+                    );
+                  }}
+                />
+              </ResizableTextBox>
+            )}
+
+            {/* Динамические элементы */}
+            {renderDynamicTextElements()}
+            {renderTableElements()}
+            {renderImageElements()}
+            {renderInfographicsElements()}
+            {renderAlignmentGuides()}
+            {renderImageAreaSelection()}
+          </div>
         </div>
       );
     }

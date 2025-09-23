@@ -713,9 +713,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     const slideTemplateKey = Object.keys(slideTemplates).find((templateId) => {
       // Попробуем найти шаблон по разным возможным именам
       return (
+        templateId === `slide_${slideNumber}` ||
         templateId === `slide_${slideNumber.toString().padStart(3, "0")}` ||
         templateId === `proto_${slideNumber.toString().padStart(3, "0")}` ||
-        templateId === `slide_${slideNumber}` ||
         templateId === `proto_${slideNumber}`
       );
     });

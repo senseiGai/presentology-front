@@ -95,7 +95,23 @@ export const PresentationGenerationBlock = () => {
           try {
             const templates = await getMultipleTemplates(templateIds);
             console.log("Templates loaded:", Object.keys(templates));
-            setSlideTemplates(templates);
+
+            // Создаем маппинг между templateIds и номерами слайдов
+            // templateIds[0] -> slide 1, templateIds[1] -> slide 2, etc.
+            const slideTemplateMapping: Record<string, string> = {};
+            templateIds.forEach((templateId, index) => {
+              const slideNumber = index + 1;
+              const slideKey = `slide_${slideNumber}`;
+              if (templates[templateId]) {
+                slideTemplateMapping[slideKey] = templates[templateId];
+              }
+            });
+
+            console.log(
+              "Slide template mapping:",
+              Object.keys(slideTemplateMapping)
+            );
+            setSlideTemplates(slideTemplateMapping);
           } catch (templateError) {
             console.error("Error loading templates:", templateError);
             // Продолжаем даже если шаблоны не загрузились

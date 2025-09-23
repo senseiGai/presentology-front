@@ -319,7 +319,12 @@ export const SlideContent: React.FC<SlideContentProps> = ({
         }
       });
     }
-  }, [renderedHtml, slideNumber, getTextElementPosition, setTextElementPosition]);
+  }, [
+    renderedHtml,
+    slideNumber,
+    getTextElementPosition,
+    setTextElementPosition,
+  ]);
 
   // Re-initialize positions when slide changes
   React.useEffect(() => {

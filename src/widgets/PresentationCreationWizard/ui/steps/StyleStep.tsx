@@ -113,112 +113,146 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="w-full  bg-white">
-      <div className="flex">
-        <div className="flex-1 mt-[122px]">
-          <div className="w-full bg-[#F4F4F4] rounded-[24px] h-[686px] justify-center items-center flex flex-col">
-            <span className="text-[#0B0911] text-[24px] font-medium">
-              Выберите шаблон
-            </span>
-            <div className="flex flex-col items-center justify-center gap-6 mt-[53px] w-full">
-              {templates.map((template, index) => (
-                <div
-                  key={index}
-                  onClick={() => setSelectedTemplateIndex(index)}
-                  className={`relative w-[397px] h-[223px] cursor-pointer rounded-[12px] transition-all ${
-                    selectedTemplateIndex === index
-                      ? "ring-[8px] ring-[#A78BFA]"
-                      : "border-[1px] border-[#EBEBEB]"
-                  }`}
-                >
-                  {selectedTemplateIndex === index && (
-                    <div className="absolute top-0 right-0 z-[99999] shadow-2xl">
-                      <SquareCheckIcon />
-                    </div>
-                  )}
-                  <Image
-                    src={"/assets/presentation/presentation01.png"}
-                    width={300}
-                    height={200}
-                    alt="Presentation"
-                    className="absolute inset-0 w-full h-full object-cover rounded-[12px]"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+    <div className="h-full flex flex-col relative bg-white overflow-y-auto">
+      <div className="pt-6 px-10">
+        <div className="font-medium text-[#0B0911] text-[24px] w-[356px] mb-[27px]">
+          Визуальный стиль
         </div>
 
-        <div className="h-full flex flex-col">
-          <div className="flex-1 px-10 pt-8 overflow-y-auto max-h-[700px]">
-            <div className="flex flex-col gap-10 w-full max-w-[356px]">
-              <div className="mb-6">
-                <h3 className="text-[24px] font-medium text-[#0B0911] mb-6">
-                  Визуальный стиль
-                </h3>
-                <div className="grid grid-cols-1 gap-4 mt-4">
-                  {styles.map((style, index) => (
-                    <div
-                      key={index}
-                      onClick={() => setSelectedStyleIndex(index)}
-                      className={`relative cursor-pointer w-[356px] h-[222px] p-4 rounded-[8px] transition-all ${
-                        selectedStyleIndex === index
-                          ? "bg-[#BBA2FE]"
-                          : "bg-[#F4F4F4]"
-                      }`}
-                    >
-                      {selectedStyleIndex === index && (
-                        <div className="absolute top-1 right-1">
-                          <SquareCheckIcon />
-                        </div>
-                      )}
-                      <div className="relative">
-                        <h4
-                          className={`text-[18px] font-medium  mb-1 ${
-                            selectedStyleIndex === index
-                              ? "text-white"
-                              : "text-[#0B0911]"
-                          }`}
-                        >
-                          {style.name}
-                        </h4>
-                        <p
-                          className={`text-[13px] tracking-[-3%] ${
-                            selectedStyleIndex === index
-                              ? "text-white"
-                              : "text-[#6B7280]"
-                          }`}
-                        >
-                          {style.description}
-                        </p>
-                        <Image
-                          src={style.image}
-                          alt={style.name}
-                          width={240}
-                          height={126}
-                          className="w-full h-[126px]  rounded-[4px] mt-[21px]"
-                        />
-                      </div>
-                    </div>
-                  ))}
+        <div className="w-[356px] flex flex-col gap-4 pb-4">
+          <div
+            onClick={() => {
+              setSelectedStyleIndex(0);
+              handleStyleSelect("modern");
+            }}
+            className={`p-4 rounded-lg relative cursor-pointer ${
+              selectedStyleIndex === 0 ? "bg-[#BBA2FE]" : "bg-[#F4F4F4]"
+            }`}
+          >
+            {selectedStyleIndex === 0 && (
+              <div className="absolute top-2 right-2 ">
+                <SquareCheckIcon />
+              </div>
+            )}
+            <div
+              className={`flex flex-col gap-1 mb-[21px] ${
+                selectedStyleIndex === 0 ? "text-white" : "text-[#0B0911]"
+              }`}
+            >
+              <div className="font-semibold text-[18px]">Современный</div>
+              <div
+                className={`font-normal text-[14px] ${
+                  selectedStyleIndex === 0 ? "text-white" : "text-[#8F8F92]"
+                }`}
+              >
+                Чистый и минималистичный дизайн
+              </div>
+            </div>
+            <div className="bg-white h-[126px] rounded-[4px] relative flex items-center">
+              <div className="absolute left-6 flex flex-col">
+                <div className="font-medium text-[#0B0911] text-[24px]">
+                  Заголовок
                 </div>
+                <div className="font-normal text-[#BEBEC0] text-[18px]">
+                  Основной текст
+                </div>
+              </div>
+              <div className="absolute right-6 w-6 h-[88px] bg-blue-500 rounded flex flex-col justify-between p-1">
+                <div className="w-full h-3 bg-blue-600 rounded"></div>
+                <div className="w-full h-3 bg-blue-600 rounded"></div>
+                <div className="w-full h-3 bg-cyan-500 rounded"></div>
               </div>
             </div>
           </div>
-          <div className="bg-white border-t border-[#f0f0f0] rounded-t-2xl shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)] mx-[11px] px-10 py-6">
-            <div className="flex gap-2">
-              <button
-                onClick={onBack}
-                className={`w-[100px] h-[52px] bg-white border border-[#C0C0C1] rounded-[8px] text-[18px] font-normal text-[#0B0911] leading-[1.2] tracking-[-0.36px] hover:bg-gray-50 transition-colors `}
+
+          {/* Корпоративный */}
+          <div
+            onClick={() => {
+              setSelectedStyleIndex(1);
+              handleStyleSelect("corporate");
+            }}
+            className={`p-4 rounded-lg relative cursor-pointer ${
+              selectedStyleIndex === 1 ? "bg-[#BBA2FE]" : "bg-[#F4F4F4]"
+            }`}
+          >
+            {selectedStyleIndex === 1 && (
+              <div className="absolute top-2 right-2  flex items-center justify-center">
+                <SquareCheckIcon />
+              </div>
+            )}
+            <div
+              className={`flex flex-col gap-1 mb-[21px] ${
+                selectedStyleIndex === 1 ? "text-white" : "text-[#0B0911]"
+              }`}
+            >
+              <div className="font-semibold text-[18px]">Корпоративный</div>
+              <div
+                className={`font-normal text-[14px] ${
+                  selectedStyleIndex === 1 ? "text-white" : "text-[#8F8F92]"
+                }`}
               >
-                Назад
-              </button>
-              <button
-                onClick={handleCreatePresentation}
-                className="w-[248px] h-[52px] bg-[#BBA2FE] rounded-[8px] text-[18px] font-normal text-white leading-[1.2] tracking-[-0.36px] hover:bg-[#A693FD] transition-colors"
+                Профессиональный бизнес-стиль
+              </div>
+            </div>
+            <div className="bg-gray-500 h-[126px] rounded-[4px] relative flex items-center">
+              <div className="absolute left-6 flex flex-col">
+                <div className="font-medium text-white text-[24px]">
+                  Заголовок
+                </div>
+                <div className="font-normal text-[#BEBEC0] text-[18px]">
+                  Основной текст
+                </div>
+              </div>
+              <div className="absolute right-6 w-6 h-[88px] bg-gray-600 rounded flex flex-col justify-between p-1">
+                <div className="w-full h-3 bg-gray-700 rounded"></div>
+                <div className="w-full h-3 bg-gray-700 rounded"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Креативный */}
+          <div
+            onClick={() => {
+              setSelectedStyleIndex(2);
+              handleStyleSelect("creative");
+            }}
+            className={`p-4 rounded-lg relative cursor-pointer ${
+              selectedStyleIndex === 2 ? "bg-[#BBA2FE]" : "bg-[#F4F4F4]"
+            }`}
+          >
+            {selectedStyleIndex === 2 && (
+              <div className="absolute top-2 right-2  flex items-center justify-center">
+                <SquareCheckIcon />
+              </div>
+            )}
+            <div
+              className={`flex flex-col gap-1 mb-[21px] ${
+                selectedStyleIndex === 2 ? "text-white" : "text-[#0B0911]"
+              }`}
+            >
+              <div className="font-semibold text-[18px]">Креативный</div>
+              <div
+                className={`font-normal text-[14px] ${
+                  selectedStyleIndex === 2 ? "text-white" : "text-[#8F8F92]"
+                }`}
               >
-                Создать презентацию
-              </button>
+                Яркий и творческий подход
+              </div>
+            </div>
+            <div className="bg-white h-[126px] rounded-[4px] relative flex items-center">
+              <div className="absolute left-6 flex flex-col">
+                <div className="font-medium text-[#F59E0C] text-[24px]">
+                  Заголовок
+                </div>
+                <div className="font-normal text-[rgba(245,158,12,0.5)] text-[18px]">
+                  Основной текст
+                </div>
+              </div>
+              <div className="absolute right-6 w-6 h-[88px] bg-orange-400 rounded flex flex-col justify-between p-1">
+                <div className="w-full h-3 bg-orange-500 rounded"></div>
+                <div className="w-full h-3 bg-red-500 rounded"></div>
+                <div className="w-full h-3 bg-green-500 rounded"></div>
+              </div>
             </div>
           </div>
         </div>

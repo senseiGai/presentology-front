@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PresentationCreationStep } from "../model/types";
 import { DescriptionStep } from "./steps/DescriptionStep";
@@ -17,11 +17,19 @@ import PaintIcon from "../../../../public/icons/PainIcon";
 
 import LogoIllustration from "../../../../public/icons/LogoIllustration";
 import { PresentationMascot } from "@/shared/ui/PesentationMascot";
+import SquareCheckIcon from "../../../../public/icons/SquareCheckIcon";
 
 export const PresentationCreationWizard: React.FC = () => {
   const router = useRouter();
-  const { currentStep, setCurrentStep, presentationData } =
-    usePresentationCreationStore();
+  const {
+    currentStep,
+    setCurrentStep,
+    presentationData,
+    updatePresentationData,
+  } = usePresentationCreationStore();
+
+  // Local state for template selection
+  const [selectedTemplateIndex, setSelectedTemplateIndex] = useState(0);
 
   // Add responsive breakpoints
   const windowWidth = useWindowWidth();
@@ -29,6 +37,20 @@ export const PresentationCreationWizard: React.FC = () => {
   const isTablet = windowWidth >= 768 && windowWidth < 1024;
   const middleWidth = windowWidth > 1600;
   const topWidth = windowWidth > 1800;
+
+  // Define templates
+  const templates = [
+    {
+      title: "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ",
+      subtitle: "Подзаголовок\nв две строки",
+      layout: "two-column",
+    },
+    {
+      title: "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ",
+      subtitle: "Подзаголовок\nв две строки",
+      layout: "four-column",
+    },
+  ];
 
   const steps: {
     key: PresentationCreationStep;
@@ -56,6 +78,10 @@ export const PresentationCreationWizard: React.FC = () => {
 
   const isCompleted =
     isDescriptionComplete && isStructureComplete && isStyleComplete;
+
+  const handleTemplateSelect = (templateId: string) => {
+    updatePresentationData({ selectedTemplate: templateId });
+  };
 
   const handleBack = () => {
     if (currentStep === "description") {
@@ -90,17 +116,17 @@ export const PresentationCreationWizard: React.FC = () => {
 
   if (currentStep === "style") {
     return (
-      <div className="bg-white w-full h-screen overflow-hidden">
-        {/* Logo - responsive positioning */}
-        <div
-          className={`absolute top-6 z-20 ${isMobile ? "left-4" : "left-10"}`}
-        >
+      <div className="bg-white w-full h-[832px] flex">
+        {/* Logo */}
+        <div className="absolute top-6 left-10 z-20">
           <LogoIllustration />
         </div>
+
+        {/* Progress Indicator */}
         <div
           className="absolute top-6 z-20"
           style={{
-            left: isMobile ? "50%" : "calc(33.333% + 1.833px)",
+            left: "calc(33.333% + 1.833px)",
             transform: "translateX(-50%)",
           }}
         >
@@ -110,7 +136,117 @@ export const PresentationCreationWizard: React.FC = () => {
             isCompleted={isCompleted}
           />
         </div>
-        <div className="w-full h-full">{renderCurrentStep()}</div>
+
+        <div className="flex-1 relative">
+          <div className="absolute bg-[#F4F4F4] h-[686px] rounded-[24px] top-[122px] w-full">
+            <div className="absolute font-medium text-[#0B0911] text-[24px] top-[48px] left-1/2 transform -translate-x-1/2">
+              Выберите шаблон
+            </div>
+
+            <div className="absolute left-1/2 top-[124px] transform -translate-x-1/2">
+              <div
+                onClick={() => {
+                  setSelectedTemplateIndex(0);
+                  handleTemplateSelect(templates[0].layout);
+                }}
+                className={`cursor-pointer ${
+                  selectedTemplateIndex === 0
+                    ? "bg-[#BBA2FE] p-2 rounded-[24px]"
+                    : "p-0"
+                } w-[413px] h-[239px] flex items-center justify-center`}
+              >
+                <div className="relative w-[397px] h-[223px] rounded-[16px] overflow-hidden">
+                  <Image
+                    src="/assets/presentation/presentation01.png"
+                    width={397}
+                    height={223}
+                    alt="Presentation"
+                    className="w-full h-full object-cover"
+                  />
+                  {selectedTemplateIndex === 0 && (
+                    <div className="absolute top-2 right-2 ">
+                      <SquareCheckIcon />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Template 2 */}
+            <div className="absolute left-1/2 top-[387px] transform -translate-x-1/2">
+              <div
+                onClick={() => {
+                  setSelectedTemplateIndex(1);
+                  handleTemplateSelect(templates[1].layout);
+                }}
+                className={`cursor-pointer ${
+                  selectedTemplateIndex === 1
+                    ? "bg-[#BBA2FE] p-2 rounded-[24px]"
+                    : "p-0"
+                } w-[413px] h-[239px] flex items-center justify-center`}
+              >
+                <div className="relative w-[397px] h-[223px] rounded-[16px] overflow-hidden">
+                  <Image
+                    src="/assets/presentation/presentation01.png"
+                    width={397}
+                    height={223}
+                    alt="Presentation"
+                    className="w-full h-full object-cover"
+                  />
+                  {selectedTemplateIndex === 1 && (
+                    <div className="absolute top-2 right-2 ">
+                      <SquareCheckIcon />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-[436px] max-h-[832px] bg-white relative flex flex-col">
+          <div className="flex-1 overflow-y-auto">
+            <StyleStep onBack={handleBack} />
+          </div>
+
+          {/* Bottom Action Buttons */}
+          <div className="bg-white h-[100px] border-t border-[#f0f0f0] shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)]">
+            <div className="flex items-center justify-center h-full px-10">
+              <div className="flex gap-2 w-[356px] h-[52px]">
+                <button
+                  onClick={handleBack}
+                  className="bg-white border border-[#C0C0C1] rounded-lg px-6 py-2 h-[52px] flex items-center justify-center"
+                >
+                  <span className="font-normal text-[#0B0911] text-[18px]">
+                    Назад
+                  </span>
+                </button>
+                <button
+                  onClick={() => {
+                    if (isCompleted) {
+                      // Navigate to presentation generation page
+                      router.push("/presentation-generation");
+                    }
+                  }}
+                  disabled={!isCompleted}
+                  className={`flex-1 rounded-lg px-6 py-2 h-[52px] flex items-center justify-center ${
+                    isCompleted
+                      ? "bg-[#BBA2FE] hover:bg-[#A78BFA] cursor-pointer"
+                      : "bg-[#DDD1FF] text-white cursor-not-allowed"
+                  }`}
+                >
+                  <span
+                    className={`font-normal text-[18px] ${
+                      isCompleted ? "text-white" : "text-white"
+                    }`}
+                  >
+                    Создать презентацию
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

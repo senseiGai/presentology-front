@@ -10,6 +10,7 @@ import DotsSixIcon from "../../../../../public/icons/DotsSixIcon";
 import GrayTrashIcon from "../../../../../public/icons/GrayTrashIcon";
 import PlusIcon from "../../../../../public/icons/PlusIcon";
 import CreationLoaderIcon from "../../../../../public/icons/CreationLoaderIcon";
+import { AddSlideButton } from "../../../../shared/ui/AddSlideButton";
 
 interface StructureStepProps {
   onNext: () => void;
@@ -513,15 +514,11 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                   </p>
                 </div>
 
-                <button
+                <AddSlideButton
                   onClick={() => setIsAddSlideModalOpen(true)}
-                  className="bg-[#BBA2FE] h-[52px] px-6 pr-4 rounded-[8px] flex items-center gap-2 text-[18px] font-normal text-white leading-[1.2] tracking-[-0.36px] hover:bg-[#A693FD] transition-colors"
-                >
-                  Добавить слайд
-                  <div className="w-8 h-8 flex items-center justify-center">
-                    <PlusIcon fill="white" width={24} height={24} />
-                  </div>
-                </button>
+                  isLoading={isAddingSlide}
+                  variant="default"
+                />
               </div>
 
               <div className="space-y-3 w-full max-h-[600px] pb-10 overflow-auto">

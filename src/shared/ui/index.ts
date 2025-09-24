@@ -7,3 +7,4 @@ export { GlassModal } from "./GlassModal";
 export { GlassShowcase } from "./GlassShowcase";
 export { Mascot } from "./Mascot";
 export { TableToolbar } from "./TableToolbar";
+export { AddSlideButton } from "./AddSlideButton";

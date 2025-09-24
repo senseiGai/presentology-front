@@ -64,7 +64,6 @@ export const SubscriptionBlock = () => {
         <div className="flex flex-row items-center gap-x-[16px] mt-[48px]">
           <h2>Оплата подписки</h2>
         </div>
-
         <div className="mt-[40px] flex flex-row items-center justify-between">
           <div className="flex flex-col">
             <span className="text-[#000000] text-[14px] font-medium">

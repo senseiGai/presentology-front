@@ -1,14 +1,20 @@
 "use client";
 
+import React, { useState } from "react";
 import { MainLayout } from "@/shared/ui";
 import { PresentationCreationWizard } from "@/widgets/PresentationCreationWizard/ui/PresentationCreationWizard";
 import ProtectedRoute from "@/shared/components/ProtectedRoute";
 import { AddSlideModal } from "@/entities/AddSlideModal";
-import { usePresentationCreationStore } from "@/widgets/PresentationCreationWizard/model/usePresentationCreationStore";
 
 export default function PresentationCreation() {
-  const { isAddSlideModalOpen, setAddSlideModalOpen, addSlide } =
-    usePresentationCreationStore();
+  // Используем локальное состояние для модального окна
+  const [isAddSlideModalOpen, setIsAddSlideModalOpen] = useState(false);
+
+  const handleAddSlide = (slideText: string) => {
+    // TODO: Интегрировать с новым flow store если нужно
+    console.log("Adding slide:", slideText);
+    setIsAddSlideModalOpen(false);
+  };
 
   return (
     <ProtectedRoute>
@@ -17,8 +23,8 @@ export default function PresentationCreation() {
       </MainLayout>
       <AddSlideModal
         isOpen={isAddSlideModalOpen}
-        onClose={() => setAddSlideModalOpen(false)}
-        onAdd={addSlide}
+        onClose={() => setIsAddSlideModalOpen(false)}
+        onAdd={handleAddSlide}
       />
     </ProtectedRoute>
   );

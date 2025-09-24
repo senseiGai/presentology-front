@@ -10,6 +10,11 @@ import { ProgressIndicator } from "./ProgressIndicator";
 
 import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
 import { useWindowWidth } from "@/shared/hooks/useWindowWidth";
+import {
+  useSelectStructureNew,
+  useCreateTitleAndSlidesNew,
+  useAddSlideToStructureNew,
+} from "@/shared/api/presentation-generation";
 import Image from "next/image";
 
 import HandWritingIcon from "../../../../public/icons/HandWritingIcon";
@@ -36,8 +41,37 @@ export const PresentationCreationWizard: React.FC = () => {
     deckTitle,
     selectedTheme,
     selectedTemplate,
+    slideCountMode,
+    slideCount,
+    extractedFiles,
+    setUiSlides,
+    setDeckTitle,
     canProceedFromStep,
   } = usePresentationFlowStore();
+
+  // API хуки
+  const selectStructureMutation = useSelectStructureNew();
+  const createTitleAndSlidesMutation = useCreateTitleAndSlidesNew();
+  const addSlideMutation = useAddSlideToStructureNew();
+
+  // Локальные состояния
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasGeneratedStructure, setHasGeneratedStructure] = useState(false);
+  const [visibleSlidesCount, setVisibleSlidesCount] = useState(0);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState("");
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [editingSlideIndex, setEditingSlideIndex] = useState<number | null>(
+    null
+  );
+  const [tempSlideTitle, setTempSlideTitle] = useState("");
+  const [tempSlideDescription, setTempSlideDescription] = useState("");
+  const [isAddSlideModalOpen, setIsAddSlideModalOpen] = useState(false);
+  const [newSlideText, setNewSlideText] = useState("");
+
+  // Ref для предотвращения повторных API вызовов
+  const hasCalledApi = useRef(false);
 
   // Add responsive breakpoints
   const windowWidth = useWindowWidth();

@@ -767,9 +767,9 @@ export const PresentationCreationWizard: React.FC = () => {
             {/* Header - only shown when not loading */}
             {!isLoading && (
               <>
-                <div className="flex items-center justify-between mb-6 pt-[138px]">
+                <div className="flex items-start justify-between mb-6 pt-[138px]">
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-start gap-2 mb-2">
                       {isEditingTitle ? (
                         <div className="flex items-center gap-2">
                           <input
@@ -796,7 +796,7 @@ export const PresentationCreationWizard: React.FC = () => {
                         </div>
                       ) : (
                         <>
-                          <h2 className="text-[24px] font-medium text-[#0B0911] leading-[1.3] tracking-[-0.48px]">
+                          <h2 className="text-[24px] font-medium text-[#0B0911] leading-[1.3] tracking-[-0.48px] max-w-[480px] 2xl:max-w-[700px]">
                             {presentationTitle}
                           </h2>
                           <button

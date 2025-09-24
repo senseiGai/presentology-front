@@ -554,9 +554,7 @@ const makeApiRequest = async <T>(endpoint: string, data: any): Promise<T> => {
   console.log("📍 endpoint:", endpoint);
   console.log("📦 data:", data);
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://presentology-back-production.up.railway.app";
+  const baseUrl = "https://presentology-back-production.up.railway.app";
   console.log("🔗 baseUrl:", baseUrl);
 
   const token = getAuthToken();

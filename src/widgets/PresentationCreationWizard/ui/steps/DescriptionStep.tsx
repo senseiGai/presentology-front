@@ -15,7 +15,6 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
   onNext,
   onBack,
 }) => {
-
   const {
     brief,
     setBrief,
@@ -47,17 +46,30 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
     }
   );
 
+  const [topic, setTopic] = useState(brief?.topic || "");
   const [customGoal, setCustomGoal] = useState("");
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
-  const [selectedAudience, setSelectedAudience] = useState<string[]>([]);
+  const [selectedGoals, setSelectedGoals] = useState<string[]>(
+    brief?.goal ? brief.goal.split(", ") : []
+  );
+  const [selectedAudience, setSelectedAudience] = useState<string[]>(
+    brief?.audience ? brief.audience.split(", ") : []
+  );
   const [customAudience, setCustomAudience] = useState("");
-  const [keyIdea, setKeyIdea] = useState("");
-  const [selectedActions, setSelectedActions] = useState<string[]>([]);
+  const [keyIdea, setKeyIdea] = useState(brief?.keyIdea || "");
+  const [selectedActions, setSelectedActions] = useState<string[]>(
+    brief?.expectedAction ? brief.expectedAction.split(", ") : []
+  );
   const [customAction, setCustomAction] = useState("");
-  const [selectedNarrative, setSelectedNarrative] = useState<string[]>([]);
+  const [selectedNarrative, setSelectedNarrative] = useState<string[]>(
+    brief?.tones || []
+  );
   const [customNarrative, setCustomNarrative] = useState("");
-  const [localSlideCount, setLocalSlideCount] = useState<"ai" | "custom">("ai");
-  const [customSlideCount, setCustomSlideCount] = useState(3);
+  const [localSlideCount, setLocalSlideCount] = useState<"ai" | "custom">(
+    slideCountMode === "auto" ? "ai" : "custom"
+  );
+  const [customSlideCount, setCustomSlideCount] = useState(
+    storeSlideCount || 3
+  );
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -244,7 +256,6 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
 
   const handleCustomGoalChange = (value: string) => {
     setCustomGoal(value);
-    updatePresentationData({ goal: value });
   };
 
   // Обработка загрузки файлов с API
@@ -375,7 +386,7 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
   };
 
   const canProceed =
-    presentationData.topic.trim() &&
+    topic.trim() &&
     (selectedGoals.length > 0 || customGoal.trim()) &&
     (selectedAudience.length > 0 || customAudience.trim()) &&
     keyIdea.trim();
@@ -392,9 +403,9 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
             </h2>
             <div className="flex flex-col gap-3">
               <textarea
-                value={presentationData.topic}
+                value={topic}
                 onChange={(e) => {
-                  updatePresentationData({ topic: e.target.value });
+                  setTopic(e.target.value);
                   console.log(
                     "📝 [DescriptionStep] Тема изменена:",
                     e.target.value.substring(0, 50) + "..."
@@ -405,7 +416,7 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
                 maxLength={500}
               />
               <div className="text-right text-[#bebec0] text-[12px] font-normal leading-[1.3] tracking-[-0.36px]">
-                {presentationData.topic.length} / 500 символов
+                {topic.length} / 500 символов
               </div>
             </div>
           </div>

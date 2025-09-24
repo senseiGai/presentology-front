@@ -705,7 +705,7 @@ export const PresentationCreationWizard: React.FC = () => {
                             <DotsSixIcon width={32} height={32} />
                           </div>
                         </div>
-                        <div className="flex flex-col gap-1 flex-1 min-w-0">
+                        <div className="flex flex-col gap-1 flex-1 min-w-0 mr-4">
                           {/* Заголовок слайда */}
                           {editingSlideId === index &&
                           editingField === "title" ? (
@@ -718,7 +718,7 @@ export const PresentationCreationWizard: React.FC = () => {
                               onKeyDown={handleSlideKeyPress}
                               onBlur={handleSaveSlideEdit}
                               autoFocus
-                              className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none"
+                              className="text-[18px] w-full min-w-[600px] max-w-none font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none"
                             />
                           ) : (
                             <h3
@@ -742,7 +742,7 @@ export const PresentationCreationWizard: React.FC = () => {
                               onBlur={handleSaveSlideEdit}
                               autoFocus
                               rows={3}
-                              className="text-[14px] w-full font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none resize-none"
+                              className="text-[14px] w-full min-w-[600px] max-w-none font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none resize-none"
                             />
                           ) : (
                             <p
@@ -867,7 +867,7 @@ export const PresentationCreationWizard: React.FC = () => {
                             <DotsSixIcon width={32} height={32} />
                           </div>
                         </div>
-                        <div className="flex flex-col gap-1 min-w-[200px] flex-1">
+                        <div className="flex flex-col gap-1 min-w-[200px] flex-1 mr-4">
                           {/* Заголовок слайда */}
                           {editingSlideId === index &&
                           editingField === "title" ? (
@@ -880,7 +880,7 @@ export const PresentationCreationWizard: React.FC = () => {
                               onKeyDown={handleSlideKeyPress}
                               onBlur={handleSaveSlideEdit}
                               autoFocus
-                              className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none"
+                              className="text-[18px] w-full min-w-[600px] max-w-none font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none"
                             />
                           ) : (
                             <h3
@@ -904,7 +904,7 @@ export const PresentationCreationWizard: React.FC = () => {
                               onBlur={handleSaveSlideEdit}
                               autoFocus
                               rows={3}
-                              className="text-[14px] w-full font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none resize-none"
+                              className="text-[14px] w-full min-w-[600px] max-w-none font-normal text-[#8F8F92] leading-[1.2]  tracking-[-0.42px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none resize-none"
                             />
                           ) : (
                             <p

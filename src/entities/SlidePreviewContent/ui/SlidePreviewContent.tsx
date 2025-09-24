@@ -66,6 +66,39 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
     );
   }
 
+  // Функция для замены изображений в HTML шаблоне на наши изображения (аналогично SlideContent)
+  const replaceTemplateImagesWithOurs = (html: string): string => {
+    if (!html) return html;
+
+    const slideImageElements = imageElements[slideNumber] || {};
+    const ourImages = Object.values(slideImageElements);
+
+    if (ourImages.length === 0) {
+      return html; // Если нет наших изображений, возвращаем оригинальный HTML
+    }
+
+    // Создаем DOM parser для работы с HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const images = doc.querySelectorAll("img");
+
+    // Заменяем изображения в шаблоне на наши
+    images.forEach((img, index) => {
+      if (index < ourImages.length && ourImages[index].src) {
+        img.src = ourImages[index].src;
+        if (ourImages[index].alt) {
+          img.alt = ourImages[index].alt;
+        }
+        console.log(
+          `🖼️ [Preview] Replaced template image ${index} with our image:`,
+          ourImages[index].src
+        );
+      }
+    });
+
+    return doc.documentElement.outerHTML;
+  };
+
   // Получаем тип слайда
   const slideType = getSlideType(slideNumber);
 
@@ -281,44 +314,61 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
   const renderPreviewImageElements = () => {
     const slideImageElements = imageElements[slideNumber] || {};
 
-    return Object.entries(slideImageElements).map(([elementId, imageData]) => {
-      const scaledX = (imageData.position?.x || 100) * SCALE;
-      const scaledY = (imageData.position?.y || 100) * SCALE;
-      const scaledWidth = Math.min(30, (imageData.width || 150) * SCALE);
-      const scaledHeight = Math.min(20, (imageData.height || 100) * SCALE);
+    // Получаем HTML шаблон для проверки
+    const templateId = `slide_${slideNumber}`;
+    const renderedHtml = slideTemplates[templateId];
 
-      console.log(`Rendering image ${elementId}:`, {
-        originalPosition: imageData.position,
-        originalSize: { width: imageData.width, height: imageData.height },
-        scaledX,
-        scaledY,
-        scaledWidth,
-        scaledHeight,
-      });
+    // Проверяем, есть ли HTML шаблон с изображениями
+    const hasTemplateWithImages = renderedHtml && renderedHtml.includes("<img");
 
-      return (
-        <div
-          key={elementId}
-          className="absolute bg-green-100 border border-green-300 rounded-[1px] flex items-center justify-center"
-          style={{
-            left: `${scaledX}px`,
-            top: `${scaledY}px`,
-            width: `${scaledWidth}px`,
-            height: `${scaledHeight}px`,
-          }}
-        >
-          {imageData.src ? (
-            <img
-              src={imageData.src}
-              alt={imageData.alt || ""}
-              className="w-full h-full object-cover rounded-[1px]"
-            />
-          ) : (
-            <div className="text-[2px] text-green-600 text-center">IMG</div>
-          )}
-        </div>
-      );
-    });
+    return Object.entries(slideImageElements)
+      .map(([elementId, imageData]) => {
+        // Если есть HTML шаблон с изображениями, не отображаем изображения как редактируемые элементы
+        // Они уже встроены в шаблон
+        if (hasTemplateWithImages) {
+          console.log(
+            `🖼️ [Preview] Hiding image element ${elementId} because it's integrated into template`
+          );
+          return null;
+        }
+        const scaledX = (imageData.position?.x || 100) * SCALE;
+        const scaledY = (imageData.position?.y || 100) * SCALE;
+        const scaledWidth = Math.min(30, (imageData.width || 150) * SCALE);
+        const scaledHeight = Math.min(20, (imageData.height || 100) * SCALE);
+
+        console.log(`Rendering image ${elementId}:`, {
+          originalPosition: imageData.position,
+          originalSize: { width: imageData.width, height: imageData.height },
+          scaledX,
+          scaledY,
+          scaledWidth,
+          scaledHeight,
+        });
+
+        return (
+          <div
+            key={elementId}
+            className="absolute bg-green-100 border border-green-300 rounded-[1px] flex items-center justify-center"
+            style={{
+              left: `${scaledX}px`,
+              top: `${scaledY}px`,
+              width: `${scaledWidth}px`,
+              height: `${scaledHeight}px`,
+            }}
+          >
+            {imageData.src ? (
+              <img
+                src={imageData.src}
+                alt={imageData.alt || ""}
+                className="w-full h-full object-cover rounded-[1px]"
+              />
+            ) : (
+              <div className="text-[2px] text-green-600 text-center">IMG</div>
+            )}
+          </div>
+        );
+      })
+      .filter(Boolean); // Убираем null элементы
   };
 
   // Рендер превью на основе типа слайда и реального контента
@@ -342,7 +392,7 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
             }}
           >
             <TemplateRenderer
-              html={renderedHtml}
+              html={replaceTemplateImagesWithOurs(renderedHtml)}
               templateId={templateId}
               className="w-full h-full"
             />

@@ -86,6 +86,39 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   // Get image area selection for current slide
   const imageAreaSelection = getImageAreaSelection(slideNumber);
 
+  // Функция для замены изображений в HTML шаблоне на наши изображения
+  const replaceTemplateImagesWithOurs = (html: string): string => {
+    if (!html) return html;
+
+    const slideImageElements = imageElements[slideNumber] || {};
+    const ourImages = Object.values(slideImageElements);
+
+    if (ourImages.length === 0) {
+      return html; // Если нет наших изображений, возвращаем оригинальный HTML
+    }
+
+    // Создаем DOM parser для работы с HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const images = doc.querySelectorAll("img");
+
+    // Заменяем изображения в шаблоне на наши
+    images.forEach((img, index) => {
+      if (index < ourImages.length && ourImages[index].src) {
+        img.src = ourImages[index].src;
+        if (ourImages[index].alt) {
+          img.alt = ourImages[index].alt;
+        }
+        console.log(
+          `🖼️ Replaced template image ${index} with our image:`,
+          ourImages[index].src
+        );
+      }
+    });
+
+    return doc.documentElement.outerHTML;
+  };
+
   // Debug effect to track state changes
   React.useEffect(() => {
     console.log(
@@ -618,8 +651,21 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   // Render image elements from store
   const renderImageElements = () => {
     const currentSlideElements = imageElements[slideNumber] || {};
-    return Object.entries(currentSlideElements).map(
-      ([elementId, imageData]) => {
+
+    // Проверяем, есть ли HTML шаблон с изображениями
+    const hasTemplateWithImages = renderedHtml && renderedHtml.includes("<img");
+
+    return Object.entries(currentSlideElements)
+      .map(([elementId, imageData]) => {
+        // Если есть HTML шаблон с изображениями, не отображаем изображения как редактируемые элементы
+        // Они уже встроены в шаблон
+        if (hasTemplateWithImages && isTemplateMode) {
+          console.log(
+            `🖼️ Hiding image element ${elementId} because it's integrated into template`
+          );
+          return null;
+        }
+
         return (
           <ResizableImageBox
             key={elementId}
@@ -631,8 +677,8 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             }}
           />
         );
-      }
-    );
+      })
+      .filter(Boolean); // Убираем null элементы
   };
 
   // Render infographics elements from store
@@ -927,7 +973,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
               }}
             >
               <TemplateRenderer
-                html={renderedHtml}
+                html={replaceTemplateImagesWithOurs(renderedHtml || "")}
                 templateId={`slide_${slideNumber}`}
                 className="w-full h-full"
               />
@@ -1257,7 +1303,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
           style={{ position: "relative" }}
         >
           <TemplateRenderer
-            html={filledHtml}
+            html={replaceTemplateImagesWithOurs(filledHtml)}
             templateId={slideTemplateKey}
             className="w-full h-full"
           />

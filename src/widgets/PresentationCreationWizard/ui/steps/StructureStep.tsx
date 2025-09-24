@@ -65,6 +65,14 @@ export const StructureStep: React.FC<StructureStepProps> = ({
   const [newSlidePrompt, setNewSlidePrompt] = useState("");
   const [isAddingSlide, setIsAddingSlide] = useState(false);
 
+  // Состояние для редактирования слайдов
+  const [editingSlideId, setEditingSlideId] = useState<number | null>(null);
+  const [editingField, setEditingField] = useState<"title" | "summary" | null>(
+    null
+  );
+  const [tempSlideTitle, setTempSlideTitle] = useState("");
+  const [tempSlideSummary, setTempSlideSummary] = useState("");
+
   // Ref для предотвращения повторных вызовов API
   const hasCalledApi = useRef(false);
 
@@ -295,6 +303,51 @@ export const StructureStep: React.FC<StructureStepProps> = ({
       handleSaveTitle();
     } else if (e.key === "Escape") {
       handleCancelTitle();
+    }
+  };
+
+  // Функции для редактирования слайдов
+  const handleEditSlide = (slideIndex: number, field: "title" | "summary") => {
+    const slide = slides[slideIndex];
+    setEditingSlideId(slideIndex);
+    setEditingField(field);
+
+    if (field === "title") {
+      setTempSlideTitle(slide.title);
+    } else {
+      setTempSlideSummary(slide.summary);
+    }
+  };
+
+  const handleSaveSlideEdit = () => {
+    if (editingSlideId === null || editingField === null) return;
+
+    const updatedSlides = [...slides];
+    const slide = updatedSlides[editingSlideId];
+
+    if (editingField === "title" && tempSlideTitle.trim()) {
+      slide.title = tempSlideTitle.trim();
+    } else if (editingField === "summary" && tempSlideSummary.trim()) {
+      slide.summary = tempSlideSummary.trim();
+    }
+
+    setUiSlides(updatedSlides);
+    handleCancelSlideEdit();
+  };
+
+  const handleCancelSlideEdit = () => {
+    setEditingSlideId(null);
+    setEditingField(null);
+    setTempSlideTitle("");
+    setTempSlideSummary("");
+  };
+
+  const handleSlideKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSaveSlideEdit();
+    } else if (e.key === "Escape") {
+      handleCancelSlideEdit();
     }
   };
 
@@ -536,7 +589,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                 </span>
               </div>
 
-              {/* Slides appearing during loading */}
+              {/* Slides appearing during loading - SECTION 1 */}
               <div className="space-y-3 max-w-[772px] pt-8">
                 {slides.slice(0, visibleSlidesCount).map((slide, index) => (
                   <div
@@ -570,12 +623,51 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                         </div>
                       </div>
                       <div className="flex flex-col gap-1 min-w-[200px] flex-1">
-                        <h3 className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px]">
-                          {slide.title}
-                        </h3>
-                        <p className="text-[14px] font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px]">
-                          {slide.summary}
-                        </p>
+                        {/* Заголовок слайда */}
+                        {editingSlideId === index &&
+                        editingField === "title" ? (
+                          <input
+                            type="text"
+                            value={tempSlideTitle}
+                            onChange={(e) => setTempSlideTitle(e.target.value)}
+                            onKeyDown={handleSlideKeyPress}
+                            onBlur={handleSaveSlideEdit}
+                            autoFocus
+                            className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none"
+                          />
+                        ) : (
+                          <h3
+                            onClick={() => handleEditSlide(index, "title")}
+                            className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] cursor-pointer hover:bg-white hover:shadow-sm rounded px-2 py-1 transition-all"
+                            title="Нажмите для редактирования"
+                          >
+                            {slide.title}
+                          </h3>
+                        )}
+
+                        {/* Описание слайда */}
+                        {editingSlideId === index &&
+                        editingField === "summary" ? (
+                          <textarea
+                            value={tempSlideSummary}
+                            onChange={(e) =>
+                              setTempSlideSummary(e.target.value)
+                            }
+                            onKeyDown={handleSlideKeyPress}
+                            onBlur={handleSaveSlideEdit}
+                            autoFocus
+                            rows={3}
+                            className="text-[14px] font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none resize-none"
+                          />
+                        ) : (
+                          <p
+                            onClick={() => handleEditSlide(index, "summary")}
+                            className="text-[14px] font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px] cursor-pointer hover:bg-white hover:shadow-sm rounded px-2 py-1 transition-all"
+                            title="Нажмите для редактирования"
+                          >
+                            {slide.summary}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <button className="bg-white w-10 h-10 rounded-[8px] border border-[#C0C0C1] flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0">
@@ -656,6 +748,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                 </div>
               </div>
 
+              {/* Main slides list - SECTION 2 */}
               <div className="space-y-3 w-full max-h-[600px] pb-10 overflow-auto">
                 {slides.map((slide, index) => (
                   <div
@@ -688,12 +781,51 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                         </div>
                       </div>
                       <div className="flex flex-col gap-1 min-w-[200px] flex-1">
-                        <h3 className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px]">
-                          {slide.title}
-                        </h3>
-                        <p className="text-[14px] font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px]">
-                          {slide.summary}
-                        </p>
+                        {/* Заголовок слайда */}
+                        {editingSlideId === index &&
+                        editingField === "title" ? (
+                          <input
+                            type="text"
+                            value={tempSlideTitle}
+                            onChange={(e) => setTempSlideTitle(e.target.value)}
+                            onKeyDown={handleSlideKeyPress}
+                            onBlur={handleSaveSlideEdit}
+                            autoFocus
+                            className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none"
+                          />
+                        ) : (
+                          <h3
+                            onClick={() => handleEditSlide(index, "title")}
+                            className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] cursor-pointer hover:bg-white hover:shadow-sm rounded px-2 py-1 transition-all"
+                            title="Нажмите для редактирования"
+                          >
+                            {slide.title}
+                          </h3>
+                        )}
+
+                        {/* Описание слайда */}
+                        {editingSlideId === index &&
+                        editingField === "summary" ? (
+                          <textarea
+                            value={tempSlideSummary}
+                            onChange={(e) =>
+                              setTempSlideSummary(e.target.value)
+                            }
+                            onKeyDown={handleSlideKeyPress}
+                            onBlur={handleSaveSlideEdit}
+                            autoFocus
+                            rows={3}
+                            className="text-[14px] font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none resize-none"
+                          />
+                        ) : (
+                          <p
+                            onClick={() => handleEditSlide(index, "summary")}
+                            className="text-[14px] font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px] cursor-pointer hover:bg-white hover:shadow-sm rounded px-2 py-1 transition-all"
+                            title="Нажмите для редактирования"
+                          >
+                            {slide.summary}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <button

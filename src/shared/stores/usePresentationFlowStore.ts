@@ -110,6 +110,9 @@ export interface PresentationFlowState {
   setUiSlides: (slides: Array<{ title: string; summary: string }>) => void;
   setDeckTitle: (title: string) => void;
 
+  // Очистка структуры
+  clearStructure: () => void;
+
   // Сброс состояния
   resetFlow: () => void;
   resetToStep: (step: PresentationFlowStep) => void;
@@ -246,6 +249,16 @@ export const usePresentationFlowStore = create<PresentationFlowState>()(
 
     setUiSlides: (slides) => set({ uiSlides: slides }),
     setDeckTitle: (title) => set({ deckTitle: title }),
+
+    // === Очистка структуры для повторной генерации ===
+    clearStructure: () =>
+      set({
+        uiSlides: undefined,
+        deckTitle: undefined,
+        isGenerating: false,
+        generationProgress: 0,
+        generationError: null,
+      }),
 
     // === Сброс ===
     resetFlow: () => set(initialState),

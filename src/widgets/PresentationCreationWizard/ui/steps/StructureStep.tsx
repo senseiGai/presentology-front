@@ -97,10 +97,19 @@ export const StructureStep: React.FC<StructureStepProps> = ({
   // Автоматический вызов API для выбора структуры при загрузке компонента
   useEffect(() => {
     const autoGenerateStructure = async () => {
-      if (!brief || hasCalledApi.current) {
+      // Если нет брифа, уже вызывали API, или уже есть сгенерированные слайды - не генерируем
+      if (!brief || hasCalledApi.current || (uiSlides && uiSlides.length > 0)) {
+        if (uiSlides && uiSlides.length > 0) {
+          console.log(
+            "StructureStep: Slides already exist, skipping generation"
+          );
+          setIsLoading(false);
+          setHasGeneratedStructure(true);
+        }
         return;
       }
 
+      console.log("StructureStep: Starting structure generation");
       hasCalledApi.current = true;
 
       try {
@@ -343,6 +352,130 @@ export const StructureStep: React.FC<StructureStepProps> = ({
     }
   };
 
+  // Функция для перегенерации структуры
+  const handleRegenerateStructure = async () => {
+    if (!brief || isLoading) {
+      return;
+    }
+
+    try {
+      // Очищаем текущие слайды и состояние
+      setUiSlides([]);
+      setDeckTitle("");
+
+      // Сбрасываем флаги для повторной генерации
+      hasCalledApi.current = false;
+      setHasGeneratedStructure(false);
+      setIsLoading(true);
+
+      console.log("StructureStep: Regenerating structure");
+
+      // Запускаем генерацию заново
+      hasCalledApi.current = true;
+
+      // Шаг 1: Выбор структуры
+      const structureRequest = {
+        mode: slideCountMode || "auto",
+        userData: {
+          topic: brief.topic,
+          goal: brief.goal,
+          audience: brief.audience,
+          keyIdea: brief.keyIdea,
+          expectedAction: brief.expectedAction,
+          tones: brief.tones,
+          files: extractedFiles || [],
+        },
+        ...(slideCountMode === "fixed" && slideCount
+          ? { slideCount: slideCount.toString() }
+          : {}),
+      };
+
+      const structureResult = await selectStructureMutation.mutateAsync(
+        structureRequest
+      );
+
+      // Обрабатываем результат так же, как в основной функции
+      const chosenStructure =
+        structureResult.chosenStructure ||
+        (structureResult as any).data?.chosenStructure;
+
+      const structureText =
+        structureResult.structureText ||
+        (structureResult as any).data?.structureText;
+
+      if (structureText) {
+        const titleMatch = structureText.match(/^(.+?)\s*\(/);
+        if (titleMatch) {
+          const presentationTitle = titleMatch[1].trim();
+          setDeckTitle(presentationTitle);
+        }
+      }
+
+      if (chosenStructure) {
+        const structureLines = chosenStructure
+          .split("\n")
+          .filter((line: string) => line.trim())
+          .filter((line: string) => /^\d+\./.test(line.trim()));
+
+        const structureSlides = structureLines.map((line: string) => {
+          const title = line.replace(/^\d+\.\s*/, "").trim();
+          return {
+            title: title || "Заголовок",
+            summary: "Содержимое будет сгенерировано",
+          };
+        });
+
+        setUiSlides(structureSlides);
+
+        // Шаг 2: Генерация названия и детальных слайдов
+        try {
+          const titleAndSlidesRequest = {
+            userData: {
+              topic: brief.topic,
+              goal: brief.goal,
+              audience: brief.audience,
+              keyIdea: brief.keyIdea,
+              expectedAction: brief.expectedAction,
+              tones: brief.tones,
+              files: extractedFiles || [],
+            },
+            chosenStructure: chosenStructure,
+          };
+
+          const titleAndSlidesResult =
+            await createTitleAndSlidesMutation.mutateAsync(
+              titleAndSlidesRequest
+            );
+
+          const titleData =
+            titleAndSlidesResult.title ||
+            (titleAndSlidesResult as any).data?.title;
+          const slidesData =
+            titleAndSlidesResult.slides ||
+            (titleAndSlidesResult as any).data?.slides;
+
+          if (titleData) {
+            setDeckTitle(titleData);
+          }
+
+          if (slidesData && slidesData.length > 0) {
+            setUiSlides(slidesData);
+          }
+        } catch (titleError) {
+          console.error("Error generating title and slides:", titleError);
+        }
+      }
+
+      setHasGeneratedStructure(true);
+    } catch (error) {
+      console.error("Error regenerating structure:", error);
+      hasCalledApi.current = false;
+      setHasGeneratedStructure(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Drag & Drop handlers
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
@@ -445,7 +578,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                         </p>
                       </div>
                     </div>
-                    <button className="bg-white w-10 h-10 rounded-[8px] border border-[#C0C0C1] flex items-center justify-center hover:bg-gray-50 transition-colors">
+                    <button className="bg-white w-10 h-10 rounded-[8px] border border-[#C0C0C1] flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0">
                       <GrayTrashIcon width={18} height={20} />
                     </button>
                   </div>
@@ -514,11 +647,13 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                   </p>
                 </div>
 
-                <AddSlideButton
-                  onClick={() => setIsAddSlideModalOpen(true)}
-                  isLoading={isAddingSlide}
-                  variant="default"
-                />
+                <div className="flex gap-3">
+                  <AddSlideButton
+                    onClick={() => setIsAddSlideModalOpen(true)}
+                    isLoading={isAddingSlide}
+                    variant="default"
+                  />
+                </div>
               </div>
 
               <div className="space-y-3 w-full max-h-[600px] pb-10 overflow-auto">
@@ -563,7 +698,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                     </div>
                     <button
                       onClick={() => handleRemoveSlide(index)}
-                      className="bg-white w-10 h-10 rounded-[8px] border border-[#C0C0C1] flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      className="bg-white w-10 h-10 rounded-[8px] border border-[#C0C0C1] flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0"
                     >
                       <GrayTrashIcon width={18} height={20} />
                     </button>

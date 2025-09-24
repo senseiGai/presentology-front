@@ -503,7 +503,7 @@ export const PresentationCreationWizard: React.FC = () => {
     return (
       <div className="bg-white w-full h-[832px] flex">
         {/* Logo */}
-        <div className="absolute top-6 left-10 z-20">
+        <div className="absolute top-6 z-20">
           <LogoIllustration />
         </div>
 

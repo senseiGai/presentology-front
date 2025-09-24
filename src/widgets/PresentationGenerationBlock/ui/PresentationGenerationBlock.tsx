@@ -31,6 +31,7 @@ export const PresentationGenerationBlock = () => {
     toggleSidebar,
     setIsGenerating,
     setSlideTemplates,
+    setTotalSlides,
   } = usePresentationStore();
 
   // API хук для генерации презентации
@@ -48,6 +49,24 @@ export const PresentationGenerationBlock = () => {
     // Если генерация уже началась, не запускаем снова
     if (hasStartedGeneration.current) {
       return;
+    }
+
+    // Сначала пытаемся установить количество слайдов даже до начала генерации
+    const presentationDataStr = localStorage.getItem(
+      "presentationGenerationData"
+    );
+    if (presentationDataStr) {
+      try {
+        const presentationData = JSON.parse(presentationDataStr);
+        const slidesCount = presentationData.uiSlides?.length || 5;
+        console.log("Early setting total slides to:", slidesCount);
+        setTotalSlides(slidesCount);
+      } catch (error) {
+        console.error(
+          "Error parsing presentation data for slides count:",
+          error
+        );
+      }
     }
 
     const startGeneration = async () => {
@@ -72,6 +91,10 @@ export const PresentationGenerationBlock = () => {
             existingPresentation?.templateIds;
           if (existingTemplateIds && existingTemplateIds.length > 0) {
             console.log("Found existing templateIds:", existingTemplateIds);
+
+            // Устанавливаем количество слайдов на основе templateIds
+            console.log("Setting total slides to:", existingTemplateIds.length);
+            setTotalSlides(existingTemplateIds.length);
 
             setGenerationStatus("Загрузка шаблонов из сохраненных данных...");
             setGenerationProgress(50);
@@ -127,6 +150,11 @@ export const PresentationGenerationBlock = () => {
         }
 
         const presentationData = JSON.parse(presentationDataStr);
+
+        // Устанавливаем количество слайдов на основе структуры
+        const slidesCount = presentationData.uiSlides?.length || 5;
+        console.log("Setting total slides to:", slidesCount);
+        setTotalSlides(slidesCount);
         console.log(
           "Starting presentation generation with data:",
           presentationData

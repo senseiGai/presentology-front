@@ -958,7 +958,25 @@ export const StructureStep: React.FC<StructureStepProps> = ({
                 Назад
               </button>
               <button
-                onClick={onNext}
+                onClick={() => {
+                  // Сохраняем данные в localStorage перед переходом
+                  const existingData = localStorage.getItem(
+                    "presentationGenerationData"
+                  );
+                  if (existingData) {
+                    try {
+                      const parsedData = JSON.parse(existingData);
+                      parsedData.uiSlides = uiSlides;
+                      localStorage.setItem(
+                        "presentationGenerationData",
+                        JSON.stringify(parsedData)
+                      );
+                    } catch (error) {
+                      console.error("Error updating presentation data:", error);
+                    }
+                  }
+                  onNext();
+                }}
                 disabled={isLoading}
                 className={`flex-1 h-[52px] bg-[#BBA2FE] rounded-[8px] text-[18px] font-normal text-white leading-[1.2] tracking-[-0.36px] hover:bg-[#A693FD] transition-colors ${
                   isLoading ? "cursor-not-allowed opacity-50" : ""

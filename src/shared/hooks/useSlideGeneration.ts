@@ -13,6 +13,7 @@ export const useSlideGeneration = () => {
     setIsGenerating,
     setShowFeedback,
     startGeneration,
+    setTotalSlides,
   } = usePresentationStore();
 
   const hasInitialized = useRef(false);
@@ -97,6 +98,11 @@ export const useSlideGeneration = () => {
         console.log("📦 Parsed structure:", parsedStructure);
         uiSlides = parsedStructure.uiSlides || [];
         console.log("📦 Extracted uiSlides:", uiSlides);
+
+        // Устанавливаем количество слайдов на основе структуры
+        const slidesCount = uiSlides.length;
+        console.log("📊 Setting total slides to:", slidesCount);
+        setTotalSlides(slidesCount);
       }
 
       if (briefData) {

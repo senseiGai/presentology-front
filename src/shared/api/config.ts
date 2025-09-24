@@ -15,13 +15,24 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
+    // Middleware для удаления двойных слэшей из URL
+    if (config.url) {
+      // Заменяем все двойные слэши на одинарные, кроме протокола (http:// или https://)
+      config.url = config.url.replace(/([^:]\/)\/+/g, "$1");
+    }
+
+    // Аналогично для baseURL, если он есть
+    if (config.baseURL) {
+      config.baseURL = config.baseURL.replace(/([^:]\/)\/+/g, "$1");
+    }
+
     // Получаем токен из Zustand store
     const token = useAuthStore.getState().accessToken;
     console.log(
       "🔐 [API Request] Token from store:",
       token ? "Token exists" : "No token"
     );
-    console.log("🔗 [API Request] URL:", config.url);
+    console.log("🔗 [API Request] Original URL:", config.url);
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

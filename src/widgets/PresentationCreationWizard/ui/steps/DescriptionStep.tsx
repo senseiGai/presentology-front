@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import { usePresentationCreationStore } from "../../model/usePresentationCreationStore";
 import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
 import { useExtractFiles } from "@/shared/api/presentation-generation";
 import { GoalOption } from "../../model/types";
@@ -16,8 +15,6 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
   onNext,
   onBack,
 }) => {
-  const { presentationData, updatePresentationData } =
-    usePresentationCreationStore();
 
   const {
     brief,
@@ -97,7 +94,7 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
   useEffect(() => {
     // Собираем данные брифа из локального состояния
     const currentBrief = {
-      topic: presentationData.topic,
+      topic: topic,
       goal: customGoal || selectedGoals.join(", "),
       audience: customAudience || selectedAudience.join(", "),
       keyIdea: keyIdea,
@@ -128,7 +125,7 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
       );
     }
   }, [
-    presentationData.topic,
+    topic,
     customGoal,
     selectedGoals,
     customAudience,

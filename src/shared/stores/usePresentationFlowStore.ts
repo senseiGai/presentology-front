@@ -125,7 +125,7 @@ export interface PresentationFlowState {
 // Начальное состояние
 const initialState = {
   // Навигация
-  currentStep: "file-upload" as PresentationFlowStep,
+  currentStep: "brief" as PresentationFlowStep,
 
   // Загрузка файлов
   isUploadingFiles: false,

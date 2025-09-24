@@ -7,13 +7,8 @@ import { DescriptionStep } from "./steps/DescriptionStep";
 import { StructureStep } from "./steps/StructureStep";
 import { StyleStep } from "./steps/StyleStep";
 import { ProgressIndicator } from "./ProgressIndicator";
-import { usePresentationCreationStore } from "../model/usePresentationCreationStore";
+
 import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
-import {
-  useSelectStructureNew,
-  useCreateTitleAndSlidesNew,
-  useAddSlideToStructureNew,
-} from "@/shared/api/presentation-generation";
 import { useWindowWidth } from "@/shared/hooks/useWindowWidth";
 import Image from "next/image";
 
@@ -31,62 +26,18 @@ import { AddSlideButton } from "../../../shared/ui/AddSlideButton";
 
 export const PresentationCreationWizard: React.FC = () => {
   const router = useRouter();
+
+  // Используем только новый flow store
   const {
     currentStep,
     setCurrentStep,
-    presentationData,
-    updatePresentationData,
-  } = usePresentationCreationStore();
-
-  // Store для workflow
-  const {
     brief,
-    slideCountMode,
-    slideCount,
-    extractedFiles,
-    deckTitle,
     uiSlides,
-    textVolume,
-    imageSource,
-    setSlideCountMode,
-    setUiSlides,
-    setDeckTitle,
-    setTextVolume,
-    setImageSource,
+    deckTitle,
+    selectedTheme,
+    selectedTemplate,
+    canProceedFromStep,
   } = usePresentationFlowStore();
-
-  // API хуки для StructureStep
-  const selectStructureMutation = useSelectStructureNew();
-  const createTitleAndSlidesMutation = useCreateTitleAndSlidesNew();
-  const addSlideMutation = useAddSlideToStructureNew();
-
-  // Local state for template selection
-  const [selectedTemplateIndex, setSelectedTemplateIndex] = useState(0);
-
-  // Состояние для StructureStep
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasGeneratedStructure, setHasGeneratedStructure] = useState(false);
-  const [visibleSlidesCount, setVisibleSlidesCount] = useState(0);
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [tempTitle, setTempTitle] = useState("");
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
-  // Состояние для добавления нового слайда
-  const [isAddSlideModalOpen, setIsAddSlideModalOpen] = useState(false);
-  const [newSlidePrompt, setNewSlidePrompt] = useState("");
-  const [isAddingSlide, setIsAddingSlide] = useState(false);
-
-  // Состояние для редактирования слайдов
-  const [editingSlideId, setEditingSlideId] = useState<number | null>(null);
-  const [editingField, setEditingField] = useState<"title" | "summary" | null>(
-    null
-  );
-  const [tempSlideTitle, setTempSlideTitle] = useState("");
-  const [tempSlideSummary, setTempSlideSummary] = useState("");
-
-  // Ref для предотвращения повторных вызовов API
-  const hasCalledApi = useRef(false);
 
   // Add responsive breakpoints
   const windowWidth = useWindowWidth();
@@ -272,28 +223,22 @@ export const PresentationCreationWizard: React.FC = () => {
   ];
 
   const steps: {
-    key: PresentationCreationStep;
+    key: string;
     label: string;
     icon: React.ReactNode;
   }[] = [
-    { key: "description", label: "Описание", icon: <HandWritingIcon /> },
-    { key: "structure", label: "Структура", icon: <StructureIcon /> },
-    { key: "style", label: "Стиль", icon: <PaintIcon /> },
+    { key: "brief", label: "Описание", icon: <HandWritingIcon /> },
+    { key: "style", label: "Структура", icon: <StructureIcon /> },
+    { key: "editor", label: "Стиль", icon: <PaintIcon /> },
   ];
 
   const currentStepIndex = steps.findIndex((step) => step.key === currentStep);
 
   // Check if all steps are completed based on required fields for each step
   const isDescriptionComplete =
-    !!presentationData.topic &&
-    !!presentationData.goal &&
-    !!presentationData.audience;
-  const isStructureComplete =
-    presentationData.slideCount > 0 &&
-    !!presentationData.textVolume &&
-    !!presentationData.imageSource;
-  const isStyleComplete =
-    !!presentationData.selectedTemplate || !!presentationData.selectedStyle;
+    !!brief?.topic && !!brief?.goal && !!brief?.audience;
+  const isStructureComplete = !!uiSlides && uiSlides.length > 0 && !!deckTitle;
+  const isStyleComplete = !!selectedTheme || !!selectedTemplate;
 
   const isCompleted =
     isDescriptionComplete && isStructureComplete && isStyleComplete;
@@ -469,12 +414,12 @@ export const PresentationCreationWizard: React.FC = () => {
   };
 
   const handleBack = () => {
-    if (currentStep === "description") {
+    if (currentStep === "brief") {
       router.push("/home");
     } else {
       const prevIndex = currentStepIndex - 1;
       if (prevIndex >= 0) {
-        setCurrentStep(steps[prevIndex].key);
+        setCurrentStep(steps[prevIndex].key as any);
       }
     }
   };
@@ -482,24 +427,27 @@ export const PresentationCreationWizard: React.FC = () => {
   const handleNext = () => {
     const nextIndex = currentStepIndex + 1;
     if (nextIndex < steps.length) {
-      setCurrentStep(steps[nextIndex].key);
+      setCurrentStep(steps[nextIndex].key as any);
+    } else if (currentStep === "editor") {
+      // Переход к генерации презентации
+      router.push("/presentation-generation");
     }
   };
 
   const renderCurrentStep = () => {
     switch (currentStep) {
-      case "description":
+      case "brief":
         return <DescriptionStep onNext={handleNext} onBack={handleBack} />;
-      case "structure":
-        return <StructureStep onNext={handleNext} onBack={handleBack} />;
       case "style":
+        return <StructureStep onNext={handleNext} onBack={handleBack} />;
+      case "editor":
         return <StyleStep onBack={handleBack} />;
       default:
-        return null;
+        return <DescriptionStep onNext={handleNext} onBack={handleBack} />;
     }
   };
 
-  if (currentStep === "style") {
+  if (currentStep === "editor") {
     return (
       <div className="bg-white w-full h-[832px] flex">
         {/* Logo */}
@@ -636,7 +584,7 @@ export const PresentationCreationWizard: React.FC = () => {
     );
   }
 
-  if (currentStep === "structure") {
+  if (currentStep === "style") {
     return (
       <div className="w-full bg-white">
         {/* Logo */}

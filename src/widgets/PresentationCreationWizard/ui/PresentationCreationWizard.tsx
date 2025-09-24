@@ -27,7 +27,8 @@ export const PresentationCreationWizard: React.FC = () => {
   const windowWidth = useWindowWidth();
   const isMobile = windowWidth < 768;
   const isTablet = windowWidth >= 768 && windowWidth < 1024;
-  const isDesktop = windowWidth >= 1024;
+  const middleWidth = windowWidth > 1600;
+  const topWidth = windowWidth > 1800;
 
   const steps: {
     key: PresentationCreationStep;
@@ -172,15 +173,41 @@ export const PresentationCreationWizard: React.FC = () => {
       {!isMobile && (
         <div className="relative flex-1">
           <div className="relative w-full h-[686px] overflow-hidden left-1/2 transform -translate-x-1/2 top-[122px]">
-            <Image
-              src="/assets/brief_mask_bg.png"
-              width={809}
-              height={686}
-              alt="Presentation"
-              className="absolute w-full h-full select-none"
-            />
+            {topWidth ? (
+              <Image
+                src="/assets/brief_mask_top.png"
+                width={1329}
+                height={686}
+                alt="Presentation"
+                className="absolute w-full h-full select-none"
+              />
+            ) : middleWidth ? (
+              <Image
+                src="/assets/brief_mask_middle.png"
+                width={1129}
+                height={686}
+                alt="Presentation"
+                className="absolute w-full h-full select-none"
+              />
+            ) : (
+              <Image
+                src="/assets/brief_mask_bg.png"
+                width={809}
+                height={686}
+                alt="Presentation"
+                className="absolute w-full h-full select-none"
+              />
+            )}
             <div className="relative">
-              <PresentationMascot className="!absolute w-[429px] !h-[475px] bottom-[-780px] left-[630px] transform -translate-x-1/2 rotate-[-30deg]" />
+              <PresentationMascot
+                className={`!absolute ${
+                  topWidth
+                    ? "w-[429px] !h-[475px] bottom-[-780px] left-[830px]"
+                    : middleWidth
+                    ? "w-[429px] !h-[475px] bottom-[-780px] left-[730px]"
+                    : "w-[429px] !h-[475px] bottom-[-780px] left-[630px]"
+                } transform -translate-x-1/2 rotate-[-30deg]`}
+              />
             </div>
           </div>
         </div>

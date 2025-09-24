@@ -19,7 +19,6 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
   const { presentationData, updatePresentationData } =
     usePresentationCreationStore();
 
-  // Новый store для flow
   const {
     brief,
     setBrief,

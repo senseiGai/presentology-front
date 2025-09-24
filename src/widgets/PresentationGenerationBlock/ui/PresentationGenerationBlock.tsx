@@ -9,6 +9,7 @@ import { SlideContent, getSlideType } from "@/entities/SlideContent";
 import { SlidePreviewContent } from "@/entities/SlidePreviewContent";
 import { type ElementOption } from "@/features/ElementSelector";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
+import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
 import {
   useGenerateSlidesForStructureNew,
   getMultipleTemplates,
@@ -34,6 +35,9 @@ export const PresentationGenerationBlock = () => {
     setTotalSlides,
   } = usePresentationStore();
 
+  // Получаем данные из PresentationFlowStore для правильного подсчета слайдов
+  const { uiSlides } = usePresentationFlowStore();
+
   // API хук для генерации презентации
   const generateSlidesMutation = useGenerateSlidesForStructureNew();
 
@@ -43,6 +47,14 @@ export const PresentationGenerationBlock = () => {
 
   // Ref для предотвращения повторного запуска генерации
   const hasStartedGeneration = useRef(false);
+
+  // Устанавливаем правильное количество слайдов при изменении uiSlides
+  useEffect(() => {
+    if (uiSlides && uiSlides.length > 0) {
+      console.log("Setting total slides from store:", uiSlides.length);
+      setTotalSlides(uiSlides.length);
+    }
+  }, [uiSlides, setTotalSlides]);
 
   // Получение и обработка данных при загрузке компонента
   useEffect(() => {
@@ -58,7 +70,9 @@ export const PresentationGenerationBlock = () => {
     if (presentationDataStr) {
       try {
         const presentationData = JSON.parse(presentationDataStr);
-        const slidesCount = presentationData.uiSlides?.length || 5;
+        // Приоритет данным из store, затем из localStorage, затем fallback
+        const slidesCount =
+          uiSlides?.length || presentationData.uiSlides?.length || 3;
         console.log("Early setting total slides to:", slidesCount);
         setTotalSlides(slidesCount);
       } catch (error) {
@@ -152,7 +166,9 @@ export const PresentationGenerationBlock = () => {
         const presentationData = JSON.parse(presentationDataStr);
 
         // Устанавливаем количество слайдов на основе структуры
-        const slidesCount = presentationData.uiSlides?.length || 5;
+        // Приоритет данным из store, затем из localStorage, затем fallback
+        const slidesCount =
+          uiSlides?.length || presentationData.uiSlides?.length || 3;
         console.log("Setting total slides to:", slidesCount);
         setTotalSlides(slidesCount);
         console.log(

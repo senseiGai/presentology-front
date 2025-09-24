@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import PreviewGenerationLoaderIcon from "../../../../public/icons/PreviewGenerationLoaderIcon";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { getSlideType } from "@/entities/SlideContent";
+import { TemplateRenderer } from "@/entities/TemplateRenderer";
 
 interface SlidePreviewContentProps {
   slideNumber: number;
@@ -24,6 +25,7 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
     textElementPositions,
     tableElements,
     imageElements,
+    slideTemplates,
     // Добавляем дополнительные зависимости для отслеживания всех изменений
     selectedTextElement,
     zoomLevel,
@@ -42,6 +44,7 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
     textElementStyles,
     tableElements,
     imageElements,
+    slideTemplates,
     selectedTextElement,
     slideNumber,
   ]);
@@ -320,27 +323,40 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
 
   // Рендер превью на основе типа слайда и реального контента
   const renderSlidePreview = () => {
-    const slideType = getSlideType(slideNumber);
+    // Получаем HTML шаблон для текущего слайда
+    const templateId = `slide_${slideNumber}`;
+    const renderedHtml = slideTemplates[templateId];
 
-    switch (slideType) {
-      case "title":
-        return (
-          <div className="w-full h-full bg-gradient-to-br from-[#2D3748] to-[#1A202C] rounded-[4px] relative overflow-hidden">
-            {renderPreviewTextElements()}
-            {renderPreviewTableElements()}
-            {renderPreviewImageElements()}
+    return (
+      <div className="w-full h-full bg-white rounded-[4px] relative overflow-hidden border border-[#E5E7EB]">
+        {/* Фоновый HTML шаблон (всегда включен) */}
+        {renderedHtml && (
+          <div
+            className="template-background absolute inset-0 pointer-events-none"
+            style={{
+              zIndex: 0,
+              transform: `scale(${SCALE})`,
+              transformOrigin: "top left",
+              width: `${ORIGINAL_WIDTH}px`,
+              height: `${ORIGINAL_HEIGHT}px`,
+            }}
+          >
+            <TemplateRenderer
+              html={renderedHtml}
+              templateId={templateId}
+              className="w-full h-full"
+            />
           </div>
-        );
+        )}
 
-      default:
-        return (
-          <div className="w-full h-full bg-[#F7FAFC] rounded-[4px] relative overflow-hidden border border-[#E5E7EB]">
-            {renderPreviewTextElements()}
-            {renderPreviewTableElements()}
-            {renderPreviewImageElements()}
-          </div>
-        );
-    }
+        {/* Редактируемые элементы поверх шаблона */}
+        <div className="relative z-10">
+          {renderPreviewTextElements()}
+          {renderPreviewTableElements()}
+          {renderPreviewImageElements()}
+        </div>
+      </div>
+    );
   };
 
   return renderSlidePreview();

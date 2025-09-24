@@ -918,25 +918,12 @@ export const SlideContent: React.FC<SlideContentProps> = ({
           onMouseLeave={handleMouseLeave}
           style={{ position: "relative" }}
         >
-          {/* Кнопка переключения режимов */}
-          <div className="absolute top-2 right-2 z-50">
-            <button
-              onClick={() => setIsTemplateMode(!isTemplateMode)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
-              title={isTemplateMode ? "Отключить шаблон" : "Включить шаблон"}
-            >
-              {isTemplateMode ? "Шаблон ВКЛ" : "Шаблон ВЫКЛ"}
-            </button>
-          </div>
-
           {/* Фоновый HTML шаблон */}
           {isTemplateMode && (
             <div
               className="template-background absolute inset-0 pointer-events-none"
               style={{
                 zIndex: 0,
-                opacity: 0.3, // Делаем фон полупрозрачным
-                filter: "grayscale(0.5)", // Слегка обесцвечиваем фон
               }}
             >
               <TemplateRenderer

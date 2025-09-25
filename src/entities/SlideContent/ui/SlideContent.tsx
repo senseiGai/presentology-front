@@ -971,34 +971,8 @@ export const SlideContent = ({
       }
     } // Закрывающая скобка для if (slideData)
 
-    // Также рендерим пользовательские элементы из store
-    const userElements = Object.entries(textElementStyles)
-      .filter(([elementId]) => elementId.includes(`slide-${slideNumber}-`))
-      .map(([elementId, style]) => {
-        const content = textElementContents[elementId] || "New text element";
-        return (
-          <ResizableTextBox
-            key={`user-${elementId}`}
-            elementId={elementId}
-            isSelected={selectedTextElements.includes(elementId)}
-            onDelete={handleTextDelete}
-            onCopy={() => handleTextCopy(elementId)}
-            onMoveUp={() => handleTextMoveUp(elementId)}
-            onMoveDown={() => handleTextMoveDown(elementId)}
-          >
-            <EditableText
-              elementId={elementId}
-              initialText={content}
-              className="text-[16px] cursor-pointer transition-colors"
-              onClick={(e) => {
-                handleTextClick(elementId, content, e);
-              }}
-            />
-          </ResizableTextBox>
-        );
-      });
-
-    return [...elements, ...userElements];
+    // УБИРАЕМ лишние пользовательские элементы! Рендерим только данные из API
+    return elements;
   };
 
   // Render table elements from store
@@ -1339,318 +1313,40 @@ export const SlideContent = ({
       );
     }
 
-    // Приоритет 1: Проверяем, есть ли готовый HTML с бэкенда
-    if (renderedHtml) {
-      console.log(
-        `🎯 [SlideContent] Rendering slide ${slideNumber} with backend HTML`
-      );
+    // УПРОЩАЕМ! Убираем всю сложную логику и рендерим ПРОСТОЕ содержимое как в preview
+    console.log(`🎯 [Main] Simple render for slide ${slideNumber}`);
 
-      // Получаем данные слайда для редактируемых элементов
-      const generatedPresentationStr = localStorage.getItem(
-        "generatedPresentation"
-      );
-      let slideData = null;
-
-      if (generatedPresentationStr) {
-        try {
-          const generatedPresentation = JSON.parse(generatedPresentationStr);
-          slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
-        } catch (error) {
-          console.error("Error parsing generated presentation:", error);
-        }
-      }
-
-      // Подготавливаем начальные позиции для элементов в store
-      const titleElementId = `slide-${slideNumber}-title`;
-      const subtitleElementId = `slide-${slideNumber}-subtitle`;
-      const text1ElementId = `slide-${slideNumber}-text1`;
-      const text2ElementId = `slide-${slideNumber}-text2`;
-
-      return (
+    return (
+      <div
+        className={`slide-container mx-auto w-[759px] h-[427px] bg-white rounded-[12px] overflow-hidden ${
+          isImageAreaSelectionMode ? "cursor-crosshair" : ""
+        }`}
+        onClick={handleSlideClick}
+        onDoubleClick={handleDoubleClick}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        style={{ position: "relative" }}
+      >
+        {/* Интерактивные элементы - ПРОСТАЯ логика как в preview */}
         <div
-          className={`slide-container mx-auto w-[759px] h-[427px] bg-white rounded-[12px] overflow-hidden ${
-            isImageAreaSelectionMode ? "cursor-crosshair" : ""
-          }`}
-          onClick={handleSlideClick}
-          onDoubleClick={handleDoubleClick}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          style={{ position: "relative" }}
+          className="interactive-layer absolute inset-0"
+          style={{ zIndex: 10 }}
         >
-          {/* Только интерактивные элементы */}
-          <div
-            className="interactive-layer absolute inset-0"
-            style={{ zIndex: 10 }}
-          >
-            {/* Интерактивные текстовые элементы с данными слайда */}
-            {renderSlideDataElements()}
-            {/* Другие интерактивные элементы (таблицы, изображения, инфографика) */}
-            {renderTableElements()}
-            {renderImageElements()}
-            {renderInfographicsElements()}
-            {renderAlignmentGuides()}
-            {renderImageAreaSelection()}
-          </div>
+          {/* Рендерим данные слайда */}
+          {renderSlideDataElements()}
+          {/* Рендерим изображения */}
+          {renderImageElements()}
+          {/* Остальные элементы */}
+          {renderTableElements()}
+          {renderInfographicsElements()}
+          {renderAlignmentGuides()}
+          {renderImageAreaSelection()}
         </div>
-      );
-    }
-
-    // Приоритет 2: Показываем лоадер, если HTML загружается
-    if (isLoadingRender) {
-      return (
-        <div
-          className="slide-container mx-auto w-[759px] h-[427px] bg-white rounded-[12px] flex items-center justify-center"
-          style={{ position: "relative" }}
-        >
-          <div className="text-gray-500">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-2"></div>
-            Загрузка слайда {slideNumber}...
-          </div>
-        </div>
-      );
-    }
-
-    // Приоритет 3: Fallback к старой логике (локальные шаблоны)
-    console.log("🔄 [SlideContent] Falling back to local template logic");
-
-    // Получаем данные презентации из localStorage
-    const generatedPresentationStr = localStorage.getItem(
-      "generatedPresentation"
+      </div>
     );
-    console.log(
-      "localStorage generatedPresentation:",
-      generatedPresentationStr
-    );
-
-    // Debug: показываем все ключи в localStorage
-    console.log("All localStorage keys:", Object.keys(localStorage));
-
-    // Debug: показываем доступные шаблоны
-    console.log("Available slideTemplates:", Object.keys(slideTemplates));
-    console.log("slideTemplates data:", slideTemplates);
-
-    // Debug: показываем все что есть в localStorage
-    const allLocalStorageData: Record<string, string | null> = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        allLocalStorageData[key] = localStorage.getItem(key);
-      }
-    }
-    console.log("All localStorage data:", allLocalStorageData);
-    let slideData = null;
-
-    if (generatedPresentationStr) {
-      try {
-        const generatedPresentation = JSON.parse(generatedPresentationStr);
-        console.log("Parsed generatedPresentation:", generatedPresentation);
-        console.log("Available slides:", generatedPresentation.data?.slides);
-
-        // Получаем данные для текущего слайда (slideNumber - 1, так как массив начинается с 0)
-        slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
-        console.log(`Slide data for slide ${slideNumber}:`, slideData);
-      } catch (error) {
-        console.error("Error parsing generated presentation:", error);
-      }
-    }
-
-    // Проверяем, есть ли HTML шаблон для текущего слайда
-    console.log(`Looking for template for slide ${slideNumber}`);
-    console.log("Available template keys:", Object.keys(slideTemplates));
-
-    const slideTemplateKey = Object.keys(slideTemplates).find((templateId) => {
-      // Попробуем найти шаблон по разным возможным именам
-      const matches =
-        templateId === `slide_${slideNumber}` ||
-        templateId === `slide_${slideNumber.toString().padStart(3, "0")}` ||
-        templateId === `proto_${slideNumber.toString().padStart(3, "0")}` ||
-        templateId === `proto_${slideNumber}`;
-      console.log(
-        `Checking template ${templateId} for slide ${slideNumber}: ${matches}`
-      );
-      return matches;
-    });
-
-    console.log(`Found template key: ${slideTemplateKey}`);
-
-    if (slideTemplateKey && slideTemplates[slideTemplateKey] && slideData) {
-      console.log(
-        `Rendering HTML template for slide ${slideNumber}:`,
-        slideTemplateKey
-      );
-
-      // Используем чистый HTML шаблон без заполнения данными
-      // Данные будут рендериться отдельными интерактивными компонентами поверх шаблона
-      let templateHtml = slideTemplates[slideTemplateKey];
-      console.log("Using template HTML as background layout only");
-      console.log("Template preview:", templateHtml.substring(0, 200) + "...");
-
-      // Убираем плейсхолдеры из шаблона, чтобы оставить только дизайн/фон
-      templateHtml = templateHtml
-        .replace(/\{\{[^}]+\}\}/g, "") // Убираем все плейсхолдеры {{...}}
-        .replace(/<[^>]*>\s*<\/[^>]*>/g, ""); // Убираем пустые теги
-
-      console.log("Final template HTML length:", templateHtml.length);
-      console.log(
-        "Template HTML preview:",
-        templateHtml.substring(0, 500) + "..."
-      );
-
-      return (
-        <div
-          className={`slide-container mx-auto w-[759px] h-[427px] bg-white rounded-[12px] overflow-hidden ${
-            isImageAreaSelectionMode ? "cursor-crosshair" : ""
-          }`}
-          onClick={handleSlideClick}
-          onDoubleClick={handleDoubleClick}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          style={{ position: "relative" }}
-        >
-          {/* Только интерактивные элементы */}
-          <div
-            className="interactive-layer absolute inset-0"
-            style={{ zIndex: 10 }}
-          >
-            {/* Интерактивные текстовые элементы с данными слайда */}
-            {renderSlideDataElements()}
-            {/* Другие интерактивные элементы (таблицы, изображения, инфографика) */}
-            {renderTableElements()}
-            {renderImageElements()}
-            {renderInfographicsElements()}
-            {renderAlignmentGuides()}
-            {renderImageAreaSelection()}
-          </div>
-        </div>
-      );
-    }
-
-    // Если нет HTML шаблона, рендерим обычный слайд
-    switch (slideType) {
-      case "title":
-        return (
-          <div
-            className={`slide-container mx-auto w-[759px] h-[427px] bg-gradient-to-br from-[#2D3748] to-[#1A202C] rounded-[12px] p-12 text-white relative ${
-              isImageAreaSelectionMode ? "cursor-crosshair" : ""
-            }`}
-            onClick={handleSlideClick}
-            onDoubleClick={handleDoubleClick}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-            style={{ position: "relative" }}
-          >
-            <ResizableTextBox
-              key="user-title-main"
-              isSelected={selectedTextElements.includes("title-main")}
-              elementId="title-main"
-              onDelete={handleTextDelete}
-              onCopy={() => handleTextCopy("title-main")}
-              onMoveUp={() => handleTextMoveUp("title-main")}
-              onMoveDown={() => handleTextMoveDown("title-main")}
-            >
-              <EditableText
-                elementId="title-main"
-                initialText="ЗАГОЛОВОК\nВ ДВЕ СТРОКИ"
-                className="text-[48px] font-bold leading-tight cursor-pointer transition-colors"
-                onClick={(e) => {
-                  handleTextClick("title-main", "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ", e);
-                }}
-              />
-            </ResizableTextBox>
-
-            <ResizableTextBox
-              key="user-title-sub"
-              isSelected={selectedTextElements.includes("title-sub")}
-              elementId="title-sub"
-              onDelete={handleTextDelete}
-              onCopy={() => handleTextCopy("title-sub")}
-              onMoveUp={() => handleTextMoveUp("title-sub")}
-              onMoveDown={() => handleTextMoveDown("title-sub")}
-            >
-              <EditableText
-                elementId="title-sub"
-                initialText="Подзаголовок\nв две строки"
-                className="text-[20px] font-light cursor-pointer transition-colors"
-                onClick={(e) => {
-                  handleTextClick("title-sub", "Подзаголовок\nв две строки", e);
-                }}
-              />
-            </ResizableTextBox>
-
-            {renderTableElements()}
-
-            {renderImageElements()}
-
-            {renderInfographicsElements()}
-
-            {renderAlignmentGuides()}
-
-            {renderImageAreaSelection()}
-          </div>
-        );
-
-      default:
-        return (
-          <div
-            className={`slide-container mx-auto w-[759px] h-[427px] bg-[#F7FAFC] rounded-[12px] ${
-              isImageAreaSelectionMode ? "cursor-crosshair" : ""
-            }`}
-            onClick={handleSlideClick}
-            onDoubleClick={handleDoubleClick}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-            style={{ position: "relative" }}
-          >
-            {/* Render slide title if exists */}
-            <ResizableTextBox
-              key={`user-slide-${slideNumber}-title`}
-              isSelected={selectedTextElements.includes(
-                `slide-${slideNumber}-title`
-              )}
-              elementId={`slide-${slideNumber}-title`}
-              onDelete={handleTextDelete}
-              onCopy={() => handleTextCopy(`slide-${slideNumber}-title`)}
-              onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-title`)}
-              onMoveDown={() =>
-                handleTextMoveDown(`slide-${slideNumber}-title`)
-              }
-            >
-              <EditableText
-                elementId={`slide-${slideNumber}-title`}
-                initialText={`Слайд ${slideNumber} - Заголовок`}
-                className="text-[#1F2937] text-[24px] font-bold cursor-pointer transition-colors"
-                onClick={(e) => {
-                  handleTextClick(
-                    `slide-${slideNumber}-title`,
-                    getTextElementContent(`slide-${slideNumber}-title`) ||
-                      `Слайд ${slideNumber} - Заголовок`,
-                    e
-                  );
-                }}
-              />
-            </ResizableTextBox>
-
-            {renderTableElements()}
-
-            {renderImageElements()}
-
-            {renderInfographicsElements()}
-
-            {renderAlignmentGuides()}
-
-            {renderImageAreaSelection()}
-          </div>
-        );
-    }
-  };
+  }; // Конец функции renderSlideByType
 
   return renderSlideByType();
 };

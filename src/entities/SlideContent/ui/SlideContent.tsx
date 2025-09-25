@@ -32,6 +32,7 @@ export const SlideContent = ({
     Record<number, string>
   >({});
   const [isMounted, setIsMounted] = React.useState(false);
+  const initializedSlidesRef = React.useRef<Set<number>>(new Set());
 
   // Предотвращаем hydration errors
   React.useEffect(() => {
@@ -300,19 +301,59 @@ export const SlideContent = ({
         }
       }
 
-      // Инициализируем изображения
+      // Инициализируем изображения - ВСЕГДА проверяем и восстанавливаем
       if (slideData._images && Array.isArray(slideData._images)) {
-        slideData._images.forEach((imageSrc: string, index: number) => {
-          const imageElementId = `slide-${slideNumber}-image-${index}`;
-          const existingImage = getImageElement(imageElementId);
+        console.log(
+          `🖼️ [SlideContent] Processing ${slideData._images.length} images for slide ${slideNumber}:`,
+          slideData._images
+        );
 
-          if (!existingImage && imageSrc) {
-            // Добавляем изображение в store если его еще нет
+        slideData._images.forEach((imageSrc: string, index: number) => {
+          // Получаем все изображения для данного слайда
+          const store = usePresentationStore.getState();
+          const slideImages = store.imageElements[slideNumber] || {};
+
+          // Ищем изображение с таким же src или по индексу
+          let existingImageId = null;
+          let existingImage = null;
+
+          // Сначала пробуем найти по src
+          for (const [id, img] of Object.entries(slideImages)) {
+            if (img.src === imageSrc) {
+              existingImageId = id;
+              existingImage = img;
+              break;
+            }
+          }
+
+          // Если не нашли по src, берем по индексу (если есть)
+          if (!existingImage) {
+            const imageIds = Object.keys(slideImages);
+            if (imageIds[index]) {
+              existingImageId = imageIds[index];
+              existingImage = slideImages[existingImageId];
+            }
+          }
+
+          console.log(
+            `🖼️ [SlideContent] Processing image ${index} for slide ${slideNumber}:`,
+            {
+              imageSrc,
+              existingImageId,
+              existingImage: !!existingImage,
+              existingSrc: existingImage?.src,
+              needsUpdate: !existingImage || existingImage.src !== imageSrc,
+            }
+          );
+
+          // Создаем или обновляем изображение
+          if (!existingImage) {
+            // Создаем новое изображение
             const defaultPosition = {
-              x: 100 + index * 50, // Смещаем каждое следующее изображение
-              y: 100 + index * 50,
+              x: 400 + index * 20, // Смещаем каждое следующее изображение
+              y: 100 + index * 20,
             };
-            const defaultSize = { width: 200, height: 150 };
+            const defaultSize = { width: 300, height: 200 };
 
             const newElementId = addImageElement(
               slideNumber,
@@ -320,12 +361,28 @@ export const SlideContent = ({
               defaultSize
             );
             // Обновляем изображение с правильным src
-            updateImageElement(newElementId, {
+            updateImageElement(newElementId, slideNumber, {
               src: imageSrc,
-              alt: `Image ${index + 1}`,
+              alt: `Slide ${slideNumber} Image ${index + 1}`,
               placeholder: false,
             });
-            console.log(`Added image ${imageSrc} as element ${newElementId}`);
+            console.log(
+              `✅ [SlideContent] Created new image ${imageSrc} as element ${newElementId} for slide ${slideNumber}`
+            );
+          } else if (existingImage.src !== imageSrc) {
+            // Обновляем существующий элемент с новым src
+            updateImageElement(existingImageId!, slideNumber, {
+              src: imageSrc,
+              alt: `Slide ${slideNumber} Image ${index + 1}`,
+              placeholder: false,
+            });
+            console.log(
+              `✅ [SlideContent] Updated existing image ${existingImageId} with new src ${imageSrc} for slide ${slideNumber}`
+            );
+          } else {
+            console.log(
+              `⏭️ [SlideContent] Image ${existingImageId} is up to date for slide ${slideNumber}, src: ${imageSrc}`
+            );
           }
         });
       }
@@ -340,6 +397,12 @@ export const SlideContent = ({
     ]
   );
 
+  // Простой эффект для логирования изменений слайда
+  React.useEffect(() => {
+    if (!isMounted) return;
+    console.log(`🔄 [SlideContent] Switched to slide ${slideNumber}`);
+  }, [slideNumber, isMounted]);
+
   // Debug effect to track state changes
   React.useEffect(() => {
     console.log(
@@ -352,11 +415,77 @@ export const SlideContent = ({
     console.log("selectedTextElement:", selectedTextElement);
   }, [slideNumber, slideType, textElementStyles, selectedTextElement]);
 
-  // Эффект для автоматического рендеринга слайдов с бэкенда
+  // Эффект для инициализации элементов слайда при переключении
   React.useEffect(() => {
     // Ждем клиентского рендеринга для предотвращения hydration errors
     if (!isMounted) {
       return;
+    }
+
+    // ВСЕГДА проверяем и инициализируем изображения для слайда
+    const generatedPresentationStr = localStorage.getItem(
+      "generatedPresentation"
+    );
+    if (generatedPresentationStr) {
+      try {
+        const generatedPresentation = JSON.parse(generatedPresentationStr);
+        const slides = generatedPresentation.data?.slides;
+        const currentSlideData = slides?.[slideNumber - 1];
+        if (currentSlideData) {
+          // Проверяем количество изображений в store vs в данных
+          const store = usePresentationStore.getState();
+          const currentImageElements = store.imageElements[slideNumber] || {};
+          const expectedImages = currentSlideData._images || [];
+          const actualImageCount = Object.keys(currentImageElements).length;
+          const expectedImageCount = expectedImages.length;
+
+          console.log(`🎯 [SlideContent] Slide ${slideNumber} image check:`, {
+            expected: expectedImageCount,
+            actual: actualImageCount,
+            hasImages: expectedImages.length > 0,
+          });
+
+          // Проверяем, есть ли изображения с правильными src
+          let needsImageInit = false;
+          if (expectedImageCount > 0) {
+            if (actualImageCount === 0) {
+              needsImageInit = true;
+            } else {
+              // Проверяем, совпадают ли src изображений
+              const currentImages = Object.values(currentImageElements);
+              const expectedSrcs = expectedImages;
+              const actualSrcs = currentImages
+                .map((img) => img.src)
+                .filter(Boolean);
+
+              const srcMismatch = expectedSrcs.some(
+                (expectedSrc: string) => !actualSrcs.includes(expectedSrc)
+              );
+
+              if (srcMismatch || expectedImageCount !== actualImageCount) {
+                needsImageInit = true;
+              }
+            }
+          }
+
+          if (needsImageInit) {
+            console.log(
+              `🎯 [SlideContent] Force initializing images for slide ${slideNumber}`
+            );
+            initializeElementContents(currentSlideData);
+          }
+          // Для текстовых элементов используем флаг инициализации
+          else if (!initializedSlidesRef.current.has(slideNumber)) {
+            console.log(
+              `🎯 [SlideContent] Initializing text elements for slide ${slideNumber}`
+            );
+            initializeElementContents(currentSlideData);
+            initializedSlidesRef.current.add(slideNumber);
+          }
+        }
+      } catch (error) {
+        console.error("Error initializing slide elements:", error);
+      }
     }
 
     // Проверяем, есть ли уже отрендеренный HTML для этого слайда
@@ -365,23 +494,6 @@ export const SlideContent = ({
         `🎯 [SlideContent] Using cached HTML for slide ${slideNumber}`
       );
       setRenderedHtml(renderedSlides[slideNumber]);
-
-      // Инициализируем содержимое элементов даже при использовании кешированного HTML
-      const generatedPresentationStr = localStorage.getItem(
-        "generatedPresentation"
-      );
-      if (generatedPresentationStr) {
-        try {
-          const generatedPresentation = JSON.parse(generatedPresentationStr);
-          const slides = generatedPresentation.data?.slides;
-          const currentSlideData = slides?.[slideNumber - 1];
-          if (currentSlideData) {
-            initializeElementContents(currentSlideData);
-          }
-        } catch (error) {
-          console.error("Error initializing cached slide contents:", error);
-        }
-      }
       return;
     }
 
@@ -453,12 +565,6 @@ export const SlideContent = ({
             htmlLength: currentSlideHtml.html.length,
           });
           setRenderedHtml(currentSlideHtml.html);
-
-          // Инициализируем содержимое элементов из данных слайда
-          const currentSlideData = slides[slideNumber - 1];
-          if (currentSlideData) {
-            initializeElementContents(currentSlideData);
-          }
         } else {
           console.warn(
             `⚠️ [SlideContent] No HTML found for slide ${slideNumber}`
@@ -1036,32 +1142,54 @@ export const SlideContent = ({
     );
   };
 
-  // Render image elements from store
+  // Render image elements from store - показываем изображения только текущего слайда
   const renderImageElements = () => {
-    const currentSlideElements = imageElements[slideNumber] || {};
+    // Получаем изображения только для текущего слайда
+    const currentSlideImages = imageElements[slideNumber] || {};
+    const currentSlideImageElements = Object.entries(currentSlideImages);
+
+    const elementCount = currentSlideImageElements.length;
 
     console.log(
-      `🎬 Rendering images for slide ${slideNumber}:`,
-      currentSlideElements
+      `🎬 [SlideContent] Rendering ${elementCount} images for slide ${slideNumber}:`,
+      currentSlideImageElements.map(([id, data]) => ({ id, src: data.src }))
     );
-    console.log(`🎬 All imageElements:`, imageElements);
 
-    return Object.entries(currentSlideElements)
+    if (elementCount === 0) {
+      console.log(`🎬 [SlideContent] No images found for slide ${slideNumber}`);
+      console.log(
+        `🎬 [SlideContent] Current slide imageElements:`,
+        currentSlideImages
+      );
+    }
+
+    return currentSlideImageElements
       .map(([elementId, imageData]) => {
         // Проверяем, что imageData существует и имеет необходимые поля
         if (!imageData || !imageData.position) {
-          console.warn("Invalid image data for element:", elementId, imageData);
+          console.warn(
+            "❌ [SlideContent] Invalid image data for element:",
+            elementId,
+            imageData
+          );
           return null;
         }
+
+        console.log(`✅ [SlideContent] Rendering image element ${elementId}:`, {
+          src: imageData.src,
+          position: imageData.position,
+          size: { width: imageData.width, height: imageData.height },
+        });
 
         // Всегда показываем изображения как интерактивные элементы
         return (
           <ResizableImageBox
             key={elementId}
             elementId={elementId}
+            slideNumber={slideNumber}
             isSelected={selectedImageElement === elementId}
             onDelete={() => {
-              deleteImageElement(elementId);
+              deleteImageElement(elementId, slideNumber);
               setSelectedImageElement(null);
             }}
           />

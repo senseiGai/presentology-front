@@ -255,13 +255,15 @@ export interface PresentationState {
   ) => string;
   updateImageElement: (
     elementId: string,
+    slideNumber: number,
     updates: Partial<PresentationState["imageElements"][number][string]>
   ) => void;
-  deleteImageElement: (elementId: string) => void;
+  deleteImageElement: (elementId: string, slideNumber: number) => void;
   getImageElement: (
-    elementId: string
+    elementId: string,
+    slideNumber: number
   ) => PresentationState["imageElements"][number][string] | null;
-  copyImageElement: (elementId: string) => string;
+  copyImageElement: (elementId: string, slideNumber: number) => string;
 
   // Table editing actions
   setSelectedTableElement: (elementId: string | null) => void;
@@ -1151,51 +1153,73 @@ export const usePresentationStore = create<PresentationState>()(
 
       updateImageElement: (
         elementId: string,
+        slideNumber: number,
         updates: Partial<PresentationState["imageElements"][number][string]>
       ) => {
-        const currentSlide = get().currentSlide;
-        set((state) => ({
-          imageElements: {
-            ...state.imageElements,
-            [currentSlide]: {
-              ...state.imageElements[currentSlide],
+        set((state) => {
+          const newImageElements = { ...state.imageElements };
+
+          if (
+            newImageElements[slideNumber] &&
+            newImageElements[slideNumber][elementId]
+          ) {
+            newImageElements[slideNumber] = {
+              ...newImageElements[slideNumber],
               [elementId]: {
-                ...state.imageElements[currentSlide]?.[elementId],
+                ...newImageElements[slideNumber][elementId],
                 ...updates,
               },
-            },
-          },
-        }));
-      },
+            };
+          }
 
-      deleteImageElement: (elementId: string) => {
-        const currentSlide = get().currentSlide;
-        set((state) => {
-          const slideImages = { ...state.imageElements[currentSlide] };
-          delete slideImages[elementId];
           return {
-            imageElements: {
-              ...state.imageElements,
-              [currentSlide]: slideImages,
-            },
+            imageElements: newImageElements,
           };
         });
       },
 
-      getImageElement: (elementId: string) => {
-        const state = get();
-        const currentSlide = state.currentSlide;
-        return state.imageElements[currentSlide]?.[elementId] || null;
+      deleteImageElement: (elementId: string, slideNumber: number) => {
+        set((state) => {
+          const newImageElements = { ...state.imageElements };
+
+          if (
+            newImageElements[slideNumber] &&
+            newImageElements[slideNumber][elementId]
+          ) {
+            const slideImages = { ...newImageElements[slideNumber] };
+            delete slideImages[elementId];
+            newImageElements[slideNumber] = slideImages;
+          }
+
+          return {
+            imageElements: newImageElements,
+          };
+        });
       },
 
-      copyImageElement: (elementId: string) => {
-        console.log("Store: copyImageElement called for:", elementId);
+      getImageElement: (elementId: string, slideNumber: number) => {
         const state = get();
-        const currentSlide = state.currentSlide;
-        const originalElement = state.imageElements[currentSlide]?.[elementId];
+        return state.imageElements[slideNumber]?.[elementId] || null;
+      },
+
+      copyImageElement: (elementId: string, slideNumber: number) => {
+        console.log(
+          "Store: copyImageElement called for:",
+          elementId,
+          "on slide:",
+          slideNumber
+        );
+        const state = get();
+
+        const originalElement = state.imageElements[slideNumber]?.[elementId];
 
         if (!originalElement) {
-          console.log("Store: No image element found to copy:", elementId);
+          console.log(
+            "Store: No image element found to copy:",
+            elementId,
+            "on slide:",
+            slideNumber
+          );
           return elementId;
         }
 
@@ -1221,8 +1245,8 @@ export const usePresentationStore = create<PresentationState>()(
         set((state) => ({
           imageElements: {
             ...state.imageElements,
-            [currentSlide]: {
-              ...state.imageElements[currentSlide],
+            [slideNumber]: {
+              ...state.imageElements[slideNumber],
               [newId]: {
                 ...originalElement,
                 id: newId,

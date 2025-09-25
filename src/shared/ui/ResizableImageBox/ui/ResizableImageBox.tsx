@@ -6,12 +6,14 @@ import { ImageToolbar } from "@/shared/ui/ImageToolbar";
 
 interface ResizableImageBoxProps {
   elementId: string;
+  slideNumber: number;
   isSelected: boolean;
   onDelete: () => void;
 }
 
 export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
   elementId,
+  slideNumber,
   isSelected,
   onDelete,
 }) => {
@@ -37,7 +39,7 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
   const [showToolbar, setShowToolbar] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
-  const imageElement = getImageElement(elementId);
+  const imageElement = getImageElement(elementId, slideNumber);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -129,7 +131,7 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
             slideHeight - imageElement.height
           )
         );
-        updateImageElement(elementId, {
+        updateImageElement(elementId, slideNumber, {
           position: { x: newX, y: newY },
         });
       } else if (isResizing) {
@@ -232,7 +234,7 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
             break;
         }
 
-        updateImageElement(elementId, {
+        updateImageElement(elementId, slideNumber, {
           width: newWidth,
           height: newHeight,
           position: { x: newX, y: newY },
@@ -280,7 +282,7 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
     if (!imageElement) return;
     const currentY = imageElement.position.y;
     const newY = Math.max(0, currentY - 10);
-    updateImageElement(elementId, {
+    updateImageElement(elementId, slideNumber, {
       position: { x: imageElement.position.x, y: newY },
     });
   };
@@ -290,7 +292,7 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
     const slideHeight = 427;
     const currentY = imageElement.position.y;
     const newY = Math.min(currentY + 10, slideHeight - imageElement.height);
-    updateImageElement(elementId, {
+    updateImageElement(elementId, slideNumber, {
       position: { x: imageElement.position.x, y: newY },
     });
   };
@@ -298,7 +300,7 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
   const handleCopy = () => {
     if (imageElement) {
       console.log("ResizableImageBox: Duplicating image element:", elementId);
-      copyImageElement(elementId);
+      copyImageElement(elementId, slideNumber);
     }
   };
 

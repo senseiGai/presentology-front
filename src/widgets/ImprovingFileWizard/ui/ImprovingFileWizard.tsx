@@ -341,7 +341,7 @@ export const ImprovingFileWizard: React.FC = () => {
           <div className="relative w-full h-[686px] overflow-hidden left-1/2 transform -translate-x-1/2 top-[122px]">
             {topWidth ? (
               <Image
-                src="/assets/brief_mask_top.png"
+                src="/assets/file_brief_top.png"
                 width={1329}
                 height={686}
                 alt="Presentation"
@@ -349,11 +349,11 @@ export const ImprovingFileWizard: React.FC = () => {
               />
             ) : middleWidth ? (
               <Image
-                src="/assets/brief_mask_middle.png"
+                src="/assets/file_brief_middle.png"
                 width={1129}
                 height={686}
                 alt="Presentation"
-                className="absolute w-full h-full select-none"
+                className="absolute w-full h-full rounded-[25px] select-none"
               />
             ) : (
               <Image

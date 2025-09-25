@@ -235,38 +235,39 @@ export const SlideContent = ({
         slideData
       );
 
-      // Инициализируем базовые элементы слайда
+      // Функция для безопасной установки содержимого элемента
+      const safeSetContent = (elementId: string, content: string) => {
+        const existingContent = getTextElementContent(elementId);
+        if (!existingContent || existingContent === "New text element") {
+          setTextElementContent(elementId, content);
+          console.log(`Set content: ${content} for ${elementId}`);
+        } else {
+          console.log(
+            `Skipped setting content for ${elementId} - already has content: ${existingContent}`
+          );
+        }
+      };
+
+      // Инициализируем базовые элементы слайда только если их содержимое еще не установлено
       if (slideData.title) {
         const titleElementId = `slide-${slideNumber}-title`;
-        setTextElementContent(titleElementId, slideData.title);
-        console.log(
-          `Set title content: ${slideData.title} for ${titleElementId}`
-        );
+        safeSetContent(titleElementId, slideData.title);
       }
 
       if (slideData.subtitle) {
         const subtitleElementId = `slide-${slideNumber}-subtitle`;
-        setTextElementContent(subtitleElementId, slideData.subtitle);
-        console.log(
-          `Set subtitle content: ${slideData.subtitle} for ${subtitleElementId}`
-        );
+        safeSetContent(subtitleElementId, slideData.subtitle);
       }
 
       // Инициализируем text1 элементы
       if (slideData.text1) {
         if (slideData.text1.t1) {
           const text1TitleId = `slide-${slideNumber}-text1-title`;
-          setTextElementContent(text1TitleId, slideData.text1.t1);
-          console.log(
-            `Set text1 title content: ${slideData.text1.t1} for ${text1TitleId}`
-          );
+          safeSetContent(text1TitleId, slideData.text1.t1);
         }
         if (slideData.text1.t2) {
           const text1ContentId = `slide-${slideNumber}-text1-content`;
-          setTextElementContent(text1ContentId, slideData.text1.t2);
-          console.log(
-            `Set text1 content: ${slideData.text1.t2} for ${text1ContentId}`
-          );
+          safeSetContent(text1ContentId, slideData.text1.t2);
         }
       }
 
@@ -274,17 +275,11 @@ export const SlideContent = ({
       if (slideData.text2) {
         if (slideData.text2.t1) {
           const text2TitleId = `slide-${slideNumber}-text2-title`;
-          setTextElementContent(text2TitleId, slideData.text2.t1);
-          console.log(
-            `Set text2 title content: ${slideData.text2.t1} for ${text2TitleId}`
-          );
+          safeSetContent(text2TitleId, slideData.text2.t1);
         }
         if (slideData.text2.t2) {
           const text2ContentId = `slide-${slideNumber}-text2-content`;
-          setTextElementContent(text2ContentId, slideData.text2.t2);
-          console.log(
-            `Set text2 content: ${slideData.text2.t2} for ${text2ContentId}`
-          );
+          safeSetContent(text2ContentId, slideData.text2.t2);
         }
       }
 
@@ -292,21 +287,15 @@ export const SlideContent = ({
       if (slideData.text3) {
         if (slideData.text3.t1) {
           const text3TitleId = `slide-${slideNumber}-text3-title`;
-          setTextElementContent(text3TitleId, slideData.text3.t1);
-          console.log(
-            `Set text3 title content: ${slideData.text3.t1} for ${text3TitleId}`
-          );
+          safeSetContent(text3TitleId, slideData.text3.t1);
         }
         if (slideData.text3.t2) {
           const text3ContentId = `slide-${slideNumber}-text3-content`;
-          setTextElementContent(text3ContentId, slideData.text3.t2);
-          console.log(
-            `Set text3 content: ${slideData.text3.t2} for ${text3ContentId}`
-          );
+          safeSetContent(text3ContentId, slideData.text3.t2);
         }
       }
     },
-    [slideNumber, setTextElementContent]
+    [slideNumber, setTextElementContent, getTextElementContent]
   );
 
   // Debug effect to track state changes
@@ -723,81 +712,251 @@ export const SlideContent = ({
   };
 
   // Render dynamic text elements from store
-  const renderDynamicTextElements = () => {
-    const staticElementIds = [
-      "title-main",
-      "title-sub",
-      "content-main",
-      "content-sub",
-    ];
-
-    console.log("renderDynamicTextElements - slideNumber:", slideNumber);
-    console.log("textElementPositions:", textElementPositions);
-    console.log("textElementContents:", textElementContents);
-    console.log("textElementStyles:", textElementStyles);
-
-    // Use textElementStyles instead of textElementPositions to get all elements with styles
-    const allElementsWithStyles = Object.entries(textElementStyles).filter(
-      ([elementId]) => {
-        // Filter out static elements
-        if (staticElementIds.includes(elementId)) {
-          console.log("Filtering out static element:", elementId);
-          return false;
-        }
-        // Only show elements that belong to current slide
-        const belongsToSlide = elementId.includes(`slide-${slideNumber}-`);
-        console.log(
-          "Element",
-          elementId,
-          "belongs to slide",
-          slideNumber,
-          ":",
-          belongsToSlide
-        );
-        return belongsToSlide;
+  // Рендер интерактивных элементов с данными слайда
+  const renderSlideDataElements = () => {
+    // Получаем данные слайда из localStorage
+    let slideData = null;
+    const generatedPresentationStr = localStorage.getItem(
+      "generatedPresentation"
+    );
+    if (generatedPresentationStr) {
+      try {
+        const generatedPresentation = JSON.parse(generatedPresentationStr);
+        slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
+      } catch (error) {
+        console.error("Error parsing generated presentation:", error);
       }
-    );
+    }
 
-    console.log(
-      "Elements with styles for slide",
-      slideNumber,
-      ":",
-      allElementsWithStyles
-    );
+    const elements = [];
 
-    return allElementsWithStyles.map(([elementId, style]) => {
-      const content = textElementContents[elementId] || "New text element";
+    // Рендерим элементы из slideData если есть
+    if (slideData) {
+      // Рендерим title если есть
+      if (slideData.title) {
+        elements.push(
+          <ResizableTextBox
+            key={`slide-${slideNumber}-title`}
+            elementId={`slide-${slideNumber}-title`}
+            isSelected={selectedTextElements.includes(
+              `slide-${slideNumber}-title`
+            )}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-title`)}
+            onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-title`)}
+            onMoveDown={() => handleTextMoveDown(`slide-${slideNumber}-title`)}
+          >
+            <EditableText
+              elementId={`slide-${slideNumber}-title`}
+              initialText={slideData.title}
+              className="text-[32px] font-bold cursor-pointer transition-colors"
+              onClick={(e) => {
+                handleTextClick(
+                  `slide-${slideNumber}-title`,
+                  slideData.title,
+                  e
+                );
+              }}
+            />
+          </ResizableTextBox>
+        );
+      }
 
-      console.log(
-        "Rendering element:",
-        elementId,
-        "with content:",
-        content,
-        "style:",
-        style
-      );
+      // Рендерим subtitle если есть
+      if (slideData.subtitle) {
+        elements.push(
+          <ResizableTextBox
+            key={`slide-${slideNumber}-subtitle`}
+            elementId={`slide-${slideNumber}-subtitle`}
+            isSelected={selectedTextElements.includes(
+              `slide-${slideNumber}-subtitle`
+            )}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-subtitle`)}
+            onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-subtitle`)}
+            onMoveDown={() =>
+              handleTextMoveDown(`slide-${slideNumber}-subtitle`)
+            }
+          >
+            <EditableText
+              elementId={`slide-${slideNumber}-subtitle`}
+              initialText={slideData.subtitle}
+              className="text-[24px] font-medium cursor-pointer transition-colors"
+              onClick={(e) => {
+                handleTextClick(
+                  `slide-${slideNumber}-subtitle`,
+                  slideData.subtitle,
+                  e
+                );
+              }}
+            />
+          </ResizableTextBox>
+        );
+      }
 
-      return (
-        <ResizableTextBox
-          key={elementId}
-          isSelected={selectedTextElements.includes(elementId)}
-          elementId={elementId}
-          onDelete={handleTextDelete}
-          onCopy={() => handleTextCopy(elementId)}
-          onMoveUp={() => handleTextMoveUp(elementId)}
-          onMoveDown={() => handleTextMoveDown(elementId)}
-        >
-          <EditableText
+      // Рендерим text1 если есть
+      if (slideData.text1?.t1) {
+        elements.push(
+          <ResizableTextBox
+            key={`slide-${slideNumber}-text1-title`}
+            elementId={`slide-${slideNumber}-text1-title`}
+            isSelected={selectedTextElements.includes(
+              `slide-${slideNumber}-text1-title`
+            )}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-text1-title`)}
+            onMoveUp={() =>
+              handleTextMoveUp(`slide-${slideNumber}-text1-title`)
+            }
+            onMoveDown={() =>
+              handleTextMoveDown(`slide-${slideNumber}-text1-title`)
+            }
+          >
+            <EditableText
+              elementId={`slide-${slideNumber}-text1-title`}
+              initialText={slideData.text1.t1}
+              className="text-[20px] font-semibold cursor-pointer transition-colors"
+              onClick={(e) => {
+                handleTextClick(
+                  `slide-${slideNumber}-text1-title`,
+                  slideData.text1.t1,
+                  e
+                );
+              }}
+            />
+          </ResizableTextBox>
+        );
+      }
+
+      if (slideData.text1?.t2) {
+        elements.push(
+          <ResizableTextBox
+            key={`slide-${slideNumber}-text1-content`}
+            elementId={`slide-${slideNumber}-text1-content`}
+            isSelected={selectedTextElements.includes(
+              `slide-${slideNumber}-text1-content`
+            )}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-text1-content`)}
+            onMoveUp={() =>
+              handleTextMoveUp(`slide-${slideNumber}-text1-content`)
+            }
+            onMoveDown={() =>
+              handleTextMoveDown(`slide-${slideNumber}-text1-content`)
+            }
+          >
+            <EditableText
+              elementId={`slide-${slideNumber}-text1-content`}
+              initialText={slideData.text1.t2}
+              className="text-[16px] cursor-pointer transition-colors"
+              onClick={(e) => {
+                handleTextClick(
+                  `slide-${slideNumber}-text1-content`,
+                  slideData.text1.t2,
+                  e
+                );
+              }}
+            />
+          </ResizableTextBox>
+        );
+      }
+
+      // Аналогично для text2 и text3
+      if (slideData.text2?.t1) {
+        elements.push(
+          <ResizableTextBox
+            key={`slide-${slideNumber}-text2-title`}
+            elementId={`slide-${slideNumber}-text2-title`}
+            isSelected={selectedTextElements.includes(
+              `slide-${slideNumber}-text2-title`
+            )}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-text2-title`)}
+            onMoveUp={() =>
+              handleTextMoveUp(`slide-${slideNumber}-text2-title`)
+            }
+            onMoveDown={() =>
+              handleTextMoveDown(`slide-${slideNumber}-text2-title`)
+            }
+          >
+            <EditableText
+              elementId={`slide-${slideNumber}-text2-title`}
+              initialText={slideData.text2.t1}
+              className="text-[20px] font-semibold cursor-pointer transition-colors"
+              onClick={(e) => {
+                handleTextClick(
+                  `slide-${slideNumber}-text2-title`,
+                  slideData.text2.t1,
+                  e
+                );
+              }}
+            />
+          </ResizableTextBox>
+        );
+      }
+
+      if (slideData.text2?.t2) {
+        elements.push(
+          <ResizableTextBox
+            key={`slide-${slideNumber}-text2-content`}
+            elementId={`slide-${slideNumber}-text2-content`}
+            isSelected={selectedTextElements.includes(
+              `slide-${slideNumber}-text2-content`
+            )}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-text2-content`)}
+            onMoveUp={() =>
+              handleTextMoveUp(`slide-${slideNumber}-text2-content`)
+            }
+            onMoveDown={() =>
+              handleTextMoveDown(`slide-${slideNumber}-text2-content`)
+            }
+          >
+            <EditableText
+              elementId={`slide-${slideNumber}-text2-content`}
+              initialText={slideData.text2.t2}
+              className="text-[16px] cursor-pointer transition-colors"
+              onClick={(e) => {
+                handleTextClick(
+                  `slide-${slideNumber}-text2-content`,
+                  slideData.text2.t2,
+                  e
+                );
+              }}
+            />
+          </ResizableTextBox>
+        );
+      }
+    } // Закрывающая скобка для if (slideData)
+
+    // Также рендерим пользовательские элементы из store
+    const userElements = Object.entries(textElementStyles)
+      .filter(([elementId]) => elementId.includes(`slide-${slideNumber}-`))
+      .map(([elementId, style]) => {
+        const content = textElementContents[elementId] || "New text element";
+        return (
+          <ResizableTextBox
+            key={elementId}
             elementId={elementId}
-            initialText={content}
-            className="text-[16px] cursor-pointer transition-colors"
-            onClick={(e) => {
-              handleTextClick(elementId, content, e);
-            }}
-          />
-        </ResizableTextBox>
-      );
-    });
+            isSelected={selectedTextElements.includes(elementId)}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(elementId)}
+            onMoveUp={() => handleTextMoveUp(elementId)}
+            onMoveDown={() => handleTextMoveDown(elementId)}
+          >
+            <EditableText
+              elementId={elementId}
+              initialText={content}
+              className="text-[16px] cursor-pointer transition-colors"
+              onClick={(e) => {
+                handleTextClick(elementId, content, e);
+              }}
+            />
+          </ResizableTextBox>
+        );
+      });
+
+    return [...elements, ...userElements];
   };
 
   // Render table elements from store
@@ -1177,160 +1336,14 @@ export const SlideContent = ({
           onMouseLeave={handleMouseLeave}
           style={{ position: "relative" }}
         >
-          {/* Убираем фоновый HTML шаблон - используем только наши компоненты */}
-
-          {/* Редактируемые элементы поверх шаблона */}
+          {/* Только интерактивные элементы */}
           <div
-            className="editable-layer absolute inset-0"
+            className="interactive-layer absolute inset-0"
             style={{ zIndex: 10 }}
           >
-            {/* Заголовок */}
-            <ResizableTextBox
-              isSelected={selectedTextElements.includes(titleElementId)}
-              elementId={titleElementId}
-              onDelete={handleTextDelete}
-              onCopy={() => handleTextCopy(titleElementId)}
-              onMoveUp={() => handleTextMoveUp(titleElementId)}
-              onMoveDown={() => handleTextMoveDown(titleElementId)}
-            >
-              <EditableText
-                elementId={titleElementId}
-                initialText={
-                  slideData?.title || `Заголовок слайда ${slideNumber}`
-                }
-                className="text-[32px] font-bold text-black cursor-pointer transition-colors"
-                style={{
-                  backgroundColor: isTemplateMode
-                    ? "rgba(255, 255, 255, 0.9)"
-                    : "transparent",
-                  padding: isTemplateMode ? "4px 8px" : "0",
-                  borderRadius: isTemplateMode ? "4px" : "0",
-                  textShadow: isTemplateMode
-                    ? "1px 1px 2px rgba(0,0,0,0.3)"
-                    : "none",
-                }}
-                onClick={(e) => {
-                  handleTextClick(
-                    titleElementId,
-                    getTextElementContent(titleElementId) ||
-                      slideData?.title ||
-                      `Заголовок слайда ${slideNumber}`,
-                    e
-                  );
-                }}
-              />
-            </ResizableTextBox>
-
-            {/* Подзаголовок */}
-            {slideData?.subtitle && (
-              <ResizableTextBox
-                isSelected={selectedTextElements.includes(subtitleElementId)}
-                elementId={subtitleElementId}
-                onDelete={handleTextDelete}
-                onCopy={() => handleTextCopy(subtitleElementId)}
-                onMoveUp={() => handleTextMoveUp(subtitleElementId)}
-                onMoveDown={() => handleTextMoveDown(subtitleElementId)}
-              >
-                <EditableText
-                  elementId={subtitleElementId}
-                  initialText={slideData.subtitle}
-                  className="text-[20px] font-normal text-gray-700 cursor-pointer transition-colors"
-                  style={{
-                    backgroundColor: isTemplateMode
-                      ? "rgba(255, 255, 255, 0.8)"
-                      : "transparent",
-                    padding: isTemplateMode ? "4px 8px" : "0",
-                    borderRadius: isTemplateMode ? "4px" : "0",
-                    textShadow: isTemplateMode
-                      ? "1px 1px 2px rgba(0,0,0,0.3)"
-                      : "none",
-                  }}
-                  onClick={(e) => {
-                    handleTextClick(
-                      subtitleElementId,
-                      getTextElementContent(subtitleElementId) ||
-                        slideData.subtitle,
-                      e
-                    );
-                  }}
-                />
-              </ResizableTextBox>
-            )}
-
-            {/* Первый текстовый блок */}
-            {slideData?.text1?.t2 && (
-              <ResizableTextBox
-                isSelected={selectedTextElements.includes(text1ElementId)}
-                elementId={text1ElementId}
-                onDelete={handleTextDelete}
-                onCopy={() => handleTextCopy(text1ElementId)}
-                onMoveUp={() => handleTextMoveUp(text1ElementId)}
-                onMoveDown={() => handleTextMoveDown(text1ElementId)}
-              >
-                <EditableText
-                  elementId={text1ElementId}
-                  initialText={slideData.text1.t2}
-                  className="text-[16px] font-normal text-gray-800 cursor-pointer transition-colors"
-                  style={{
-                    backgroundColor: isTemplateMode
-                      ? "rgba(255, 255, 255, 0.8)"
-                      : "transparent",
-                    padding: isTemplateMode ? "4px 8px" : "0",
-                    borderRadius: isTemplateMode ? "4px" : "0",
-                    textShadow: isTemplateMode
-                      ? "1px 1px 2px rgba(0,0,0,0.3)"
-                      : "none",
-                  }}
-                  onClick={(e) => {
-                    handleTextClick(
-                      text1ElementId,
-                      getTextElementContent(text1ElementId) ||
-                        slideData.text1.t2,
-                      e
-                    );
-                  }}
-                />
-              </ResizableTextBox>
-            )}
-
-            {/* Второй текстовый блок */}
-            {slideData?.text2?.t2 && (
-              <ResizableTextBox
-                isSelected={selectedTextElements.includes(text2ElementId)}
-                elementId={text2ElementId}
-                onDelete={handleTextDelete}
-                onCopy={() => handleTextCopy(text2ElementId)}
-                onMoveUp={() => handleTextMoveUp(text2ElementId)}
-                onMoveDown={() => handleTextMoveDown(text2ElementId)}
-              >
-                <EditableText
-                  elementId={text2ElementId}
-                  initialText={slideData.text2.t2}
-                  className="text-[16px] font-normal text-gray-800 cursor-pointer transition-colors"
-                  style={{
-                    backgroundColor: isTemplateMode
-                      ? "rgba(255, 255, 255, 0.8)"
-                      : "transparent",
-                    padding: isTemplateMode ? "4px 8px" : "0",
-                    borderRadius: isTemplateMode ? "4px" : "0",
-                    textShadow: isTemplateMode
-                      ? "1px 1px 2px rgba(0,0,0,0.3)"
-                      : "none",
-                  }}
-                  onClick={(e) => {
-                    handleTextClick(
-                      text2ElementId,
-                      getTextElementContent(text2ElementId) ||
-                        slideData.text2.t2,
-                      e
-                    );
-                  }}
-                />
-              </ResizableTextBox>
-            )}
-
-            {/* Динамические элементы */}
-            {renderDynamicTextElements()}
+            {/* Интерактивные текстовые элементы с данными слайда */}
+            {renderSlideDataElements()}
+            {/* Другие интерактивные элементы (таблицы, изображения, инфографика) */}
             {renderTableElements()}
             {renderImageElements()}
             {renderInfographicsElements()}
@@ -1425,68 +1438,22 @@ export const SlideContent = ({
         slideTemplateKey
       );
 
-      // Заполняем шаблон данными слайда
-      let filledHtml = slideTemplates[slideTemplateKey];
-      console.log("Original template HTML length:", filledHtml.length);
-      console.log("Template preview:", filledHtml.substring(0, 200) + "...");
+      // Используем чистый HTML шаблон без заполнения данными
+      // Данные будут рендериться отдельными интерактивными компонентами поверх шаблона
+      let templateHtml = slideTemplates[slideTemplateKey];
+      console.log("Using template HTML as background layout only");
+      console.log("Template preview:", templateHtml.substring(0, 200) + "...");
 
-      // Заменяем плейсхолдеры данными слайда
-      if (slideData.title) {
-        console.log("Replacing {{title}} with:", slideData.title);
-        filledHtml = filledHtml.replace(/\{\{title\}\}/g, slideData.title);
-      }
-      if (slideData.subtitle) {
-        console.log("Replacing {{subtitle}} with:", slideData.subtitle);
-        filledHtml = filledHtml.replace(
-          /\{\{subtitle\}\}/g,
-          slideData.subtitle
-        );
-      }
-      if (slideData.text1?.t1) {
-        console.log("Replacing {{text1_title}} with:", slideData.text1.t1);
-        filledHtml = filledHtml.replace(
-          /\{\{text1_title\}\}/g,
-          slideData.text1.t1
-        );
-      }
-      if (slideData.text1?.t2) {
-        console.log("Replacing {{text1_content}} with:", slideData.text1.t2);
-        filledHtml = filledHtml.replace(
-          /\{\{text1_content\}\}/g,
-          slideData.text1.t2
-        );
-      }
-      if (slideData.text2?.t1) {
-        filledHtml = filledHtml.replace(
-          /\{\{text2_title\}\}/g,
-          slideData.text2.t1
-        );
-      }
-      if (slideData.text2?.t2) {
-        filledHtml = filledHtml.replace(
-          /\{\{text2_content\}\}/g,
-          slideData.text2.t2
-        );
-      }
-      if (slideData.text3?.t1) {
-        filledHtml = filledHtml.replace(
-          /\{\{text3_title\}\}/g,
-          slideData.text3.t1
-        );
-      }
-      if (slideData.text3?.t2) {
-        filledHtml = filledHtml.replace(
-          /\{\{text3_content\}\}/g,
-          slideData.text3.t2
-        );
-      }
-      if (slideData._images?.[0]) {
-        console.log("Replacing {{image}} with:", slideData._images[0]);
-        filledHtml = filledHtml.replace(/\{\{image\}\}/g, slideData._images[0]);
-      }
+      // Убираем плейсхолдеры из шаблона, чтобы оставить только дизайн/фон
+      templateHtml = templateHtml
+        .replace(/\{\{[^}]+\}\}/g, "") // Убираем все плейсхолдеры {{...}}
+        .replace(/<[^>]*>\s*<\/[^>]*>/g, ""); // Убираем пустые теги
 
-      console.log("Final filled HTML length:", filledHtml.length);
-      console.log("Final HTML preview:", filledHtml.substring(0, 500) + "...");
+      console.log("Final template HTML length:", templateHtml.length);
+      console.log(
+        "Template HTML preview:",
+        templateHtml.substring(0, 500) + "..."
+      );
 
       return (
         <div
@@ -1501,13 +1468,20 @@ export const SlideContent = ({
           onMouseLeave={handleMouseLeave}
           style={{ position: "relative" }}
         >
-          <PureTemplateRenderer
-            html={slideTemplates[slideTemplateKey]}
-            templateId={slideTemplateKey}
-            slideNumber={slideNumber}
-            slideData={slideData}
-            className="w-full h-full"
-          />
+          {/* Только интерактивные элементы */}
+          <div
+            className="interactive-layer absolute inset-0"
+            style={{ zIndex: 10 }}
+          >
+            {/* Интерактивные текстовые элементы с данными слайда */}
+            {renderSlideDataElements()}
+            {/* Другие интерактивные элементы (таблицы, изображения, инфографика) */}
+            {renderTableElements()}
+            {renderImageElements()}
+            {renderInfographicsElements()}
+            {renderAlignmentGuides()}
+            {renderImageAreaSelection()}
+          </div>
         </div>
       );
     }
@@ -1564,8 +1538,6 @@ export const SlideContent = ({
               />
             </ResizableTextBox>
 
-            {renderDynamicTextElements()}
-
             {renderTableElements()}
 
             {renderImageElements()}
@@ -1619,8 +1591,6 @@ export const SlideContent = ({
                 }}
               />
             </ResizableTextBox>
-
-            {renderDynamicTextElements()}
 
             {renderTableElements()}
 

@@ -746,21 +746,6 @@ export const PureTemplateRenderer: React.FC<PureTemplateRendererProps> = ({
           </div>
         );
       })}
-
-      {/* ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ОТЛАДКИ ДУБЛИРОВАНИЯ */}
-      <div
-        style={{
-          position: "absolute",
-          top: "10px",
-          left: "10px",
-          background: "red",
-          color: "white",
-          padding: "5px",
-          zIndex: 1000,
-        }}
-      >
-        PureTemplateRenderer DISABLED for debug
-      </div>
     </div>
   );
 };

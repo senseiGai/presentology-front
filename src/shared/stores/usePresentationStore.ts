@@ -462,7 +462,7 @@ const initializeTextContentFromMockData = (mockData: any) => {
         const titleElementId = `slide-${slideNumber}-title`;
         textElementContents[titleElementId] = slide.title;
         textElementStyles[titleElementId] = {
-          fontSize: slide._fontSizes?.title || 24,
+          fontSize: 24,
           fontWeight: "bold",
           textAlign: "left" as const,
           color: "#000000",
@@ -477,7 +477,7 @@ const initializeTextContentFromMockData = (mockData: any) => {
         const subtitleElementId = `slide-${slideNumber}-subtitle`;
         textElementContents[subtitleElementId] = slide.subtitle;
         textElementStyles[subtitleElementId] = {
-          fontSize: slide._fontSizes?.subtitle || 20,
+          fontSize: 16,
           fontWeight: "normal",
           textAlign: "left" as const,
           color: "#333333",
@@ -493,7 +493,7 @@ const initializeTextContentFromMockData = (mockData: any) => {
           const text1TitleElementId = `slide-${slideNumber}-text1-title`;
           textElementContents[text1TitleElementId] = slide.text1.t1;
           textElementStyles[text1TitleElementId] = {
-            fontSize: slide._fontSizes?.t1 || 18,
+            fontSize: 16,
             fontWeight: "bold",
             textAlign: "left" as const,
             color: "#000000",
@@ -507,7 +507,7 @@ const initializeTextContentFromMockData = (mockData: any) => {
           const text1ContentElementId = `slide-${slideNumber}-text1-content`;
           textElementContents[text1ContentElementId] = slide.text1.t2;
           textElementStyles[text1ContentElementId] = {
-            fontSize: slide._fontSizes?.t2 || 16,
+            fontSize: 16,
             fontWeight: "normal",
             textAlign: "left" as const,
             color: "#333333",
@@ -520,7 +520,7 @@ const initializeTextContentFromMockData = (mockData: any) => {
           const text1ElementId = `slide-${slideNumber}-text1`;
           textElementContents[text1ElementId] = slide.text1;
           textElementStyles[text1ElementId] = {
-            fontSize: slide._fontSizes?.t2 || 16,
+            fontSize: 16,
             fontWeight: "normal",
             textAlign: "left" as const,
             color: "#333333",
@@ -537,7 +537,7 @@ const initializeTextContentFromMockData = (mockData: any) => {
           const text2TitleElementId = `slide-${slideNumber}-text2-title`;
           textElementContents[text2TitleElementId] = slide.text2.t1;
           textElementStyles[text2TitleElementId] = {
-            fontSize: slide._fontSizes?.t1 || 18,
+            fontSize: 16,
             fontWeight: "bold",
             textAlign: "left" as const,
             color: "#000000",
@@ -551,7 +551,7 @@ const initializeTextContentFromMockData = (mockData: any) => {
           const text2ContentElementId = `slide-${slideNumber}-text2-content`;
           textElementContents[text2ContentElementId] = slide.text2.t2;
           textElementStyles[text2ContentElementId] = {
-            fontSize: slide._fontSizes?.t2 || 16,
+            fontSize: 16,
             fontWeight: "normal",
             textAlign: "left" as const,
             color: "#333333",
@@ -564,7 +564,7 @@ const initializeTextContentFromMockData = (mockData: any) => {
           const text2ElementId = `slide-${slideNumber}-text2`;
           textElementContents[text2ElementId] = slide.text2;
           textElementStyles[text2ElementId] = {
-            fontSize: slide._fontSizes?.t2 || 16,
+            fontSize: 16,
             fontWeight: "normal",
             textAlign: "left" as const,
             color: "#333333",
@@ -581,7 +581,7 @@ const initializeTextContentFromMockData = (mockData: any) => {
           const text3TitleElementId = `slide-${slideNumber}-text3-title`;
           textElementContents[text3TitleElementId] = slide.text3.t1;
           textElementStyles[text3TitleElementId] = {
-            fontSize: slide._fontSizes?.t1 || 18,
+            fontSize: 16,
             fontWeight: "bold",
             textAlign: "left" as const,
             color: "#000000",
@@ -595,7 +595,7 @@ const initializeTextContentFromMockData = (mockData: any) => {
           const text3ContentElementId = `slide-${slideNumber}-text3-content`;
           textElementContents[text3ContentElementId] = slide.text3.t2;
           textElementStyles[text3ContentElementId] = {
-            fontSize: slide._fontSizes?.t2 || 16,
+            fontSize: 16,
             fontWeight: "normal",
             textAlign: "left" as const,
             color: "#333333",

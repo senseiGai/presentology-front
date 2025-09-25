@@ -44,7 +44,43 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
   const [showToolbar, setShowToolbar] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
+  // ПРИНУДИТЕЛЬНЫЙ ЛОГ в начале
+  console.log(
+    `🚀 ResizableImageBox START for elementId: ${elementId}, slideNumber: ${slideNumber}`
+  );
+
   const imageElement = getImageElement(elementId, slideNumber);
+
+  // Временный лог для отладки proto002
+  if (elementId.includes("proto002")) {
+    console.log(
+      `🎯 ResizableImageBox called for ${elementId} on slide ${slideNumber}, imageElement:`,
+      imageElement
+    );
+
+    // Также проверим store напрямую
+    const directStoreCheck =
+      usePresentationStore.getState().imageElements[slideNumber]?.[elementId];
+    console.log(`🔍 Direct store check for ${elementId}:`, directStoreCheck);
+
+    if (imageElement) {
+      console.log(`✅ Image element found:`, {
+        src: imageElement.src,
+        position: imageElement.position,
+        width: imageElement.width,
+        height: imageElement.height,
+        placeholder: imageElement.placeholder,
+      });
+    } else {
+      console.log(
+        `❌ Image element NOT found for ${elementId} on slide ${slideNumber}`
+      );
+      console.log(
+        `📦 All slide images:`,
+        usePresentationStore.getState().imageElements[slideNumber]
+      );
+    }
+  }
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -382,7 +418,16 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
 
   // Check if imageElement exists AFTER all hooks have been called
   if (!imageElement) {
-    console.log("Image element not found:", elementId);
+    console.log(
+      "❌ Image element not found:",
+      elementId,
+      "slideNumber:",
+      slideNumber
+    );
+    // Проверим что есть в store для этого слайда
+    const allSlideImages =
+      usePresentationStore.getState().imageElements[slideNumber];
+    console.log("📦 All images for slide", slideNumber, ":", allSlideImages);
     return null;
   }
 
@@ -453,6 +498,21 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
             backgroundPosition: "center",
           }}
         >
+          {/* ОТЛАДОЧНЫЙ ЛОГ прямо перед рендером изображения */}
+          {(() => {
+            if (elementId.includes("proto002")) {
+              console.log(`🖼️ IMAGE RENDER CHECK:`, {
+                elementId,
+                src,
+                placeholder,
+                shouldRenderImg: src && !placeholder,
+                backgroundImage:
+                  src && !placeholder ? `url(${src})` : undefined,
+              });
+            }
+            return null;
+          })()}
+
           {src && !placeholder && (
             <img src={src} alt={alt} className="w-full h-full object-cover" />
           )}

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { SlideContent, getSlideType } from "@/entities/SlideContent";
+import { Proto002Template } from "@/entities/TemplateSlides";
 import { DeleteConfirmationModal } from "@/shared/ui/DeleteConfirmationModal";
 import { SlideTypeChangePopup } from "@/shared/ui/SlideTypeChangePopup/SlideTypeChangePopup";
 import { useSlideTypeChangePopup } from "@/shared/hooks/useSlideTypeChangePopup";
@@ -416,12 +417,35 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
     const isGenerated = generatedSlides.includes(slideNumber);
     const slideType = getSlideType(slideNumber);
 
+    // Получаем templateId из localStorage для определения какой компонент использовать
+    let templateId = null;
+    const generatedPresentationStr = localStorage.getItem(
+      "generatedPresentation"
+    );
+    if (generatedPresentationStr) {
+      try {
+        const generatedPresentation = JSON.parse(generatedPresentationStr);
+        const templateIds = generatedPresentation.data?.templateIds;
+        templateId = templateIds?.[slideNumber - 1];
+      } catch (error) {
+        console.error("Error parsing generated presentation:", error);
+      }
+    }
+
     console.log(
-      `🎬 SlideCanvas: rendering slide ${slideNumber}, isGenerated: ${isGenerated}, generatedSlides:`,
-      generatedSlides
+      `🎬 SlideCanvas: rendering slide ${slideNumber}, isGenerated: ${isGenerated}, templateId: ${templateId}`
     );
 
-    // Показываем SlideContent для всех слайдов (как сгенерированных, так и плейсхолдеров)
+    // Используем специфичный компонент шаблона если templateId соответствует
+    if (templateId === "proto_002") {
+      return (
+        <div>
+          <Proto002Template slideNumber={slideNumber} />
+        </div>
+      );
+    }
+
+    // Показываем SlideContent для всех остальных слайдов
     return (
       <div>
         <SlideContent slideNumber={slideNumber} slideType={slideType} />

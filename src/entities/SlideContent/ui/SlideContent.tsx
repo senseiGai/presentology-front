@@ -982,6 +982,7 @@ export const SlideContent = ({
   const renderSlideDataElements = () => {
     // Получаем данные слайда из localStorage
     let slideData = null;
+    let templateId = null;
     const generatedPresentationStr = localStorage.getItem(
       "generatedPresentation"
     );
@@ -989,10 +990,73 @@ export const SlideContent = ({
       try {
         const generatedPresentation = JSON.parse(generatedPresentationStr);
         slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
+        const templateIds = generatedPresentation.data?.templateIds;
+        templateId = templateIds?.[slideNumber - 1];
       } catch (error) {
         console.error("Error parsing generated presentation:", error);
       }
     }
+
+    console.log(
+      `🎨 SlideContent - Slide ${slideNumber}, templateId: ${templateId}`
+    );
+
+    // Применяем позиционирование в зависимости от templateId
+    const getElementPosition = (elementType: string): React.CSSProperties => {
+      if (templateId === "proto_002") {
+        // Макет slide_002: заголовок + подзаголовок на всю ширину сверху,
+        // текст слева (60% ширины), изображение справа (40% ширины)
+        switch (elementType) {
+          case "title":
+            return {
+              position: "absolute" as const,
+              left: "40px",
+              top: "40px",
+              width: "680px", // На всю ширину минус отступы
+            };
+          case "subtitle":
+            return {
+              position: "absolute" as const,
+              left: "40px",
+              top: "100px",
+              width: "680px", // На всю ширину минус отступы
+            };
+          case "text1-title":
+            return {
+              position: "absolute" as const,
+              left: "40px",
+              top: "180px",
+              width: "380px", // 60% от доступной ширины
+            };
+          case "text1-content":
+            return {
+              position: "absolute" as const,
+              left: "40px",
+              top: "220px",
+              width: "380px", // 60% от доступной ширины
+            };
+          case "text2-title":
+            return {
+              position: "absolute" as const,
+              left: "40px",
+              top: "280px",
+              width: "380px", // 60% от доступной ширины
+            };
+          case "text2-content":
+            return {
+              position: "absolute" as const,
+              left: "40px",
+              top: "320px",
+              width: "380px", // 60% от доступной ширины
+            };
+          default:
+            return { position: "absolute" as const };
+        }
+      }
+
+      // Обычное позиционирование для других templateId
+      return { position: "absolute" as const };
+    };
 
     const elements = [];
 
@@ -1000,97 +1064,114 @@ export const SlideContent = ({
     if (slideData) {
       // Рендерим title если есть
       if (slideData.title) {
+        const titlePosition = getElementPosition("title");
         elements.push(
-          <ResizableTextBox
-            key={`slidedata-${slideNumber}-title`}
-            elementId={`slide-${slideNumber}-title`}
-            isSelected={selectedTextElements.includes(
-              `slide-${slideNumber}-title`
-            )}
-            onDelete={handleTextDelete}
-            onCopy={() => handleTextCopy(`slide-${slideNumber}-title`)}
-            onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-title`)}
-            onMoveDown={() => handleTextMoveDown(`slide-${slideNumber}-title`)}
+          <div
+            key={`slidedata-${slideNumber}-title-wrapper`}
+            style={titlePosition}
           >
-            <EditableText
+            <ResizableTextBox
               elementId={`slide-${slideNumber}-title`}
-              initialText={slideData.title}
-              className="text-[32px] font-bold cursor-pointer transition-colors"
-              onClick={(e) => {
-                handleTextClick(
-                  `slide-${slideNumber}-title`,
-                  slideData.title,
-                  e
-                );
-              }}
-            />
-          </ResizableTextBox>
+              isSelected={selectedTextElements.includes(
+                `slide-${slideNumber}-title`
+              )}
+              onDelete={handleTextDelete}
+              onCopy={() => handleTextCopy(`slide-${slideNumber}-title`)}
+              onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-title`)}
+              onMoveDown={() =>
+                handleTextMoveDown(`slide-${slideNumber}-title`)
+              }
+            >
+              <EditableText
+                elementId={`slide-${slideNumber}-title`}
+                initialText={slideData.title}
+                className="text-[24px] font-bold cursor-pointer transition-colors"
+                onClick={(e) => {
+                  handleTextClick(
+                    `slide-${slideNumber}-title`,
+                    slideData.title,
+                    e
+                  );
+                }}
+              />
+            </ResizableTextBox>
+          </div>
         );
       }
 
       // Рендерим subtitle если есть
       if (slideData.subtitle) {
+        const subtitlePosition = getElementPosition("subtitle");
         elements.push(
-          <ResizableTextBox
-            key={`slidedata-${slideNumber}-subtitle`}
-            elementId={`slide-${slideNumber}-subtitle`}
-            isSelected={selectedTextElements.includes(
-              `slide-${slideNumber}-subtitle`
-            )}
-            onDelete={handleTextDelete}
-            onCopy={() => handleTextCopy(`slide-${slideNumber}-subtitle`)}
-            onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-subtitle`)}
-            onMoveDown={() =>
-              handleTextMoveDown(`slide-${slideNumber}-subtitle`)
-            }
+          <div
+            key={`slidedata-${slideNumber}-subtitle-wrapper`}
+            style={subtitlePosition}
           >
-            <EditableText
+            <ResizableTextBox
               elementId={`slide-${slideNumber}-subtitle`}
-              initialText={slideData.subtitle}
-              className="text-[24px] font-medium cursor-pointer transition-colors"
-              onClick={(e) => {
-                handleTextClick(
-                  `slide-${slideNumber}-subtitle`,
-                  slideData.subtitle,
-                  e
-                );
-              }}
-            />
-          </ResizableTextBox>
+              isSelected={selectedTextElements.includes(
+                `slide-${slideNumber}-subtitle`
+              )}
+              onDelete={handleTextDelete}
+              onCopy={() => handleTextCopy(`slide-${slideNumber}-subtitle`)}
+              onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-subtitle`)}
+              onMoveDown={() =>
+                handleTextMoveDown(`slide-${slideNumber}-subtitle`)
+              }
+            >
+              <EditableText
+                elementId={`slide-${slideNumber}-subtitle`}
+                initialText={slideData.subtitle}
+                className="text-[16px] font-medium cursor-pointer transition-colors"
+                onClick={(e) => {
+                  handleTextClick(
+                    `slide-${slideNumber}-subtitle`,
+                    slideData.subtitle,
+                    e
+                  );
+                }}
+              />
+            </ResizableTextBox>
+          </div>
         );
       }
 
       // Рендерим text1 если есть
       if (slideData.text1?.t1) {
+        const text1TitlePosition = getElementPosition("text1-title");
         elements.push(
-          <ResizableTextBox
-            key={`slidedata-${slideNumber}-text1-title`}
-            elementId={`slide-${slideNumber}-text1-title`}
-            isSelected={selectedTextElements.includes(
-              `slide-${slideNumber}-text1-title`
-            )}
-            onDelete={handleTextDelete}
-            onCopy={() => handleTextCopy(`slide-${slideNumber}-text1-title`)}
-            onMoveUp={() =>
-              handleTextMoveUp(`slide-${slideNumber}-text1-title`)
-            }
-            onMoveDown={() =>
-              handleTextMoveDown(`slide-${slideNumber}-text1-title`)
-            }
+          <div
+            key={`slidedata-${slideNumber}-text1-title-wrapper`}
+            style={text1TitlePosition}
           >
-            <EditableText
+            <ResizableTextBox
               elementId={`slide-${slideNumber}-text1-title`}
-              initialText={slideData.text1.t1}
-              className="text-[20px] font-semibold cursor-pointer transition-colors"
-              onClick={(e) => {
-                handleTextClick(
-                  `slide-${slideNumber}-text1-title`,
-                  slideData.text1.t1,
-                  e
-                );
-              }}
-            />
-          </ResizableTextBox>
+              isSelected={selectedTextElements.includes(
+                `slide-${slideNumber}-text1-title`
+              )}
+              onDelete={handleTextDelete}
+              onCopy={() => handleTextCopy(`slide-${slideNumber}-text1-title`)}
+              onMoveUp={() =>
+                handleTextMoveUp(`slide-${slideNumber}-text1-title`)
+              }
+              onMoveDown={() =>
+                handleTextMoveDown(`slide-${slideNumber}-text1-title`)
+              }
+            >
+              <EditableText
+                elementId={`slide-${slideNumber}-text1-title`}
+                initialText={slideData.text1.t1}
+                className="text-[16px] font-semibold cursor-pointer transition-colors"
+                onClick={(e) => {
+                  handleTextClick(
+                    `slide-${slideNumber}-text1-title`,
+                    slideData.text1.t1,
+                    e
+                  );
+                }}
+              />
+            </ResizableTextBox>
+          </div>
         );
       }
 
@@ -1148,7 +1229,7 @@ export const SlideContent = ({
             <EditableText
               elementId={`slide-${slideNumber}-text2-title`}
               initialText={slideData.text2.t1}
-              className="text-[20px] font-semibold cursor-pointer transition-colors"
+              className="text-[16px] font-semibold cursor-pointer transition-colors"
               onClick={(e) => {
                 handleTextClick(
                   `slide-${slideNumber}-text2-title`,
@@ -1262,7 +1343,32 @@ export const SlideContent = ({
 
   // Render image elements from store - показываем изображения только текущего слайда
   const renderImageElements = () => {
-    // Получаем изображения только для текущего слайда
+    // Проверяем templateId для специального позиционирования
+    let templateId = null;
+    let slideData = null;
+    const generatedPresentationStr = localStorage.getItem(
+      "generatedPresentation"
+    );
+    if (generatedPresentationStr) {
+      try {
+        const generatedPresentation = JSON.parse(generatedPresentationStr);
+        slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
+        const templateIds = generatedPresentation.data?.templateIds;
+        templateId = templateIds?.[slideNumber - 1];
+      } catch (error) {
+        console.error("Error parsing generated presentation:", error);
+      }
+    }
+
+    // proto_002 изображения рендерятся в Proto002Template, не здесь
+    if (templateId === "proto_002") {
+      console.log(
+        `🎯 SlideContent: Skipping proto_002 images - handled by Proto002Template`
+      );
+      return []; // Пустой массив для proto_002
+    }
+
+    // Обычная логика для других шаблонов
     const currentSlideImages = imageElements[slideNumber] || {};
     const currentSlideImageElements = Object.entries(currentSlideImages);
 

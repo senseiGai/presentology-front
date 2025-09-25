@@ -6,7 +6,7 @@ import { ResizableTable } from "@/shared/ui/ResizableTable";
 import { EditableTable } from "@/features/TablePanel/ui/EditableTable";
 import { ResizableImageBox } from "@/shared/ui/ResizableImageBox";
 import { ResizableInfographicsBox } from "@/shared/ui/ResizableInfographicsBox";
-import { TemplateRenderer } from "@/entities/TemplateRenderer";
+import { PureTemplateRenderer } from "@/entities/PureTemplateRenderer";
 import { useRenderSlidesWithData } from "@/shared/api/presentation-generation";
 
 interface SlideContentProps {
@@ -15,10 +15,10 @@ interface SlideContentProps {
   isGenerating?: boolean;
 }
 
-export const SlideContent: React.FC<SlideContentProps> = ({
+export const SlideContent = ({
   slideNumber,
   slideType = "default",
-}) => {
+}: SlideContentProps) => {
   const [isDragging, setIsDragging] = React.useState(false);
   const [editingTableElement, setEditingTableElement] = React.useState<
     string | null
@@ -87,37 +87,227 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   const imageAreaSelection = getImageAreaSelection(slideNumber);
 
   // Функция для замены изображений в HTML шаблоне на наши изображения
+  // Функция для обработки изменений текста в шаблоне
+  const handleTemplateTextChange = (field: string, value: string) => {
+    console.log(`📝 Template text changed - field: ${field}, value: ${value}`);
+
+    // Получаем текущие данные презентации
+    const generatedPresentationStr = localStorage.getItem(
+      "generatedPresentation"
+    );
+    if (!generatedPresentationStr) return;
+
+    try {
+      const generatedPresentation = JSON.parse(generatedPresentationStr);
+      const slides = generatedPresentation.data?.slides;
+
+      if (!slides || !slides[slideNumber - 1]) return;
+
+      const slideData = slides[slideNumber - 1];
+
+      // Обновляем соответствующее поле
+      switch (field) {
+        case "title":
+          slideData.title = value;
+          break;
+        case "subtitle":
+          slideData.subtitle = value;
+          break;
+        case "text1_title":
+          if (!slideData.text1) slideData.text1 = {};
+          slideData.text1.t1 = value;
+          break;
+        case "text1_content":
+          if (!slideData.text1) slideData.text1 = {};
+          slideData.text1.t2 = value;
+          break;
+        case "text2_title":
+          if (!slideData.text2) slideData.text2 = {};
+          slideData.text2.t1 = value;
+          break;
+        case "text2_content":
+          if (!slideData.text2) slideData.text2 = {};
+          slideData.text2.t2 = value;
+          break;
+        case "text3_title":
+          if (!slideData.text3) slideData.text3 = {};
+          slideData.text3.t1 = value;
+          break;
+        case "text3_content":
+          if (!slideData.text3) slideData.text3 = {};
+          slideData.text3.t2 = value;
+          break;
+      }
+
+      // Сохраняем обновленные данные
+      localStorage.setItem(
+        "generatedPresentation",
+        JSON.stringify(generatedPresentation)
+      );
+
+      // Обновляем кэш рендера
+      setRenderedSlides((prev) => {
+        const newSlides = { ...prev };
+        delete newSlides[slideNumber]; // Удаляем кэш, чтобы перерендерить
+        return newSlides;
+      });
+
+      // Форсируем перерендеринг
+      setRenderedHtml(null);
+
+      console.log(`✅ Updated ${field} for slide ${slideNumber}`);
+    } catch (error) {
+      console.error("❌ Error updating template text:", error);
+    }
+  };
+
   const replaceTemplateImagesWithOurs = (html: string): string => {
-    if (!html) return html;
-
-    const slideImageElements = imageElements[slideNumber] || {};
-    const ourImages = Object.values(slideImageElements);
-
-    if (ourImages.length === 0) {
-      return html; // Если нет наших изображений, возвращаем оригинальный HTML
+    if (!html) {
+      console.log("🖼️ No HTML provided for image replacement");
+      return html;
     }
 
-    // Создаем DOM parser для работы с HTML
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
-    const images = doc.querySelectorAll("img");
+    const generatedPresentation = localStorage.getItem("generatedPresentation");
+    if (!generatedPresentation) {
+      console.log("🖼️ No generated presentation found for image replacement");
+      return html;
+    }
 
-    // Заменяем изображения в шаблоне на наши
-    images.forEach((img, index) => {
-      if (index < ourImages.length && ourImages[index].src) {
-        img.src = ourImages[index].src;
-        if (ourImages[index].alt) {
-          img.alt = ourImages[index].alt;
-        }
+    try {
+      const presentationData = JSON.parse(generatedPresentation);
+      const slides = presentationData.data?.slides;
+
+      if (!slides || !slides[slideNumber - 1]) {
+        console.log(`🖼️ No slide data found for slide ${slideNumber}`);
+        return html;
+      }
+
+      const slideData = slides[slideNumber - 1];
+      const slideImages = slideData._images;
+
+      if (!slideImages || slideImages.length === 0) {
+        console.log(`🖼️ No images found for slide ${slideNumber}`);
+        return html;
+      }
+
+      let modifiedHtml = html;
+
+      // Заменяем изображения в HTML
+      slideImages.forEach((imageUrl: string, index: number) => {
         console.log(
-          `🖼️ Replaced template image ${index} with our image:`,
-          ourImages[index].src
+          `🖼️ [Preview] Replaced template image ${index} with our image:`,
+          imageUrl
+        );
+
+        // Заменяем различные паттерны изображений в HTML
+        const imgPatterns = [
+          /src="[^"]*\.(jpg|jpeg|png|gif|webp|svg)[^"]*"/gi,
+          /background-image:\s*url\(['"]?[^'"]*\.(jpg|jpeg|png|gif|webp|svg)[^'"]*['"]?\)/gi,
+        ];
+
+        imgPatterns.forEach((pattern) => {
+          if (index === 0) {
+            // Заменяем только первое найденное изображение
+            modifiedHtml = modifiedHtml.replace(pattern, (match) => {
+              if (match.includes("src=")) {
+                return `src="${imageUrl}"`;
+              } else {
+                return `background-image: url('${imageUrl}')`;
+              }
+            });
+          }
+        });
+      });
+
+      return modifiedHtml;
+    } catch (error) {
+      console.error("🖼️ Error replacing images:", error);
+      return html;
+    }
+  };
+
+  // Функция для инициализации содержимого элементов из данных слайда
+  const initializeElementContents = React.useCallback(
+    (slideData: any) => {
+      console.log(
+        "🎯 [SlideContent] Initializing element contents for slide",
+        slideNumber,
+        slideData
+      );
+
+      // Инициализируем базовые элементы слайда
+      if (slideData.title) {
+        const titleElementId = `slide-${slideNumber}-title`;
+        setTextElementContent(titleElementId, slideData.title);
+        console.log(
+          `Set title content: ${slideData.title} for ${titleElementId}`
         );
       }
-    });
 
-    return doc.documentElement.outerHTML;
-  };
+      if (slideData.subtitle) {
+        const subtitleElementId = `slide-${slideNumber}-subtitle`;
+        setTextElementContent(subtitleElementId, slideData.subtitle);
+        console.log(
+          `Set subtitle content: ${slideData.subtitle} for ${subtitleElementId}`
+        );
+      }
+
+      // Инициализируем text1 элементы
+      if (slideData.text1) {
+        if (slideData.text1.t1) {
+          const text1TitleId = `slide-${slideNumber}-text1-title`;
+          setTextElementContent(text1TitleId, slideData.text1.t1);
+          console.log(
+            `Set text1 title content: ${slideData.text1.t1} for ${text1TitleId}`
+          );
+        }
+        if (slideData.text1.t2) {
+          const text1ContentId = `slide-${slideNumber}-text1-content`;
+          setTextElementContent(text1ContentId, slideData.text1.t2);
+          console.log(
+            `Set text1 content: ${slideData.text1.t2} for ${text1ContentId}`
+          );
+        }
+      }
+
+      // Инициализируем text2 элементы
+      if (slideData.text2) {
+        if (slideData.text2.t1) {
+          const text2TitleId = `slide-${slideNumber}-text2-title`;
+          setTextElementContent(text2TitleId, slideData.text2.t1);
+          console.log(
+            `Set text2 title content: ${slideData.text2.t1} for ${text2TitleId}`
+          );
+        }
+        if (slideData.text2.t2) {
+          const text2ContentId = `slide-${slideNumber}-text2-content`;
+          setTextElementContent(text2ContentId, slideData.text2.t2);
+          console.log(
+            `Set text2 content: ${slideData.text2.t2} for ${text2ContentId}`
+          );
+        }
+      }
+
+      // Инициализируем text3 элементы
+      if (slideData.text3) {
+        if (slideData.text3.t1) {
+          const text3TitleId = `slide-${slideNumber}-text3-title`;
+          setTextElementContent(text3TitleId, slideData.text3.t1);
+          console.log(
+            `Set text3 title content: ${slideData.text3.t1} for ${text3TitleId}`
+          );
+        }
+        if (slideData.text3.t2) {
+          const text3ContentId = `slide-${slideNumber}-text3-content`;
+          setTextElementContent(text3ContentId, slideData.text3.t2);
+          console.log(
+            `Set text3 content: ${slideData.text3.t2} for ${text3ContentId}`
+          );
+        }
+      }
+    },
+    [slideNumber, setTextElementContent]
+  );
 
   // Debug effect to track state changes
   React.useEffect(() => {
@@ -144,6 +334,23 @@ export const SlideContent: React.FC<SlideContentProps> = ({
         `🎯 [SlideContent] Using cached HTML for slide ${slideNumber}`
       );
       setRenderedHtml(renderedSlides[slideNumber]);
+
+      // Инициализируем содержимое элементов даже при использовании кешированного HTML
+      const generatedPresentationStr = localStorage.getItem(
+        "generatedPresentation"
+      );
+      if (generatedPresentationStr) {
+        try {
+          const generatedPresentation = JSON.parse(generatedPresentationStr);
+          const slides = generatedPresentation.data?.slides;
+          const currentSlideData = slides?.[slideNumber - 1];
+          if (currentSlideData) {
+            initializeElementContents(currentSlideData);
+          }
+        } catch (error) {
+          console.error("Error initializing cached slide contents:", error);
+        }
+      }
       return;
     }
 
@@ -215,6 +422,12 @@ export const SlideContent: React.FC<SlideContentProps> = ({
             htmlLength: currentSlideHtml.html.length,
           });
           setRenderedHtml(currentSlideHtml.html);
+
+          // Инициализируем содержимое элементов из данных слайда
+          const currentSlideData = slides[slideNumber - 1];
+          if (currentSlideData) {
+            initializeElementContents(currentSlideData);
+          }
         } else {
           console.warn(
             `⚠️ [SlideContent] No HTML found for slide ${slideNumber}`
@@ -964,21 +1177,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
           onMouseLeave={handleMouseLeave}
           style={{ position: "relative" }}
         >
-          {/* Фоновый HTML шаблон */}
-          {isTemplateMode && (
-            <div
-              className="template-background absolute inset-0 pointer-events-none"
-              style={{
-                zIndex: 0,
-              }}
-            >
-              <TemplateRenderer
-                html={replaceTemplateImagesWithOurs(renderedHtml || "")}
-                templateId={`slide_${slideNumber}`}
-                className="w-full h-full"
-              />
-            </div>
-          )}
+          {/* Убираем фоновый HTML шаблон - используем только наши компоненты */}
 
           {/* Редактируемые элементы поверх шаблона */}
           <div
@@ -1302,9 +1501,11 @@ export const SlideContent: React.FC<SlideContentProps> = ({
           onMouseLeave={handleMouseLeave}
           style={{ position: "relative" }}
         >
-          <TemplateRenderer
-            html={replaceTemplateImagesWithOurs(filledHtml)}
+          <PureTemplateRenderer
+            html={slideTemplates[slideTemplateKey]}
             templateId={slideTemplateKey}
+            slideNumber={slideNumber}
+            slideData={slideData}
             className="w-full h-full"
           />
         </div>

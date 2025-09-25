@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { ImageToolbar } from "@/shared/ui/ImageToolbar";
@@ -335,6 +337,12 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
   }
 
   const { position, width, height, src, alt, placeholder } = imageElement;
+
+  // Check if position exists
+  if (!position) {
+    console.log("Image position not found for element:", elementId);
+    return null;
+  }
 
   // Calculate toolbar position
   const toolbarPosition = {

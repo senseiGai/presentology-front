@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import {
   ElementSelector,
   type ElementOption,
@@ -14,6 +16,8 @@ interface ToolsPanelProps {
 }
 
 export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
+  const [isMounted, setIsMounted] = useState(false);
+
   const {
     isGenerating,
     generatedSlides,
@@ -35,6 +39,10 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
     addTableElement,
     addImageElement,
   } = usePresentationStore();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const handleElementSelect = (elementId: string) => {
     setSelectedElement(elementId);
 
@@ -137,7 +145,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
         height: "calc(100vh - 80px)",
       }}
     >
-      {isGenerating && (
+      {isMounted && isGenerating && (
         <div className="mb-6 flex-shrink-0">
           <div className="text-[14px] font-regular text-[#8F8F92] mb-2">
             Генерация слайдов
@@ -150,7 +158,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
         </div>
       )}
 
-      {!isGenerating && (
+      {isMounted && !isGenerating && (
         <div className="flex-1 overflow-y-auto">
           {selectedTextElement ? (
             <TextEditorPanel />

@@ -1,8 +1,9 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 import PreviewGenerationLoaderIcon from "../../../../public/icons/PreviewGenerationLoaderIcon";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { getSlideType } from "@/entities/SlideContent";
-import { TemplateRenderer } from "@/entities/TemplateRenderer";
 
 interface SlidePreviewContentProps {
   slideNumber: number;
@@ -17,6 +18,8 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
 }) => {
   // Состояние для принудительного обновления
   const [forceUpdateCount, forceUpdate] = useState(0);
+  // Предотвращение hydration errors
+  const [isMounted, setIsMounted] = useState(false);
 
   // Получаем данные из store для отображения реального контента
   const {
@@ -31,14 +34,22 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
     zoomLevel,
   } = usePresentationStore();
 
+  // Предотвращаем hydration errors
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // useEffect для отслеживания изменений
   useEffect(() => {
+    if (!isMounted) return; // Ждем клиентского рендеринга
+
     console.log(
       "SlidePreviewContent useEffect triggered for slide:",
       slideNumber
     );
     forceUpdate((prev) => prev + 1);
   }, [
+    isMounted,
     textElementContents,
     textElementPositions,
     textElementStyles,
@@ -314,23 +325,9 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
   const renderPreviewImageElements = () => {
     const slideImageElements = imageElements[slideNumber] || {};
 
-    // Получаем HTML шаблон для проверки
-    const templateId = `slide_${slideNumber}`;
-    const renderedHtml = slideTemplates[templateId];
-
-    // Проверяем, есть ли HTML шаблон с изображениями
-    const hasTemplateWithImages = renderedHtml && renderedHtml.includes("<img");
-
     return Object.entries(slideImageElements)
       .map(([elementId, imageData]) => {
-        // Если есть HTML шаблон с изображениями, не отображаем изображения как редактируемые элементы
-        // Они уже встроены в шаблон
-        if (hasTemplateWithImages) {
-          console.log(
-            `🖼️ [Preview] Hiding image element ${elementId} because it's integrated into template`
-          );
-          return null;
-        }
+        // Теперь всегда показываем изображения как редактируемые элементы
         const scaledX = (imageData.position?.x || 100) * SCALE;
         const scaledY = (imageData.position?.y || 100) * SCALE;
         const scaledWidth = Math.min(30, (imageData.width || 150) * SCALE);
@@ -373,31 +370,9 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
 
   // Рендер превью на основе типа слайда и реального контента
   const renderSlidePreview = () => {
-    // Получаем HTML шаблон для текущего слайда
-    const templateId = `slide_${slideNumber}`;
-    const renderedHtml = slideTemplates[templateId];
-
     return (
       <div className="w-full h-full bg-white rounded-[4px] relative overflow-hidden border border-[#E5E7EB]">
-        {/* Фоновый HTML шаблон (всегда включен) */}
-        {renderedHtml && (
-          <div
-            className="template-background absolute inset-0 pointer-events-none"
-            style={{
-              zIndex: 0,
-              transform: `scale(${SCALE})`,
-              transformOrigin: "top left",
-              width: `${ORIGINAL_WIDTH}px`,
-              height: `${ORIGINAL_HEIGHT}px`,
-            }}
-          >
-            <TemplateRenderer
-              html={replaceTemplateImagesWithOurs(renderedHtml)}
-              templateId={templateId}
-              className="w-full h-full"
-            />
-          </div>
-        )}
+        {/* HTML шаблон полностью убран */}
 
         {/* Редактируемые элементы поверх шаблона */}
         <div className="relative z-10">
@@ -408,6 +383,15 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
       </div>
     );
   };
+
+  // Не рендерим содержимое до тех пор, пока компонент не смонтирован на клиенте
+  if (!isMounted) {
+    return (
+      <div className="w-full h-full bg-white rounded-[4px] relative overflow-hidden border border-[#E5E7EB]">
+        {/* Пустой контейнер во время SSR */}
+      </div>
+    );
+  }
 
   return renderSlidePreview();
 };

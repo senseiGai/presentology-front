@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { ResizableTextBox } from "@/shared/ui/ResizableTextBox";
@@ -67,6 +69,9 @@ export const SlideContent = ({
     selectedImageElement,
     setSelectedImageElement,
     deleteImageElement,
+    getImageElement,
+    addImageElement,
+    updateImageElement,
     // Table state
     tableElements,
     selectedTableElement,
@@ -294,8 +299,45 @@ export const SlideContent = ({
           safeSetContent(text3ContentId, slideData.text3.t2);
         }
       }
+
+      // Инициализируем изображения
+      if (slideData._images && Array.isArray(slideData._images)) {
+        slideData._images.forEach((imageSrc: string, index: number) => {
+          const imageElementId = `slide-${slideNumber}-image-${index}`;
+          const existingImage = getImageElement(imageElementId);
+
+          if (!existingImage && imageSrc) {
+            // Добавляем изображение в store если его еще нет
+            const defaultPosition = {
+              x: 100 + index * 50, // Смещаем каждое следующее изображение
+              y: 100 + index * 50,
+            };
+            const defaultSize = { width: 200, height: 150 };
+
+            const newElementId = addImageElement(
+              slideNumber,
+              defaultPosition,
+              defaultSize
+            );
+            // Обновляем изображение с правильным src
+            updateImageElement(newElementId, {
+              src: imageSrc,
+              alt: `Image ${index + 1}`,
+              placeholder: false,
+            });
+            console.log(`Added image ${imageSrc} as element ${newElementId}`);
+          }
+        });
+      }
     },
-    [slideNumber, setTextElementContent, getTextElementContent]
+    [
+      slideNumber,
+      setTextElementContent,
+      getTextElementContent,
+      getImageElement,
+      addImageElement,
+      updateImageElement,
+    ]
   );
 
   // Debug effect to track state changes
@@ -736,7 +778,7 @@ export const SlideContent = ({
       if (slideData.title) {
         elements.push(
           <ResizableTextBox
-            key={`slide-${slideNumber}-title`}
+            key={`slidedata-${slideNumber}-title`}
             elementId={`slide-${slideNumber}-title`}
             isSelected={selectedTextElements.includes(
               `slide-${slideNumber}-title`
@@ -766,7 +808,7 @@ export const SlideContent = ({
       if (slideData.subtitle) {
         elements.push(
           <ResizableTextBox
-            key={`slide-${slideNumber}-subtitle`}
+            key={`slidedata-${slideNumber}-subtitle`}
             elementId={`slide-${slideNumber}-subtitle`}
             isSelected={selectedTextElements.includes(
               `slide-${slideNumber}-subtitle`
@@ -798,7 +840,7 @@ export const SlideContent = ({
       if (slideData.text1?.t1) {
         elements.push(
           <ResizableTextBox
-            key={`slide-${slideNumber}-text1-title`}
+            key={`slidedata-${slideNumber}-text1-title`}
             elementId={`slide-${slideNumber}-text1-title`}
             isSelected={selectedTextElements.includes(
               `slide-${slideNumber}-text1-title`
@@ -831,7 +873,7 @@ export const SlideContent = ({
       if (slideData.text1?.t2) {
         elements.push(
           <ResizableTextBox
-            key={`slide-${slideNumber}-text1-content`}
+            key={`slidedata-${slideNumber}-text1-content`}
             elementId={`slide-${slideNumber}-text1-content`}
             isSelected={selectedTextElements.includes(
               `slide-${slideNumber}-text1-content`
@@ -865,7 +907,7 @@ export const SlideContent = ({
       if (slideData.text2?.t1) {
         elements.push(
           <ResizableTextBox
-            key={`slide-${slideNumber}-text2-title`}
+            key={`slidedata-${slideNumber}-text2-title`}
             elementId={`slide-${slideNumber}-text2-title`}
             isSelected={selectedTextElements.includes(
               `slide-${slideNumber}-text2-title`
@@ -898,7 +940,7 @@ export const SlideContent = ({
       if (slideData.text2?.t2) {
         elements.push(
           <ResizableTextBox
-            key={`slide-${slideNumber}-text2-content`}
+            key={`slidedata-${slideNumber}-text2-content`}
             elementId={`slide-${slideNumber}-text2-content`}
             isSelected={selectedTextElements.includes(
               `slide-${slideNumber}-text2-content`
@@ -936,7 +978,7 @@ export const SlideContent = ({
         const content = textElementContents[elementId] || "New text element";
         return (
           <ResizableTextBox
-            key={elementId}
+            key={`user-${elementId}`}
             elementId={elementId}
             isSelected={selectedTextElements.includes(elementId)}
             onDelete={handleTextDelete}
@@ -1024,20 +1066,15 @@ export const SlideContent = ({
   const renderImageElements = () => {
     const currentSlideElements = imageElements[slideNumber] || {};
 
-    // Проверяем, есть ли HTML шаблон с изображениями
-    const hasTemplateWithImages = renderedHtml && renderedHtml.includes("<img");
-
     return Object.entries(currentSlideElements)
       .map(([elementId, imageData]) => {
-        // Если есть HTML шаблон с изображениями, не отображаем изображения как редактируемые элементы
-        // Они уже встроены в шаблон
-        if (hasTemplateWithImages && isTemplateMode) {
-          console.log(
-            `🖼️ Hiding image element ${elementId} because it's integrated into template`
-          );
+        // Проверяем, что imageData существует и имеет необходимые поля
+        if (!imageData || !imageData.position) {
+          console.warn("Invalid image data for element:", elementId, imageData);
           return null;
         }
 
+        // Всегда показываем изображения как интерактивные элементы
         return (
           <ResizableImageBox
             key={elementId}
@@ -1503,6 +1540,7 @@ export const SlideContent = ({
             style={{ position: "relative" }}
           >
             <ResizableTextBox
+              key="user-title-main"
               isSelected={selectedTextElements.includes("title-main")}
               elementId="title-main"
               onDelete={handleTextDelete}
@@ -1521,6 +1559,7 @@ export const SlideContent = ({
             </ResizableTextBox>
 
             <ResizableTextBox
+              key="user-title-sub"
               isSelected={selectedTextElements.includes("title-sub")}
               elementId="title-sub"
               onDelete={handleTextDelete}
@@ -1566,6 +1605,7 @@ export const SlideContent = ({
           >
             {/* Render slide title if exists */}
             <ResizableTextBox
+              key={`user-slide-${slideNumber}-title`}
               isSelected={selectedTextElements.includes(
                 `slide-${slideNumber}-title`
               )}

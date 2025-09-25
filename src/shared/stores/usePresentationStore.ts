@@ -704,7 +704,7 @@ export const usePresentationStore = create<PresentationState>()(
       addGeneratedSlide: (slide: number) =>
         set((state) => ({
           generatedSlides: [...state.generatedSlides, slide],
-          currentSlide: slide, // Автоматически переключаемся на новый слайд
+          // Убираем автоматическое переключение слайда
         })),
 
       insertSlideAfter: (afterSlide: number) =>

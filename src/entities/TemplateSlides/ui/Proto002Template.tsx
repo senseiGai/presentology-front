@@ -86,7 +86,7 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
               [elementId]: {
                 id: elementId,
                 position: { x: 430, y: 0 }, // Позиция относительно слайда (не контейнера)
-                width: "40%", // Почти вся доступная ширина (720 - 430 - 10px отступ)
+                width: "45%", // Почти вся доступная ширина (720 - 430 - 10px отступ)
                 height: 405, // Почти вся доступная высота (405 - 130 - 15px отступ)
                 placeholder: false,
                 alt: "Proto002 Image",
@@ -253,9 +253,9 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
         <div
           style={{
             position: "absolute",
-            left: "0px",
-            top: "40px",
-            width: "440px",
+            left: "-20px",
+            top: "120px",
+            width: "400px",
           }}
         >
           <ResizableTextBox
@@ -271,7 +271,7 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
             <EditableText
               elementId={`slide-${slideNumber}-title`}
               initialText={slideData.title}
-              className="text-[24px] font-bold cursor-pointer transition-colors text-black leading-tight"
+              className="text-[22px] font-bold cursor-pointer transition-colors text-black leading-tight"
               onClick={(e) => {
                 handleTextClick(
                   `slide-${slideNumber}-title`,

@@ -38,6 +38,9 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
   const [isDragging, setIsDragging] = React.useState(false);
   const [slideData, setSlideData] = React.useState<any>(null);
 
+  // Позиция subtitle - можно двигать влево без ограничений
+  const subtitlePosition = { left: -20, top: 85 };
+
   // Загружаем данные слайда
   React.useEffect(() => {
     const generatedPresentationStr = localStorage.getItem(
@@ -85,9 +88,9 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
               ...(state.imageElements[slideNumber] || {}),
               [elementId]: {
                 id: elementId,
-                position: { x: 430, y: 0 }, // Позиция относительно слайда (не контейнера)
-                width: "45%", // Почти вся доступная ширина (720 - 430 - 10px отступ)
-                height: 405, // Почти вся доступная высота (405 - 130 - 15px отступ)
+                position: { x: 430, y: 130 }, // Позиция относительно слайда (не контейнера)
+                width: 280, // Почти вся доступная ширина (720 - 430 - 10px отступ)
+                height: 260, // Почти вся доступная высота (405 - 130 - 15px отступ)
                 placeholder: false,
                 alt: "Proto002 Image",
                 zIndex: 2,
@@ -289,9 +292,9 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
         <div
           style={{
             position: "absolute",
-            left: "40px",
-            top: "85px",
-            width: "640px",
+            left: `${subtitlePosition.left}px`,
+            top: `${subtitlePosition.top}px`,
+            width: "700px", // Расширили контейнер для движения влево
           }}
         >
           <ResizableTextBox

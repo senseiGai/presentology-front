@@ -167,6 +167,7 @@ export interface PresentationState {
   setCurrentSlide: (slide: number) => void;
   setTotalSlides: (total: number) => void;
   addGeneratedSlide: (slide: number) => void;
+  setAllSlidesGenerated: (totalSlides: number) => void;
   insertSlideAfter: (afterSlide: number) => void;
   deleteSlide: (slideNumber: number) => void;
   deleteSlideByIndex: (slideIndex: number) => void;
@@ -319,6 +320,9 @@ export interface PresentationState {
   // Template actions
   setSlideTemplates: (templates: Record<string, string>) => void;
   setSlideTemplate: (templateId: string, html: string) => void;
+
+  // Reload data from localStorage
+  reloadDataFromStorage: () => void;
 }
 
 const initialState = {
@@ -563,6 +567,10 @@ const initializeTextContentFromMockData = (mockData: any) => {
 
       // Initialize images from _images array
       if (slide._images && Array.isArray(slide._images)) {
+        console.log(
+          `🖼️ Processing ${slide._images.length} images for slide ${slideNumber}:`,
+          slide._images
+        );
         const slideImageElements: Record<string, any> = {};
         slide._images.forEach((imageUrl: string, imageIndex: number) => {
           const elementId = `slide-${slideNumber}-image-${imageIndex}`;
@@ -579,10 +587,20 @@ const initializeTextContentFromMockData = (mockData: any) => {
             },
             placeholder: false,
           };
+          console.log(
+            `✅ Created image element ${elementId} with src: ${imageUrl}`
+          );
         });
         if (Object.keys(slideImageElements).length > 0) {
           imageElementsData[slideNumber] = slideImageElements;
+          console.log(
+            `💾 Saved ${
+              Object.keys(slideImageElements).length
+            } images for slide ${slideNumber}`
+          );
         }
+      } else {
+        console.log(`⚠️ No images found for slide ${slideNumber}`);
       }
     });
   } else if (mockData?.slides && Array.isArray(mockData.slides)) {
@@ -706,6 +724,12 @@ export const usePresentationStore = create<PresentationState>()(
           generatedSlides: [...state.generatedSlides, slide],
           // Убираем автоматическое переключение слайда
         })),
+
+      setAllSlidesGenerated: (totalSlides: number) =>
+        set({
+          generatedSlides: Array.from({ length: totalSlides }, (_, i) => i + 1),
+          isGenerating: false,
+        }),
 
       insertSlideAfter: (afterSlide: number) =>
         set((state) => {
@@ -1928,6 +1952,45 @@ export const usePresentationStore = create<PresentationState>()(
             [templateId]: html,
           },
         }));
+      },
+
+      reloadDataFromStorage: () => {
+        console.log("🔄 Reloading data from localStorage...");
+        const mockData = loadMockDataFromStorage();
+        if (mockData) {
+          console.log("📋 Found data in localStorage, reinitializing store...");
+          const {
+            textElementContents,
+            textElementStyles,
+            imageElements,
+            infographicsElements,
+          } = initializeTextContentFromMockData(mockData);
+
+          const totalSlides =
+            mockData?.data?.slides?.length ||
+            mockData?.slides?.length ||
+            initialState.totalSlides;
+
+          set((state) => ({
+            ...state,
+            totalSlides,
+            generatedSlides: Array.from(
+              { length: totalSlides },
+              (_, i) => i + 1
+            ),
+            textElementContents,
+            textElementStyles,
+            imageElements,
+            infographicsElements,
+            isGenerating: false,
+          }));
+
+          console.log("✅ Store reloaded with new data");
+          console.log("📊 New totalSlides:", totalSlides);
+          console.log("📊 New imageElements:", imageElements);
+        } else {
+          console.log("❌ No data found in localStorage");
+        }
       },
     };
   })

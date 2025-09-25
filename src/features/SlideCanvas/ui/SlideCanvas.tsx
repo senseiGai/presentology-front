@@ -415,18 +415,15 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
   const renderSlide = (slideNumber: number) => {
     const isGenerated = generatedSlides.includes(slideNumber);
 
-    if (!isGenerated) {
-      return (
-        <div className="w-[640px] h-[360px] bg-[#F7FAFC] rounded-[12px] flex items-center justify-center border-2 border-dashed border-[#E2E8F0]">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-[#E2E8F0] rounded-full mx-auto mb-3" />
-            <div className="text-[#6B7280] text-[16px]">
-              Слайд {slideNumber} ожидает генерации
-            </div>
-          </div>
-        </div>
-      );
-    }
+    console.log(
+      `🎬 SlideCanvas: rendering slide ${slideNumber}, isGenerated: ${isGenerated}, generatedSlides:`,
+      generatedSlides
+    );
+
+    // УБИРАЕМ УСЛОВИЕ! Всегда рендерим полное содержимое слайда
+    // if (!isGenerated) {
+    //   return плейсхолдер
+    // }
 
     const slideType = getSlideType(slideNumber);
     return (

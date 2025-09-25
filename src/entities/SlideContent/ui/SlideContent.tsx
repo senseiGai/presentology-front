@@ -1066,6 +1066,12 @@ export const SlideContent = ({
   const renderImageElements = () => {
     const currentSlideElements = imageElements[slideNumber] || {};
 
+    console.log(
+      `🎬 Rendering images for slide ${slideNumber}:`,
+      currentSlideElements
+    );
+    console.log(`🎬 All imageElements:`, imageElements);
+
     return Object.entries(currentSlideElements)
       .map(([elementId, imageData]) => {
         // Проверяем, что imageData существует и имеет необходимые поля

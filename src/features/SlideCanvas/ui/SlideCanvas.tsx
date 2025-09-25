@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { SlideContent, getSlideType } from "@/entities/SlideContent";
-import { HTMLTemplateParser } from "@/shared/ui/HTMLTemplateParser";
 import { DeleteConfirmationModal } from "@/shared/ui/DeleteConfirmationModal";
 import { SlideTypeChangePopup } from "@/shared/ui/SlideTypeChangePopup/SlideTypeChangePopup";
 import { useSlideTypeChangePopup } from "@/shared/hooks/useSlideTypeChangePopup";
@@ -422,16 +421,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
       generatedSlides
     );
 
-    // Если слайд сгенерирован, используем HTMLTemplateParser
-    if (isGenerated) {
-      return (
-        <div>
-          <HTMLTemplateParser slideNumber={slideNumber} slideType={slideType} />
-        </div>
-      );
-    }
-
-    // Иначе показываем обычный SlideContent (плейсхолдер)
+    // Показываем SlideContent для всех слайдов (как сгенерированных, так и плейсхолдеров)
     return (
       <div>
         <SlideContent slideNumber={slideNumber} slideType={slideType} />

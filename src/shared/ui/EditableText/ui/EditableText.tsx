@@ -39,6 +39,10 @@ export const EditableText: React.FC<EditableTextProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hasDragged, setHasDragged] = useState(false); // Track if we actually dragged
+  const [initialDragPosition, setInitialDragPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null); // Track initial position for history
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -61,12 +65,22 @@ export const EditableText: React.FC<EditableTextProps> = ({
 
     // Start drag after a short delay to distinguish from click
     dragTimeoutRef.current = setTimeout(() => {
+      // Save initial position for history
+      const currentPosition = {
+        x: elementStyle.x || 0,
+        y: elementStyle.y || 0,
+      };
+      setInitialDragPosition(currentPosition);
+
       setIsDragging(true);
       setDragStart({
         x: e.clientX,
         y: e.clientY,
       });
-      console.log("Started dragging text element");
+      console.log(
+        "Started dragging text element, initial position:",
+        currentPosition
+      );
     }, 150); // 150ms delay before drag starts
   };
 
@@ -152,7 +166,36 @@ export const EditableText: React.FC<EditableTextProps> = ({
   );
 
   const handleGlobalMouseUp = useCallback(() => {
+    // If we were dragging and actually moved, record the action in history
+    if (isDragging && hasDragged && initialDragPosition) {
+      const currentPosition = {
+        x: elementStyle.x || 0,
+        y: elementStyle.y || 0,
+      };
+
+      // Only record if position actually changed
+      if (
+        currentPosition.x !== initialDragPosition.x ||
+        currentPosition.y !== initialDragPosition.y
+      ) {
+        addToHistory({
+          type: "text_position",
+          elementId,
+          previousValue: initialDragPosition,
+          newValue: currentPosition,
+          timestamp: Date.now(),
+        });
+        console.log("📝 Recorded text position change in history:", {
+          elementId,
+          from: initialDragPosition,
+          to: currentPosition,
+        });
+      }
+    }
+
     setIsDragging(false);
+    setInitialDragPosition(null);
+
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
       dragTimeoutRef.current = null;
@@ -162,7 +205,14 @@ export const EditableText: React.FC<EditableTextProps> = ({
     setTimeout(() => {
       setHasDragged(false);
     }, 100);
-  }, []);
+  }, [
+    isDragging,
+    hasDragged,
+    initialDragPosition,
+    elementStyle,
+    elementId,
+    addToHistory,
+  ]);
 
   // Add global mouse event listeners for dragging
   useEffect(() => {
@@ -398,6 +448,27 @@ export const EditableText: React.FC<EditableTextProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     console.log("Key pressed:", e.key, "Shift:", e.shiftKey);
 
+    // Handle Ctrl+Z for undo functionality
+    if (e.ctrlKey && e.key === "z" && !e.shiftKey) {
+      e.preventDefault();
+      console.log("Ctrl+Z pressed in EditableText - calling undo");
+      const store = usePresentationStore.getState();
+      store.undo();
+      return;
+    }
+
+    // Handle Ctrl+Shift+Z or Ctrl+Y for redo functionality
+    if (
+      (e.ctrlKey && e.shiftKey && e.key === "Z") ||
+      (e.ctrlKey && e.key === "y")
+    ) {
+      e.preventDefault();
+      console.log("Ctrl+Shift+Z pressed in EditableText - calling redo");
+      const store = usePresentationStore.getState();
+      store.redo();
+      return;
+    }
+
     if (e.key === "Escape") {
       e.preventDefault();
       console.log("Escape pressed, canceling edit");
@@ -563,7 +634,6 @@ export const EditableText: React.FC<EditableTextProps> = ({
         width: "100%", // Fill parent width
         height: "100%", // Fill parent height
         minHeight: "1.2em",
-        minWidth: "50px",
         pointerEvents: "auto",
         userSelect: isEditing ? "text" : "none", // Allow text selection only when editing
         cursor: isEditing ? "text" : isDragging ? "grabbing" : "grab", // Show drag cursor when not editing
@@ -581,7 +651,7 @@ export const EditableText: React.FC<EditableTextProps> = ({
           onChange={handleTextChange}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
-          className="absolute inset-0 w-full h-full resize-none outline-none bg-transparent"
+          className="absolute inset-0 resize-none outline-none bg-transparent"
           style={{
             fontSize: `${elementStyle.fontSize}px`,
             fontWeight: elementStyle.fontWeight,
@@ -595,6 +665,7 @@ export const EditableText: React.FC<EditableTextProps> = ({
             width: "100%",
             height: "100%",
             minHeight: "100%",
+            minWidth: "50px", // Minimum readable width for textarea
             maxWidth: "100%", // Prevent horizontal overflow
             maxHeight: "100%", // Prevent vertical overflow
             overflow: "hidden", // Hide scrollbars and prevent overflow

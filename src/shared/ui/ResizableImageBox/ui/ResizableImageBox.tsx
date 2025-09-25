@@ -22,6 +22,7 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
     updateImageElement,
     setSelectedImageElement,
     copyImageElement,
+    addToHistory,
   } = usePresentationStore();
 
   const [isDragging, setIsDragging] = useState(false);
@@ -36,6 +37,10 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
     x: 0,
     y: 0,
   });
+  const [initialDragPosition, setInitialDragPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null); // For history tracking
   const [showToolbar, setShowToolbar] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +50,7 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
     (e: React.MouseEvent) => {
       if (!imageElement || !isSelected) {
         if (imageElement) {
+          console.log("Selecting image element:", elementId);
           setSelectedImageElement(elementId);
           setShowToolbar(true);
         }
@@ -92,6 +98,11 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
         setResizeDirection("n");
       } else {
         setIsDragging(true);
+        // Save initial position for history tracking
+        setInitialDragPosition({
+          x: imageElement.position.x,
+          y: imageElement.position.y,
+        });
       }
 
       setDragStart({ x: e.clientX, y: e.clientY });
@@ -255,10 +266,47 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
   );
 
   const handleMouseUp = useCallback(() => {
+    // If we were dragging an image and have initial position, record the change
+    if (isDragging && initialDragPosition && imageElement) {
+      const currentPosition = {
+        x: imageElement.position.x,
+        y: imageElement.position.y,
+      };
+
+      // Only record if position actually changed
+      if (
+        currentPosition.x !== initialDragPosition.x ||
+        currentPosition.y !== initialDragPosition.y
+      ) {
+        addToHistory({
+          type: "image_position",
+          elementId,
+          slideNumber,
+          previousValue: initialDragPosition,
+          newValue: currentPosition,
+          timestamp: Date.now(),
+        });
+        console.log("📝 Recorded image position change in history:", {
+          elementId,
+          slideNumber,
+          from: initialDragPosition,
+          to: currentPosition,
+        });
+      }
+    }
+
     setIsDragging(false);
     setIsResizing(false);
     setResizeDirection("");
-  }, []);
+    setInitialDragPosition(null);
+  }, [
+    isDragging,
+    initialDragPosition,
+    imageElement,
+    elementId,
+    slideNumber,
+    addToHistory,
+  ]);
 
   useEffect(() => {
     if (isDragging || isResizing) {
@@ -300,11 +348,18 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
   const handleCopy = () => {
     if (imageElement) {
       console.log("ResizableImageBox: Duplicating image element:", elementId);
-      copyImageElement(elementId, slideNumber);
+      const newId = copyImageElement(elementId, slideNumber);
+      console.log("ResizableImageBox: Copy completed, new element ID:", newId);
+    } else {
+      console.log(
+        "ResizableImageBox: No image element found for copying:",
+        elementId
+      );
     }
   };
 
   const handleDelete = () => {
+    console.log("ResizableImageBox: Deleting image element:", elementId);
     onDelete();
   };
 

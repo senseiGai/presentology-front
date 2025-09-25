@@ -744,14 +744,132 @@ export const SlideContent = ({
   // Handle keyboard shortcuts
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape key - clear image area selection
       if (e.key === "Escape" && isImageAreaSelectionMode) {
         clearImageAreaSelection(slideNumber);
+        return;
+      }
+
+      // Ignore if user is typing in input/textarea
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.contentEditable === "true"
+      ) {
+        return;
+      }
+
+      const store = usePresentationStore.getState();
+
+      // Ctrl+Z - Undo
+      if (e.ctrlKey && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        store.undo();
+        console.log("🔄 Undo triggered");
+        return;
+      }
+
+      // Ctrl+Shift+Z or Ctrl+Y - Redo
+      if (
+        (e.ctrlKey && e.shiftKey && e.key === "Z") ||
+        (e.ctrlKey && e.key === "y")
+      ) {
+        e.preventDefault();
+        store.redo();
+        console.log("🔄 Redo triggered");
+        return;
+      }
+
+      // Ctrl+C - Copy selected element
+      if (e.ctrlKey && e.key === "c") {
+        e.preventDefault();
+
+        if (selectedTextElement) {
+          store.copyElementToClipboard(
+            "text",
+            selectedTextElement,
+            slideNumber
+          );
+        } else if (selectedImageElement) {
+          store.copyElementToClipboard(
+            "image",
+            selectedImageElement,
+            slideNumber
+          );
+        } else if (selectedTableElement) {
+          store.copyElementToClipboard(
+            "table",
+            selectedTableElement,
+            slideNumber
+          );
+        } else if (selectedInfographicsElement) {
+          store.copyElementToClipboard(
+            "infographics",
+            selectedInfographicsElement,
+            slideNumber
+          );
+        }
+        console.log("📋 Copy triggered");
+        return;
+      }
+
+      // Ctrl+V - Paste from clipboard
+      if (e.ctrlKey && e.key === "v") {
+        e.preventDefault();
+        store.pasteElementFromClipboard(slideNumber);
+        console.log("📋 Paste triggered");
+        return;
+      }
+
+      // Delete key - delete selected element
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+
+        console.log("Delete key pressed. Current selections:", {
+          selectedTextElement,
+          selectedImageElement,
+          selectedTableElement,
+          selectedInfographicsElement,
+        });
+
+        if (selectedTextElement) {
+          console.log("Deleting text element:", selectedTextElement);
+          deleteTextElement(selectedTextElement);
+        } else if (selectedImageElement) {
+          console.log("Deleting image element:", selectedImageElement);
+          deleteImageElement(selectedImageElement, slideNumber);
+          setSelectedImageElement(null);
+        } else if (selectedTableElement) {
+          deleteTableElement(selectedTableElement);
+          setSelectedTableElement(null);
+        } else if (selectedInfographicsElement) {
+          deleteInfographicsElement(slideNumber, selectedInfographicsElement);
+          setSelectedInfographicsElement(null);
+        }
+        console.log("🗑️ Delete triggered");
+        return;
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isImageAreaSelectionMode, clearImageAreaSelection, slideNumber]);
+  }, [
+    isImageAreaSelectionMode,
+    clearImageAreaSelection,
+    slideNumber,
+    selectedTextElement,
+    selectedImageElement,
+    selectedTableElement,
+    selectedInfographicsElement,
+    deleteTextElement,
+    deleteImageElement,
+    setSelectedImageElement,
+    deleteTableElement,
+    setSelectedTableElement,
+    deleteInfographicsElement,
+    setSelectedInfographicsElement,
+  ]);
 
   const handleTextClick = (
     elementId: string,

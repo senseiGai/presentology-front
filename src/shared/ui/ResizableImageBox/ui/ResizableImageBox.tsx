@@ -327,22 +327,15 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
 
   // Handle toolbar actions
   const handleMoveUp = () => {
-    if (!imageElement) return;
-    const currentY = imageElement.position.y;
-    const newY = Math.max(0, currentY - 10);
-    updateImageElement(elementId, slideNumber, {
-      position: { x: imageElement.position.x, y: newY },
-    });
+    console.log("ResizableImageBox: Move Up called for:", elementId);
+    usePresentationStore.getState().moveImageElementUp(elementId, slideNumber);
   };
 
   const handleMoveDown = () => {
-    if (!imageElement) return;
-    const slideHeight = 427;
-    const currentY = imageElement.position.y;
-    const newY = Math.min(currentY + 10, slideHeight - imageElement.height);
-    updateImageElement(elementId, slideNumber, {
-      position: { x: imageElement.position.x, y: newY },
-    });
+    console.log("ResizableImageBox: Move Down called for:", elementId);
+    usePresentationStore
+      .getState()
+      .moveImageElementDown(elementId, slideNumber);
   };
 
   const handleCopy = () => {
@@ -433,15 +426,14 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
       {/* Image Element */}
       <div
         ref={boxRef}
-        className={`absolute select-none border-[#BBA2FE] border-[1px] ${
-          isSelected ? "z-[100]" : "z-10"
-        }`}
+        className="absolute select-none border-[#BBA2FE] border-[1px]"
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
           width: `${width}px`,
           height: `${height}px`,
           cursor: getCursor(),
+          zIndex: imageElement.zIndex || 2,
         }}
         onMouseDown={handleMouseDown}
         data-image-element={elementId}

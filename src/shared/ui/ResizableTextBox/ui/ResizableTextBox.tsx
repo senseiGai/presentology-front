@@ -333,7 +333,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           overflowWrap: "break-word",
           overflow: "visible",
           transition: "all 0.1s ease-out",
-          zIndex: elementStyle.zIndex || 1,
+          zIndex: elementStyle.zIndex || 2,
           boxSizing: "border-box",
         }}
       >
@@ -377,7 +377,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           overflowWrap: "break-word",
           overflow: "visible",
           transition: "all 0.1s ease-out",
-          zIndex: elementStyle.zIndex || 1,
+          zIndex: elementStyle.zIndex || 2,
           boxSizing: "border-box",
         }}
       >

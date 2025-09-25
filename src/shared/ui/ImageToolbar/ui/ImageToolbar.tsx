@@ -107,7 +107,7 @@ export const ImageToolbar: React.FC<ImageToolbarProps> = ({
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"
-        title="Переместить вверх"
+        title="На передний план"
       >
         <MoveUpIcon />
       </button>
@@ -118,7 +118,7 @@ export const ImageToolbar: React.FC<ImageToolbarProps> = ({
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"
-        title="Переместить вниз"
+        title="На задний план"
       >
         <MoveDownIcon />
       </button>

@@ -90,6 +90,7 @@ export interface PresentationState {
     x?: number;
     y?: number;
     rotation?: number;
+    zIndex?: number;
     style:
       | "normal"
       | "scientific"
@@ -127,6 +128,7 @@ export interface PresentationState {
         height: number;
         position: { x: number; y: number };
         placeholder?: boolean;
+        zIndex?: number;
       }
     >
   >;
@@ -285,6 +287,8 @@ export interface PresentationState {
     slideNumber: number
   ) => PresentationState["imageElements"][number][string] | null;
   copyImageElement: (elementId: string, slideNumber: number) => string;
+  moveImageElementUp: (elementId: string, slideNumber: number) => void;
+  moveImageElementDown: (elementId: string, slideNumber: number) => void;
 
   // Table editing actions
   setSelectedTableElement: (elementId: string | null) => void;
@@ -386,6 +390,7 @@ const initialState = {
     x: 0,
     y: 0,
     rotation: 0,
+    zIndex: 2,
     style: "normal" as const,
   },
 
@@ -1177,6 +1182,7 @@ export const usePresentationStore = create<PresentationState>()(
                 height: size.height,
                 placeholder: true,
                 alt: "Image placeholder",
+                zIndex: 2, // Same as text elements by default
               },
             },
           },
@@ -1190,10 +1196,16 @@ export const usePresentationStore = create<PresentationState>()(
         slideNumber: number,
         updates: Partial<PresentationState["imageElements"][number][string]>
       ) => {
+        console.log("Store: updateImageElement called", {
+          elementId,
+          slideNumber,
+          updates,
+        });
         // Get current state to save old values for history
         const currentState = get();
         const currentElement =
           currentState.imageElements[slideNumber]?.[elementId];
+        console.log("Store: current element before update:", currentElement);
 
         set((state) => {
           const newImageElements = { ...state.imageElements };
@@ -1645,7 +1657,7 @@ export const usePresentationStore = create<PresentationState>()(
             x: 0,
             y: 0,
             rotation: 0,
-            zIndex: 1,
+            zIndex: 2,
           }
         );
       },
@@ -1865,55 +1877,103 @@ export const usePresentationStore = create<PresentationState>()(
       moveTextElementUp: (elementId: string) => {
         console.log("Store: moveTextElementUp called for:", elementId);
         const state = get();
-        const currentPosition = state.textElementPositions[elementId];
-
-        if (!currentPosition) {
-          console.log("Store: No position found for element:", elementId);
-          return;
-        }
-
-        // Move element up by 10 pixels
-        const newPosition = {
-          x: currentPosition.x,
-          y: currentPosition.y - 10,
+        const currentStyle = state.textElementStyles[elementId] || {
+          ...state.textStyle,
+          zIndex: 2,
         };
 
+        const currentZIndex = currentStyle.zIndex || 2;
+        const newZIndex = currentZIndex + 1;
+
         console.log(
-          "Store: Moving element up from:",
-          currentPosition,
-          "to:",
-          newPosition
+          "Store: Moving text element up. Current z-index:",
+          currentZIndex,
+          "New z-index:",
+          newZIndex
         );
 
-        // Use the existing setTextElementPosition function
-        get().setTextElementPosition(elementId, newPosition);
+        // Update z-index using updateTextElementStyle
+        get().updateTextElementStyle(elementId, { zIndex: newZIndex });
       },
 
       moveTextElementDown: (elementId: string) => {
         console.log("Store: moveTextElementDown called for:", elementId);
         const state = get();
-        const currentPosition = state.textElementPositions[elementId];
+        const currentStyle = state.textElementStyles[elementId] || {
+          ...state.textStyle,
+          zIndex: 2,
+        };
 
-        if (!currentPosition) {
-          console.log("Store: No position found for element:", elementId);
+        const currentZIndex = currentStyle.zIndex || 2;
+        const newZIndex = Math.max(1, currentZIndex - 1); // Minimum z-index: 1
+
+        console.log(
+          "Store: Moving text element down. Current z-index:",
+          currentZIndex,
+          "New z-index:",
+          newZIndex
+        );
+
+        // Update z-index using updateTextElementStyle
+        get().updateTextElementStyle(elementId, { zIndex: newZIndex });
+      },
+
+      moveImageElementUp: (elementId: string, slideNumber: number) => {
+        console.log(
+          "Store: moveImageElementUp called for:",
+          elementId,
+          "on slide:",
+          slideNumber
+        );
+        const state = get();
+        const currentImage = state.imageElements[slideNumber]?.[elementId];
+
+        if (!currentImage) {
+          console.log("Store: No image found for element:", elementId);
           return;
         }
 
-        // Move element down by 10 pixels
-        const newPosition = {
-          x: currentPosition.x,
-          y: currentPosition.y + 10,
-        };
+        const currentZIndex = currentImage.zIndex || 2;
+        const newZIndex = currentZIndex + 1;
 
         console.log(
-          "Store: Moving element down from:",
-          currentPosition,
-          "to:",
-          newPosition
+          "Store: Moving image up. Current z-index:",
+          currentZIndex,
+          "New z-index:",
+          newZIndex
         );
 
-        // Use the existing setTextElementPosition function
-        get().setTextElementPosition(elementId, newPosition);
+        // Update z-index using updateImageElement
+        get().updateImageElement(elementId, slideNumber, { zIndex: newZIndex });
+      },
+
+      moveImageElementDown: (elementId: string, slideNumber: number) => {
+        console.log(
+          "Store: moveImageElementDown called for:",
+          elementId,
+          "on slide:",
+          slideNumber
+        );
+        const state = get();
+        const currentImage = state.imageElements[slideNumber]?.[elementId];
+
+        if (!currentImage) {
+          console.log("Store: No image found for element:", elementId);
+          return;
+        }
+
+        const currentZIndex = currentImage.zIndex || 2;
+        const newZIndex = Math.max(1, currentZIndex - 1); // Minimum z-index: 1
+
+        console.log(
+          "Store: Moving image down. Current z-index:",
+          currentZIndex,
+          "New z-index:",
+          newZIndex
+        );
+
+        // Update z-index using updateImageElement
+        get().updateImageElement(elementId, slideNumber, { zIndex: newZIndex });
       },
 
       resetPresentation: () => set(initialState),

@@ -637,9 +637,9 @@ export const EditableText: React.FC<EditableTextProps> = ({
         pointerEvents: "auto",
         userSelect: isEditing ? "text" : "none", // Allow text selection only when editing
         cursor: isEditing ? "text" : isDragging ? "grabbing" : "grab", // Show drag cursor when not editing
-        overflow: "hidden", // Prevent content overflow
         wordWrap: "break-word",
         overflowWrap: "break-word",
+        whiteSpace: "pre-wrap", // Preserve formatting but wrap text
         ...props.style,
       }}
       {...props}
@@ -666,9 +666,7 @@ export const EditableText: React.FC<EditableTextProps> = ({
             height: "100%",
             minHeight: "100%",
             minWidth: "50px", // Minimum readable width for textarea
-            maxWidth: "100%", // Prevent horizontal overflow
-            maxHeight: "100%", // Prevent vertical overflow
-            overflow: "hidden", // Hide scrollbars and prevent overflow
+            overflow: "auto", // Allow scrolling if content is too large
             wordWrap: "break-word",
             overflowWrap: "break-word",
             whiteSpace: "pre-wrap", // Preserve formatting but wrap text
@@ -687,7 +685,6 @@ export const EditableText: React.FC<EditableTextProps> = ({
             lineHeight: "1.4",
             padding: "8px", // Match textarea padding
             margin: "0",
-            overflow: "hidden", // Prevent content overflow
             wordWrap: "break-word",
             overflowWrap: "break-word",
             whiteSpace: "pre-wrap", // Preserve formatting but wrap text

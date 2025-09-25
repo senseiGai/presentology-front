@@ -27,28 +27,6 @@ export const TextToolbar: React.FC<TextToolbarProps> = ({
 
   console.log("TextToolbar rendering at position:", position);
 
-  // Handle moving element up
-  const handleMoveUp = () => {
-    const elementStyle = getTextElementStyle(elementId);
-    const currentX = elementStyle.x || 0;
-    const currentY = elementStyle.y || 0;
-    const newY = Math.max(0, currentY - 10); // Move up 10px, minimum 0
-
-    updateTextElementStyle(elementId, { y: newY });
-    console.log("Moving element up from y:", currentY, "to y:", newY);
-  };
-
-  // Handle moving element down
-  const handleMoveDown = () => {
-    const elementStyle = getTextElementStyle(elementId);
-    const currentX = elementStyle.x || 0;
-    const currentY = elementStyle.y || 0;
-    const newY = currentY + 10; // Move down 10px
-
-    updateTextElementStyle(elementId, { y: newY });
-    console.log("Moving element down from y:", currentY, "to y:", newY);
-  };
-
   // Prevent toolbar from losing focus when clicking on buttons
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent focus loss
@@ -77,22 +55,22 @@ export const TextToolbar: React.FC<TextToolbarProps> = ({
       <button
         onClick={handleButtonClick(() => {
           console.log("TextToolbar: Move Up button clicked");
-          handleMoveUp();
+          onMoveUp();
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"
-        title="Переместить вверх"
+        title="На передний план"
       >
         <MoveUpIcon />
       </button>
       <button
         onClick={handleButtonClick(() => {
           console.log("TextToolbar: Move Down button clicked");
-          handleMoveDown();
+          onMoveDown();
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"
-        title="Переместить вниз"
+        title="На задний план"
       >
         <MoveDownIcon />
       </button>

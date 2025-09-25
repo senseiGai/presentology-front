@@ -324,16 +324,16 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           top: `${elementStyle.y || 0}px`,
           transform: `rotate(${elementStyle.rotation || 0}deg)`,
           transformOrigin: "center",
-          width: "fit-content", // Подстраиваться под контент
-          height: "fit-content", // Подстраиваться под контент
-          minWidth: "20px", // Очень маленький минимум
-          minHeight: "16px", // Очень маленький минимум
-          maxWidth: "100%",
+          width: "auto", // Автоматическая ширина без принуждения
+          height: "auto", // Автоматическая высота без принуждения
+          minWidth: "100px", // Увеличенный минимум для комфортного редактирования
+          minHeight: "40px", // Увеличенный минимум для комфортного редактирования
+          maxWidth: "none", // Убираем максимальное ограничение
           wordWrap: "break-word",
           overflowWrap: "break-word",
           overflow: "visible",
           transition: "all 0.1s ease-out",
-          zIndex: elementStyle.zIndex || 1,
+          zIndex: elementStyle.zIndex || 2,
           boxSizing: "border-box",
         }}
       >
@@ -344,9 +344,9 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
             zIndex: 10,
             width: "100%",
             height: "100%",
-            minWidth: "20px", // Маленький минимум
-            minHeight: "16px", // Маленький минимум
-            overflow: "hidden",
+            minWidth: "100px", // Увеличенный минимум для комфортного редактирования
+            minHeight: "40px", // Увеличенный минимум для комфортного редактирования
+            overflow: "visible", // Изменено с hidden на visible
             boxSizing: "border-box",
           }}
         >
@@ -368,16 +368,16 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           top: `${elementStyle.y || 0}px`,
           transform: `rotate(${elementStyle.rotation || 0}deg)`,
           transformOrigin: "center",
-          width: "fit-content", // Подстраиваться под контент
-          height: "fit-content", // Подстраиваться под контент
-          minWidth: "20px", // Очень маленький минимум
-          minHeight: "16px", // Очень маленький минимум
-          maxWidth: "100%",
+          width: "auto", // Автоматическая ширина без принуждения
+          height: "auto", // Автоматическая высота без принуждения
+          minWidth: "100px", // Увеличенный минимум для комфортного редактирования
+          minHeight: "40px", // Увеличенный минимум для комфортного редактирования
+          maxWidth: "none", // Убираем максимальное ограничение
           wordWrap: "break-word",
           overflowWrap: "break-word",
           overflow: "visible",
           transition: "all 0.1s ease-out",
-          zIndex: elementStyle.zIndex || 1,
+          zIndex: elementStyle.zIndex || 2,
           boxSizing: "border-box",
         }}
       >
@@ -389,9 +389,9 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
             zIndex: 10,
             width: "100%",
             height: "100%",
-            minWidth: "20px", // Маленький минимум
-            minHeight: "16px", // Маленький минимум
-            overflow: "hidden",
+            minWidth: "100px", // Увеличенный минимум для комфортного редактирования
+            minHeight: "40px", // Увеличенный минимум для комфортного редактирования
+            overflow: "visible", // Изменено с hidden на visible
             boxSizing: "border-box",
           }}
         >

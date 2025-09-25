@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 import PreviewGenerationLoaderIcon from "../../../../public/icons/PreviewGenerationLoaderIcon";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
@@ -16,6 +18,8 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
 }) => {
   // Состояние для принудительного обновления
   const [forceUpdateCount, forceUpdate] = useState(0);
+  // Предотвращение hydration errors
+  const [isMounted, setIsMounted] = useState(false);
 
   // Получаем данные из store для отображения реального контента
   const {
@@ -24,24 +28,34 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
     textElementPositions,
     tableElements,
     imageElements,
+    slideTemplates,
     // Добавляем дополнительные зависимости для отслеживания всех изменений
     selectedTextElement,
     zoomLevel,
   } = usePresentationStore();
 
+  // Предотвращаем hydration errors
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // useEffect для отслеживания изменений
   useEffect(() => {
+    if (!isMounted) return; // Ждем клиентского рендеринга
+
     console.log(
       "SlidePreviewContent useEffect triggered for slide:",
       slideNumber
     );
     forceUpdate((prev) => prev + 1);
   }, [
+    isMounted,
     textElementContents,
     textElementPositions,
     textElementStyles,
     tableElements,
     imageElements,
+    slideTemplates,
     selectedTextElement,
     slideNumber,
   ]);
@@ -62,6 +76,39 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
       </div>
     );
   }
+
+  // Функция для замены изображений в HTML шаблоне на наши изображения (аналогично SlideContent)
+  const replaceTemplateImagesWithOurs = (html: string): string => {
+    if (!html) return html;
+
+    const slideImageElements = imageElements[slideNumber] || {};
+    const ourImages = Object.values(slideImageElements);
+
+    if (ourImages.length === 0) {
+      return html; // Если нет наших изображений, возвращаем оригинальный HTML
+    }
+
+    // Создаем DOM parser для работы с HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const images = doc.querySelectorAll("img");
+
+    // Заменяем изображения в шаблоне на наши
+    images.forEach((img, index) => {
+      if (index < ourImages.length && ourImages[index].src) {
+        img.src = ourImages[index].src;
+        if (ourImages[index].alt) {
+          img.alt = ourImages[index].alt;
+        }
+        console.log(
+          `🖼️ [Preview] Replaced template image ${index} with our image:`,
+          ourImages[index].src
+        );
+      }
+    });
+
+    return doc.documentElement.outerHTML;
+  };
 
   // Получаем тип слайда
   const slideType = getSlideType(slideNumber);
@@ -278,70 +325,73 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
   const renderPreviewImageElements = () => {
     const slideImageElements = imageElements[slideNumber] || {};
 
-    return Object.entries(slideImageElements).map(([elementId, imageData]) => {
-      const scaledX = (imageData.position?.x || 100) * SCALE;
-      const scaledY = (imageData.position?.y || 100) * SCALE;
-      const scaledWidth = Math.min(30, (imageData.width || 150) * SCALE);
-      const scaledHeight = Math.min(20, (imageData.height || 100) * SCALE);
+    return Object.entries(slideImageElements)
+      .map(([elementId, imageData]) => {
+        // Теперь всегда показываем изображения как редактируемые элементы
+        const scaledX = (imageData.position?.x || 100) * SCALE;
+        const scaledY = (imageData.position?.y || 100) * SCALE;
+        const scaledWidth = Math.min(30, (imageData.width || 150) * SCALE);
+        const scaledHeight = Math.min(20, (imageData.height || 100) * SCALE);
 
-      console.log(`Rendering image ${elementId}:`, {
-        originalPosition: imageData.position,
-        originalSize: { width: imageData.width, height: imageData.height },
-        scaledX,
-        scaledY,
-        scaledWidth,
-        scaledHeight,
-      });
+        console.log(`Rendering image ${elementId}:`, {
+          originalPosition: imageData.position,
+          originalSize: { width: imageData.width, height: imageData.height },
+          scaledX,
+          scaledY,
+          scaledWidth,
+          scaledHeight,
+        });
 
-      return (
-        <div
-          key={elementId}
-          className="absolute bg-green-100 border border-green-300 rounded-[1px] flex items-center justify-center"
-          style={{
-            left: `${scaledX}px`,
-            top: `${scaledY}px`,
-            width: `${scaledWidth}px`,
-            height: `${scaledHeight}px`,
-          }}
-        >
-          {imageData.src ? (
-            <img
-              src={imageData.src}
-              alt={imageData.alt || ""}
-              className="w-full h-full object-cover rounded-[1px]"
-            />
-          ) : (
-            <div className="text-[2px] text-green-600 text-center">IMG</div>
-          )}
-        </div>
-      );
-    });
+        return (
+          <div
+            key={elementId}
+            className="absolute bg-green-100 border border-green-300 rounded-[1px] flex items-center justify-center"
+            style={{
+              left: `${scaledX}px`,
+              top: `${scaledY}px`,
+              width: `${scaledWidth}px`,
+              height: `${scaledHeight}px`,
+            }}
+          >
+            {imageData.src ? (
+              <img
+                src={imageData.src}
+                alt={imageData.alt || ""}
+                className="w-full h-full object-cover rounded-[1px]"
+              />
+            ) : (
+              <div className="text-[2px] text-green-600 text-center">IMG</div>
+            )}
+          </div>
+        );
+      })
+      .filter(Boolean); // Убираем null элементы
   };
 
   // Рендер превью на основе типа слайда и реального контента
   const renderSlidePreview = () => {
-    const slideType = getSlideType(slideNumber);
+    return (
+      <div className="w-full h-full bg-white rounded-[4px] relative overflow-hidden border border-[#E5E7EB]">
+        {/* HTML шаблон полностью убран */}
 
-    switch (slideType) {
-      case "title":
-        return (
-          <div className="w-full h-full bg-gradient-to-br from-[#2D3748] to-[#1A202C] rounded-[4px] relative overflow-hidden">
-            {renderPreviewTextElements()}
-            {renderPreviewTableElements()}
-            {renderPreviewImageElements()}
-          </div>
-        );
-
-      default:
-        return (
-          <div className="w-full h-full bg-[#F7FAFC] rounded-[4px] relative overflow-hidden border border-[#E5E7EB]">
-            {renderPreviewTextElements()}
-            {renderPreviewTableElements()}
-            {renderPreviewImageElements()}
-          </div>
-        );
-    }
+        {/* Редактируемые элементы поверх шаблона */}
+        <div className="relative z-10">
+          {renderPreviewTextElements()}
+          {renderPreviewTableElements()}
+          {renderPreviewImageElements()}
+        </div>
+      </div>
+    );
   };
+
+  // Не рендерим содержимое до тех пор, пока компонент не смонтирован на клиенте
+  if (!isMounted) {
+    return (
+      <div className="w-full h-full bg-white rounded-[4px] relative overflow-hidden border border-[#E5E7EB]">
+        {/* Пустой контейнер во время SSR */}
+      </div>
+    );
+  }
 
   return renderSlidePreview();
 };

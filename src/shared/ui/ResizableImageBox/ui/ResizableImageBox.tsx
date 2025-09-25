@@ -1,15 +1,19 @@
+"use client";
+
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { ImageToolbar } from "@/shared/ui/ImageToolbar";
 
 interface ResizableImageBoxProps {
   elementId: string;
+  slideNumber: number;
   isSelected: boolean;
   onDelete: () => void;
 }
 
 export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
   elementId,
+  slideNumber,
   isSelected,
   onDelete,
 }) => {
@@ -18,6 +22,7 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
     updateImageElement,
     setSelectedImageElement,
     copyImageElement,
+    addToHistory,
   } = usePresentationStore();
 
   const [isDragging, setIsDragging] = useState(false);
@@ -32,15 +37,20 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
     x: 0,
     y: 0,
   });
+  const [initialDragPosition, setInitialDragPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null); // For history tracking
   const [showToolbar, setShowToolbar] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
-  const imageElement = getImageElement(elementId);
+  const imageElement = getImageElement(elementId, slideNumber);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (!imageElement || !isSelected) {
         if (imageElement) {
+          console.log("Selecting image element:", elementId);
           setSelectedImageElement(elementId);
           setShowToolbar(true);
         }
@@ -88,6 +98,11 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
         setResizeDirection("n");
       } else {
         setIsDragging(true);
+        // Save initial position for history tracking
+        setInitialDragPosition({
+          x: imageElement.position.x,
+          y: imageElement.position.y,
+        });
       }
 
       setDragStart({ x: e.clientX, y: e.clientY });
@@ -127,7 +142,7 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
             slideHeight - imageElement.height
           )
         );
-        updateImageElement(elementId, {
+        updateImageElement(elementId, slideNumber, {
           position: { x: newX, y: newY },
         });
       } else if (isResizing) {
@@ -230,7 +245,7 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
             break;
         }
 
-        updateImageElement(elementId, {
+        updateImageElement(elementId, slideNumber, {
           width: newWidth,
           height: newHeight,
           position: { x: newX, y: newY },
@@ -251,10 +266,47 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
   );
 
   const handleMouseUp = useCallback(() => {
+    // If we were dragging an image and have initial position, record the change
+    if (isDragging && initialDragPosition && imageElement) {
+      const currentPosition = {
+        x: imageElement.position.x,
+        y: imageElement.position.y,
+      };
+
+      // Only record if position actually changed
+      if (
+        currentPosition.x !== initialDragPosition.x ||
+        currentPosition.y !== initialDragPosition.y
+      ) {
+        addToHistory({
+          type: "image_position",
+          elementId,
+          slideNumber,
+          previousValue: initialDragPosition,
+          newValue: currentPosition,
+          timestamp: Date.now(),
+        });
+        console.log("📝 Recorded image position change in history:", {
+          elementId,
+          slideNumber,
+          from: initialDragPosition,
+          to: currentPosition,
+        });
+      }
+    }
+
     setIsDragging(false);
     setIsResizing(false);
     setResizeDirection("");
-  }, []);
+    setInitialDragPosition(null);
+  }, [
+    isDragging,
+    initialDragPosition,
+    imageElement,
+    elementId,
+    slideNumber,
+    addToHistory,
+  ]);
 
   useEffect(() => {
     if (isDragging || isResizing) {
@@ -275,32 +327,32 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
 
   // Handle toolbar actions
   const handleMoveUp = () => {
-    if (!imageElement) return;
-    const currentY = imageElement.position.y;
-    const newY = Math.max(0, currentY - 10);
-    updateImageElement(elementId, {
-      position: { x: imageElement.position.x, y: newY },
-    });
+    console.log("ResizableImageBox: Move Up called for:", elementId);
+    usePresentationStore.getState().moveImageElementUp(elementId, slideNumber);
   };
 
   const handleMoveDown = () => {
-    if (!imageElement) return;
-    const slideHeight = 427;
-    const currentY = imageElement.position.y;
-    const newY = Math.min(currentY + 10, slideHeight - imageElement.height);
-    updateImageElement(elementId, {
-      position: { x: imageElement.position.x, y: newY },
-    });
+    console.log("ResizableImageBox: Move Down called for:", elementId);
+    usePresentationStore
+      .getState()
+      .moveImageElementDown(elementId, slideNumber);
   };
 
   const handleCopy = () => {
     if (imageElement) {
       console.log("ResizableImageBox: Duplicating image element:", elementId);
-      copyImageElement(elementId);
+      const newId = copyImageElement(elementId, slideNumber);
+      console.log("ResizableImageBox: Copy completed, new element ID:", newId);
+    } else {
+      console.log(
+        "ResizableImageBox: No image element found for copying:",
+        elementId
+      );
     }
   };
 
   const handleDelete = () => {
+    console.log("ResizableImageBox: Deleting image element:", elementId);
     onDelete();
   };
 
@@ -336,6 +388,12 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
 
   const { position, width, height, src, alt, placeholder } = imageElement;
 
+  // Check if position exists
+  if (!position) {
+    console.log("Image position not found for element:", elementId);
+    return null;
+  }
+
   // Calculate toolbar position
   const toolbarPosition = {
     x: position.x,
@@ -368,15 +426,14 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
       {/* Image Element */}
       <div
         ref={boxRef}
-        className={`absolute select-none border-[#BBA2FE] border-[1px] ${
-          isSelected ? "z-[100]" : "z-10"
-        }`}
+        className="absolute select-none border-[#BBA2FE] border-[1px]"
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
           width: `${width}px`,
           height: `${height}px`,
           cursor: getCursor(),
+          zIndex: imageElement.zIndex || 2,
         }}
         onMouseDown={handleMouseDown}
         data-image-element={elementId}

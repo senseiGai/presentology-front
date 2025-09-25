@@ -8,10 +8,28 @@ interface HistoryAction {
     | "text_style"
     | "text_position"
     | "text_delete"
-    | "text_create";
+    | "text_create"
+    | "image_create"
+    | "image_delete"
+    | "image_position"
+    | "image_size"
+    | "table_create"
+    | "table_delete"
+    | "table_update";
   elementId: string;
+  slideNumber?: number;
   previousValue: any;
   newValue: any;
+  oldValue?: any; // For backward compatibility
+  timestamp: number;
+}
+
+// Clipboard state for copy/paste functionality
+interface ClipboardItem {
+  type: "text" | "image" | "table" | "infographics";
+  elementId: string;
+  data: any;
+  slideNumber: number;
   timestamp: number;
 }
 
@@ -72,6 +90,7 @@ export interface PresentationState {
     x?: number;
     y?: number;
     rotation?: number;
+    zIndex?: number;
     style:
       | "normal"
       | "scientific"
@@ -109,6 +128,7 @@ export interface PresentationState {
         height: number;
         position: { x: number; y: number };
         placeholder?: boolean;
+        zIndex?: number;
       }
     >
   >;
@@ -160,6 +180,9 @@ export interface PresentationState {
   historyIndex: number;
   maxHistorySize: number;
 
+  // Clipboard for copy/paste
+  clipboard: ClipboardItem | null;
+
   // Template HTML storage
   slideTemplates: Record<string, string>; // Store HTML templates by template ID
 
@@ -167,6 +190,7 @@ export interface PresentationState {
   setCurrentSlide: (slide: number) => void;
   setTotalSlides: (total: number) => void;
   addGeneratedSlide: (slide: number) => void;
+  setAllSlidesGenerated: (totalSlides: number) => void;
   insertSlideAfter: (afterSlide: number) => void;
   deleteSlide: (slideNumber: number) => void;
   deleteSlideByIndex: (slideIndex: number) => void;
@@ -254,13 +278,17 @@ export interface PresentationState {
   ) => string;
   updateImageElement: (
     elementId: string,
+    slideNumber: number,
     updates: Partial<PresentationState["imageElements"][number][string]>
   ) => void;
-  deleteImageElement: (elementId: string) => void;
+  deleteImageElement: (elementId: string, slideNumber: number) => void;
   getImageElement: (
-    elementId: string
+    elementId: string,
+    slideNumber: number
   ) => PresentationState["imageElements"][number][string] | null;
-  copyImageElement: (elementId: string) => string;
+  copyImageElement: (elementId: string, slideNumber: number) => string;
+  moveImageElementUp: (elementId: string, slideNumber: number) => void;
+  moveImageElementDown: (elementId: string, slideNumber: number) => void;
 
   // Table editing actions
   setSelectedTableElement: (elementId: string | null) => void;
@@ -316,9 +344,22 @@ export interface PresentationState {
   saveToHistory: () => void;
   addToHistory: (action: HistoryAction) => void;
 
+  // Clipboard actions
+  copyElementToClipboard: (
+    type: "text" | "image" | "table" | "infographics",
+    elementId: string,
+    slideNumber: number
+  ) => void;
+  pasteElementFromClipboard: (targetSlideNumber: number) => void;
+  clearClipboard: () => void;
+  hasClipboardContent: () => boolean;
+
   // Template actions
   setSlideTemplates: (templates: Record<string, string>) => void;
   setSlideTemplate: (templateId: string, html: string) => void;
+
+  // Reload data from localStorage
+  reloadDataFromStorage: () => void;
 }
 
 const initialState = {
@@ -349,6 +390,7 @@ const initialState = {
     x: 0,
     y: 0,
     rotation: 0,
+    zIndex: 2,
     style: "normal" as const,
   },
 
@@ -370,6 +412,9 @@ const initialState = {
   history: [],
   historyIndex: -1,
   maxHistorySize: 50,
+
+  // Clipboard for copy/paste
+  clipboard: null,
 
   // Template HTML storage
   slideTemplates: {},
@@ -563,6 +608,10 @@ const initializeTextContentFromMockData = (mockData: any) => {
 
       // Initialize images from _images array
       if (slide._images && Array.isArray(slide._images)) {
+        console.log(
+          `🖼️ Processing ${slide._images.length} images for slide ${slideNumber}:`,
+          slide._images
+        );
         const slideImageElements: Record<string, any> = {};
         slide._images.forEach((imageUrl: string, imageIndex: number) => {
           const elementId = `slide-${slideNumber}-image-${imageIndex}`;
@@ -579,10 +628,20 @@ const initializeTextContentFromMockData = (mockData: any) => {
             },
             placeholder: false,
           };
+          console.log(
+            `✅ Created image element ${elementId} with src: ${imageUrl}`
+          );
         });
         if (Object.keys(slideImageElements).length > 0) {
           imageElementsData[slideNumber] = slideImageElements;
+          console.log(
+            `💾 Saved ${
+              Object.keys(slideImageElements).length
+            } images for slide ${slideNumber}`
+          );
         }
+      } else {
+        console.log(`⚠️ No images found for slide ${slideNumber}`);
       }
     });
   } else if (mockData?.slides && Array.isArray(mockData.slides)) {
@@ -704,8 +763,14 @@ export const usePresentationStore = create<PresentationState>()(
       addGeneratedSlide: (slide: number) =>
         set((state) => ({
           generatedSlides: [...state.generatedSlides, slide],
-          currentSlide: slide, // Автоматически переключаемся на новый слайд
+          // Убираем автоматическое переключение слайда
         })),
+
+      setAllSlidesGenerated: (totalSlides: number) =>
+        set({
+          generatedSlides: Array.from({ length: totalSlides }, (_, i) => i + 1),
+          isGenerating: false,
+        }),
 
       insertSlideAfter: (afterSlide: number) =>
         set((state) => {
@@ -1117,6 +1182,7 @@ export const usePresentationStore = create<PresentationState>()(
                 height: size.height,
                 placeholder: true,
                 alt: "Image placeholder",
+                zIndex: 2, // Same as text elements by default
               },
             },
           },
@@ -1127,51 +1193,134 @@ export const usePresentationStore = create<PresentationState>()(
 
       updateImageElement: (
         elementId: string,
+        slideNumber: number,
         updates: Partial<PresentationState["imageElements"][number][string]>
       ) => {
-        const currentSlide = get().currentSlide;
-        set((state) => ({
-          imageElements: {
-            ...state.imageElements,
-            [currentSlide]: {
-              ...state.imageElements[currentSlide],
+        console.log("Store: updateImageElement called", {
+          elementId,
+          slideNumber,
+          updates,
+        });
+        // Get current state to save old values for history
+        const currentState = get();
+        const currentElement =
+          currentState.imageElements[slideNumber]?.[elementId];
+        console.log("Store: current element before update:", currentElement);
+
+        set((state) => {
+          const newImageElements = { ...state.imageElements };
+
+          if (
+            newImageElements[slideNumber] &&
+            newImageElements[slideNumber][elementId] &&
+            currentElement
+          ) {
+            const oldElement = newImageElements[slideNumber][elementId];
+
+            newImageElements[slideNumber] = {
+              ...newImageElements[slideNumber],
               [elementId]: {
-                ...state.imageElements[currentSlide]?.[elementId],
+                ...oldElement,
                 ...updates,
               },
-            },
-          },
-        }));
-      },
+            };
 
-      deleteImageElement: (elementId: string) => {
-        const currentSlide = get().currentSlide;
-        set((state) => {
-          const slideImages = { ...state.imageElements[currentSlide] };
-          delete slideImages[elementId];
+            // Record in history based on what changed
+            if (updates.position !== undefined) {
+              // Position change
+              currentState.addToHistory({
+                type: "image_position",
+                elementId,
+                slideNumber,
+                previousValue: oldElement.position,
+                newValue: updates.position,
+                timestamp: Date.now(),
+              });
+            }
+
+            if (updates.width !== undefined || updates.height !== undefined) {
+              // Size change
+              currentState.addToHistory({
+                type: "image_size",
+                elementId,
+                slideNumber,
+                previousValue: {
+                  width: oldElement.width,
+                  height: oldElement.height,
+                },
+                newValue: {
+                  width: updates.width ?? oldElement.width,
+                  height: updates.height ?? oldElement.height,
+                },
+                timestamp: Date.now(),
+              });
+            }
+          }
+
           return {
-            imageElements: {
-              ...state.imageElements,
-              [currentSlide]: slideImages,
-            },
+            imageElements: newImageElements,
           };
         });
       },
 
-      getImageElement: (elementId: string) => {
-        const state = get();
-        const currentSlide = state.currentSlide;
-        return state.imageElements[currentSlide]?.[elementId] || null;
+      deleteImageElement: (elementId: string, slideNumber: number) => {
+        const currentState = get();
+        const elementToDelete =
+          currentState.imageElements[slideNumber]?.[elementId];
+
+        // Record deletion in history before actually deleting
+        if (elementToDelete) {
+          currentState.addToHistory({
+            type: "image_delete",
+            elementId,
+            slideNumber,
+            previousValue: elementToDelete,
+            newValue: null,
+            timestamp: Date.now(),
+          });
+        }
+
+        set((state) => {
+          const newImageElements = { ...state.imageElements };
+
+          if (
+            newImageElements[slideNumber] &&
+            newImageElements[slideNumber][elementId]
+          ) {
+            const slideImages = { ...newImageElements[slideNumber] };
+            delete slideImages[elementId];
+            newImageElements[slideNumber] = slideImages;
+          }
+
+          return {
+            imageElements: newImageElements,
+          };
+        });
       },
 
-      copyImageElement: (elementId: string) => {
-        console.log("Store: copyImageElement called for:", elementId);
+      getImageElement: (elementId: string, slideNumber: number) => {
         const state = get();
-        const currentSlide = state.currentSlide;
-        const originalElement = state.imageElements[currentSlide]?.[elementId];
+        return state.imageElements[slideNumber]?.[elementId] || null;
+      },
+
+      copyImageElement: (elementId: string, slideNumber: number) => {
+        console.log(
+          "Store: copyImageElement called for:",
+          elementId,
+          "on slide:",
+          slideNumber
+        );
+        const state = get();
+
+        const originalElement = state.imageElements[slideNumber]?.[elementId];
 
         if (!originalElement) {
-          console.log("Store: No image element found to copy:", elementId);
+          console.log(
+            "Store: No image element found to copy:",
+            elementId,
+            "on slide:",
+            slideNumber
+          );
           return elementId;
         }
 
@@ -1194,20 +1343,32 @@ export const usePresentationStore = create<PresentationState>()(
         );
         console.log("Original element data:", originalElement);
 
+        const newElement = {
+          ...originalElement,
+          id: newId,
+          position: newPosition,
+        };
+
         set((state) => ({
           imageElements: {
             ...state.imageElements,
-            [currentSlide]: {
-              ...state.imageElements[currentSlide],
-              [newId]: {
-                ...originalElement,
-                id: newId,
-                position: newPosition,
-              },
+            [slideNumber]: {
+              ...state.imageElements[slideNumber],
+              [newId]: newElement,
             },
           },
           selectedImageElement: newId, // Automatically select the new copied element
         }));
+
+        // Record creation in history
+        get().addToHistory({
+          type: "image_create",
+          elementId: newId,
+          slideNumber,
+          previousValue: null,
+          newValue: newElement,
+          timestamp: Date.now(),
+        });
 
         console.log("Store: Successfully copied image element, new ID:", newId);
         return newId;
@@ -1496,7 +1657,7 @@ export const usePresentationStore = create<PresentationState>()(
             x: 0,
             y: 0,
             rotation: 0,
-            zIndex: 1,
+            zIndex: 2,
           }
         );
       },
@@ -1538,11 +1699,28 @@ export const usePresentationStore = create<PresentationState>()(
         return state.textElementContents[elementId] || "";
       },
 
-      deleteTextElement: (elementId: string) =>
-        set((state) => {
-          // Save current state to history before making changes
-          get().saveToHistory();
+      deleteTextElement: (elementId: string) => {
+        const currentState = get();
 
+        // Collect element data before deletion for history
+        const elementData = {
+          styles: currentState.textElementStyles[elementId],
+          position: currentState.textElementPositions[elementId],
+          content: currentState.textElementContents[elementId],
+        };
+
+        // Only record in history if element actually exists
+        if (elementData.styles || elementData.position || elementData.content) {
+          currentState.addToHistory({
+            type: "text_delete",
+            elementId,
+            previousValue: elementData,
+            newValue: null,
+            timestamp: Date.now(),
+          });
+        }
+
+        set((state) => {
           console.log("Store: Deleting element", elementId);
           console.log("Current deleted elements:", state.deletedTextElements);
 
@@ -1582,7 +1760,8 @@ export const usePresentationStore = create<PresentationState>()(
               ? state.textEditorContent
               : "",
           };
-        }),
+        });
+      },
 
       copyTextElement: (elementId: string, slideNumber?: number) => {
         // Save current state to history before making changes
@@ -1675,67 +1854,126 @@ export const usePresentationStore = create<PresentationState>()(
           selectedTextElement: newId, // Automatically select the new copied element
         }));
 
-        console.log("Store: Successfully copied element, new ID:", newId);
-        console.log("New element data:", {
+        // Record text creation in history
+        const newElementData = {
           styles: get().textElementStyles[newId],
           position: get().textElementPositions[newId],
           content: get().textElementContents[newId],
+        };
+
+        get().addToHistory({
+          type: "text_create",
+          elementId: newId,
+          previousValue: null,
+          newValue: newElementData,
+          timestamp: Date.now(),
         });
+
+        console.log("Store: Successfully copied element, new ID:", newId);
+        console.log("New element data:", newElementData);
         return newId;
       },
 
       moveTextElementUp: (elementId: string) => {
         console.log("Store: moveTextElementUp called for:", elementId);
         const state = get();
-        const currentPosition = state.textElementPositions[elementId];
-
-        if (!currentPosition) {
-          console.log("Store: No position found for element:", elementId);
-          return;
-        }
-
-        // Move element up by 10 pixels
-        const newPosition = {
-          x: currentPosition.x,
-          y: currentPosition.y - 10,
+        const currentStyle = state.textElementStyles[elementId] || {
+          ...state.textStyle,
+          zIndex: 2,
         };
 
+        const currentZIndex = currentStyle.zIndex || 2;
+        const newZIndex = currentZIndex + 1;
+
         console.log(
-          "Store: Moving element up from:",
-          currentPosition,
-          "to:",
-          newPosition
+          "Store: Moving text element up. Current z-index:",
+          currentZIndex,
+          "New z-index:",
+          newZIndex
         );
 
-        // Use the existing setTextElementPosition function
-        get().setTextElementPosition(elementId, newPosition);
+        // Update z-index using updateTextElementStyle
+        get().updateTextElementStyle(elementId, { zIndex: newZIndex });
       },
 
       moveTextElementDown: (elementId: string) => {
         console.log("Store: moveTextElementDown called for:", elementId);
         const state = get();
-        const currentPosition = state.textElementPositions[elementId];
+        const currentStyle = state.textElementStyles[elementId] || {
+          ...state.textStyle,
+          zIndex: 2,
+        };
 
-        if (!currentPosition) {
-          console.log("Store: No position found for element:", elementId);
+        const currentZIndex = currentStyle.zIndex || 2;
+        const newZIndex = Math.max(1, currentZIndex - 1); // Minimum z-index: 1
+
+        console.log(
+          "Store: Moving text element down. Current z-index:",
+          currentZIndex,
+          "New z-index:",
+          newZIndex
+        );
+
+        // Update z-index using updateTextElementStyle
+        get().updateTextElementStyle(elementId, { zIndex: newZIndex });
+      },
+
+      moveImageElementUp: (elementId: string, slideNumber: number) => {
+        console.log(
+          "Store: moveImageElementUp called for:",
+          elementId,
+          "on slide:",
+          slideNumber
+        );
+        const state = get();
+        const currentImage = state.imageElements[slideNumber]?.[elementId];
+
+        if (!currentImage) {
+          console.log("Store: No image found for element:", elementId);
           return;
         }
 
-        // Move element down by 10 pixels
-        const newPosition = {
-          x: currentPosition.x,
-          y: currentPosition.y + 10,
-        };
+        const currentZIndex = currentImage.zIndex || 2;
+        const newZIndex = currentZIndex + 1;
 
         console.log(
-          "Store: Moving element down from:",
-          currentPosition,
-          "to:",
-          newPosition
+          "Store: Moving image up. Current z-index:",
+          currentZIndex,
+          "New z-index:",
+          newZIndex
         );
 
-        // Use the existing setTextElementPosition function
-        get().setTextElementPosition(elementId, newPosition);
+        // Update z-index using updateImageElement
+        get().updateImageElement(elementId, slideNumber, { zIndex: newZIndex });
+      },
+
+      moveImageElementDown: (elementId: string, slideNumber: number) => {
+        console.log(
+          "Store: moveImageElementDown called for:",
+          elementId,
+          "on slide:",
+          slideNumber
+        );
+        const state = get();
+        const currentImage = state.imageElements[slideNumber]?.[elementId];
+
+        if (!currentImage) {
+          console.log("Store: No image found for element:", elementId);
+          return;
+        }
+
+        const currentZIndex = currentImage.zIndex || 2;
+        const newZIndex = Math.max(1, currentZIndex - 1); // Minimum z-index: 1
+
+        console.log(
+          "Store: Moving image down. Current z-index:",
+          currentZIndex,
+          "New z-index:",
+          newZIndex
+        );
+
+        // Update z-index using updateImageElement
+        get().updateImageElement(elementId, slideNumber, { zIndex: newZIndex });
       },
 
       resetPresentation: () => set(initialState),
@@ -1840,6 +2078,153 @@ export const usePresentationStore = create<PresentationState>()(
                 },
               }));
               break;
+
+            case "image_position":
+              if (actionToUndo.slideNumber !== undefined) {
+                set((state) => ({
+                  imageElements: {
+                    ...state.imageElements,
+                    [actionToUndo.slideNumber!]: {
+                      ...state.imageElements[actionToUndo.slideNumber!],
+                      [actionToUndo.elementId]: {
+                        ...state.imageElements[actionToUndo.slideNumber!]?.[
+                          actionToUndo.elementId
+                        ],
+                        position: actionToUndo.previousValue,
+                      },
+                    },
+                  },
+                }));
+              }
+              break;
+
+            case "image_size":
+              if (actionToUndo.slideNumber !== undefined) {
+                set((state) => ({
+                  imageElements: {
+                    ...state.imageElements,
+                    [actionToUndo.slideNumber!]: {
+                      ...state.imageElements[actionToUndo.slideNumber!],
+                      [actionToUndo.elementId]: {
+                        ...state.imageElements[actionToUndo.slideNumber!]?.[
+                          actionToUndo.elementId
+                        ],
+                        width: actionToUndo.previousValue.width,
+                        height: actionToUndo.previousValue.height,
+                      },
+                    },
+                  },
+                }));
+              }
+              break;
+
+            case "image_delete":
+              if (
+                actionToUndo.slideNumber !== undefined &&
+                actionToUndo.previousValue
+              ) {
+                // Restore deleted image element
+                set((state) => ({
+                  imageElements: {
+                    ...state.imageElements,
+                    [actionToUndo.slideNumber!]: {
+                      ...state.imageElements[actionToUndo.slideNumber!],
+                      [actionToUndo.elementId]: actionToUndo.previousValue,
+                    },
+                  },
+                }));
+              }
+              break;
+
+            case "image_create":
+              if (actionToUndo.slideNumber !== undefined) {
+                // Remove created image element (undo creation)
+                set((state) => {
+                  const newImageElements = { ...state.imageElements };
+                  if (
+                    newImageElements[actionToUndo.slideNumber!] &&
+                    newImageElements[actionToUndo.slideNumber!][
+                      actionToUndo.elementId
+                    ]
+                  ) {
+                    const slideImages = {
+                      ...newImageElements[actionToUndo.slideNumber!],
+                    };
+                    delete slideImages[actionToUndo.elementId];
+                    newImageElements[actionToUndo.slideNumber!] = slideImages;
+                  }
+                  return { imageElements: newImageElements };
+                });
+              }
+              break;
+
+            case "text_delete":
+              if (actionToUndo.previousValue) {
+                // Restore deleted text element
+                set((state) => {
+                  const elementData = actionToUndo.previousValue;
+                  const newDeletedElements = new Set(state.deletedTextElements);
+                  newDeletedElements.delete(actionToUndo.elementId);
+
+                  return {
+                    deletedTextElements: newDeletedElements,
+                    textElementStyles: elementData.styles
+                      ? {
+                          ...state.textElementStyles,
+                          [actionToUndo.elementId]: elementData.styles,
+                        }
+                      : state.textElementStyles,
+                    textElementPositions: elementData.position
+                      ? {
+                          ...state.textElementPositions,
+                          [actionToUndo.elementId]: elementData.position,
+                        }
+                      : state.textElementPositions,
+                    textElementContents: elementData.content
+                      ? {
+                          ...state.textElementContents,
+                          [actionToUndo.elementId]: elementData.content,
+                        }
+                      : state.textElementContents,
+                  };
+                });
+              }
+              break;
+
+            case "text_create":
+              // Remove created text element (undo creation)
+              set((state) => {
+                const newDeletedElements = new Set(state.deletedTextElements);
+                newDeletedElements.add(actionToUndo.elementId);
+
+                const {
+                  [actionToUndo.elementId]: removedStyles,
+                  ...remainingStyles
+                } = state.textElementStyles;
+                const {
+                  [actionToUndo.elementId]: removedPosition,
+                  ...remainingPositions
+                } = state.textElementPositions;
+                const {
+                  [actionToUndo.elementId]: removedContent,
+                  ...remainingContents
+                } = state.textElementContents;
+
+                return {
+                  deletedTextElements: newDeletedElements,
+                  textElementStyles: remainingStyles,
+                  textElementPositions: remainingPositions,
+                  textElementContents: remainingContents,
+                  selectedTextElement:
+                    state.selectedTextElement === actionToUndo.elementId
+                      ? null
+                      : state.selectedTextElement,
+                  selectedTextElements: state.selectedTextElements.filter(
+                    (id) => id !== actionToUndo.elementId
+                  ),
+                };
+              });
+              break;
           }
 
           set({ historyIndex: state.historyIndex - 1 });
@@ -1893,6 +2278,146 @@ export const usePresentationStore = create<PresentationState>()(
                 },
               }));
               break;
+
+            case "image_position":
+              if (actionToRedo.slideNumber !== undefined) {
+                set((state) => ({
+                  imageElements: {
+                    ...state.imageElements,
+                    [actionToRedo.slideNumber!]: {
+                      ...state.imageElements[actionToRedo.slideNumber!],
+                      [actionToRedo.elementId]: {
+                        ...state.imageElements[actionToRedo.slideNumber!]?.[
+                          actionToRedo.elementId
+                        ],
+                        position: actionToRedo.newValue,
+                      },
+                    },
+                  },
+                }));
+              }
+              break;
+
+            case "image_size":
+              if (actionToRedo.slideNumber !== undefined) {
+                set((state) => ({
+                  imageElements: {
+                    ...state.imageElements,
+                    [actionToRedo.slideNumber!]: {
+                      ...state.imageElements[actionToRedo.slideNumber!],
+                      [actionToRedo.elementId]: {
+                        ...state.imageElements[actionToRedo.slideNumber!]?.[
+                          actionToRedo.elementId
+                        ],
+                        width: actionToRedo.newValue.width,
+                        height: actionToRedo.newValue.height,
+                      },
+                    },
+                  },
+                }));
+              }
+              break;
+
+            case "image_delete":
+              if (actionToRedo.slideNumber !== undefined) {
+                // Re-delete the element (redo deletion)
+                set((state) => {
+                  const newImageElements = { ...state.imageElements };
+                  if (
+                    newImageElements[actionToRedo.slideNumber!] &&
+                    newImageElements[actionToRedo.slideNumber!][
+                      actionToRedo.elementId
+                    ]
+                  ) {
+                    const slideImages = {
+                      ...newImageElements[actionToRedo.slideNumber!],
+                    };
+                    delete slideImages[actionToRedo.elementId];
+                    newImageElements[actionToRedo.slideNumber!] = slideImages;
+                  }
+                  return { imageElements: newImageElements };
+                });
+              }
+              break;
+
+            case "image_create":
+              if (
+                actionToRedo.slideNumber !== undefined &&
+                actionToRedo.newValue
+              ) {
+                // Re-create the image element (redo creation)
+                set((state) => ({
+                  imageElements: {
+                    ...state.imageElements,
+                    [actionToRedo.slideNumber!]: {
+                      ...state.imageElements[actionToRedo.slideNumber!],
+                      [actionToRedo.elementId]: actionToRedo.newValue,
+                    },
+                  },
+                }));
+              }
+              break;
+
+            case "text_delete":
+              // Re-delete the text element (redo deletion)
+              set((state) => {
+                const newDeletedElements = new Set(state.deletedTextElements);
+                newDeletedElements.add(actionToRedo.elementId);
+
+                const {
+                  [actionToRedo.elementId]: removedStyles,
+                  ...remainingStyles
+                } = state.textElementStyles;
+                const {
+                  [actionToRedo.elementId]: removedPosition,
+                  ...remainingPositions
+                } = state.textElementPositions;
+                const {
+                  [actionToRedo.elementId]: removedContent,
+                  ...remainingContents
+                } = state.textElementContents;
+
+                return {
+                  deletedTextElements: newDeletedElements,
+                  textElementStyles: remainingStyles,
+                  textElementPositions: remainingPositions,
+                  textElementContents: remainingContents,
+                  selectedTextElement:
+                    state.selectedTextElement === actionToRedo.elementId
+                      ? null
+                      : state.selectedTextElement,
+                  selectedTextElements: state.selectedTextElements.filter(
+                    (id) => id !== actionToRedo.elementId
+                  ),
+                };
+              });
+              break;
+
+            case "text_create":
+              // Re-create the text element (redo creation after undo)
+              set((state) => {
+                const newDeletedElements = new Set(state.deletedTextElements);
+                newDeletedElements.delete(actionToRedo.elementId);
+
+                return {
+                  deletedTextElements: newDeletedElements,
+                  textElementStyles: {
+                    ...state.textElementStyles,
+                    [actionToRedo.elementId]: actionToRedo.previousValue.styles,
+                  },
+                  textElementPositions: {
+                    ...state.textElementPositions,
+                    [actionToRedo.elementId]:
+                      actionToRedo.previousValue.position,
+                  },
+                  textElementContents: {
+                    ...state.textElementContents,
+                    [actionToRedo.elementId]:
+                      actionToRedo.previousValue.content,
+                  },
+                };
+              });
+              break;
           }
 
           set({ historyIndex: state.historyIndex + 1 });
@@ -1928,6 +2453,232 @@ export const usePresentationStore = create<PresentationState>()(
             [templateId]: html,
           },
         }));
+      },
+
+      reloadDataFromStorage: () => {
+        console.log("🔄 Reloading data from localStorage...");
+        const mockData = loadMockDataFromStorage();
+        if (mockData) {
+          console.log("📋 Found data in localStorage, reinitializing store...");
+          const {
+            textElementContents,
+            textElementStyles,
+            imageElements,
+            infographicsElements,
+          } = initializeTextContentFromMockData(mockData);
+
+          const totalSlides =
+            mockData?.data?.slides?.length ||
+            mockData?.slides?.length ||
+            initialState.totalSlides;
+
+          set((state) => ({
+            ...state,
+            totalSlides,
+            generatedSlides: Array.from(
+              { length: totalSlides },
+              (_, i) => i + 1
+            ),
+            textElementContents,
+            textElementStyles,
+            imageElements,
+            infographicsElements,
+            isGenerating: false,
+          }));
+
+          console.log("✅ Store reloaded with new data");
+          console.log("📊 New totalSlides:", totalSlides);
+          console.log("📊 New imageElements:", imageElements);
+        } else {
+          console.log("❌ No data found in localStorage");
+        }
+      },
+
+      // Clipboard actions
+      copyElementToClipboard: (
+        type: "text" | "image" | "table" | "infographics",
+        elementId: string,
+        slideNumber: number
+      ) => {
+        const state = get();
+        let data = null;
+
+        switch (type) {
+          case "text":
+            data = {
+              content: state.textElementContents[elementId],
+              style: state.textElementStyles[elementId],
+              position: state.textElementPositions[elementId],
+            };
+            break;
+          case "image":
+            data = state.imageElements[slideNumber]?.[elementId];
+            break;
+          case "table":
+            data = state.tableElements[slideNumber]?.[elementId];
+            break;
+          case "infographics":
+            data = state.infographicsElements[slideNumber]?.[elementId];
+            break;
+        }
+
+        if (data) {
+          set({
+            clipboard: {
+              type,
+              elementId,
+              data,
+              slideNumber,
+              timestamp: Date.now(),
+            },
+          });
+          console.log(`📋 Copied ${type} element to clipboard:`, elementId);
+        }
+      },
+
+      pasteElementFromClipboard: (targetSlideNumber: number) => {
+        const state = get();
+        const clipboard = state.clipboard;
+
+        if (!clipboard) {
+          console.log("📋 No content in clipboard");
+          return;
+        }
+
+        const timestamp = Date.now();
+        const randomId = Math.random().toString(36).substr(2, 9);
+
+        switch (clipboard.type) {
+          case "text": {
+            const newElementId = `text-${timestamp}-${randomId}`;
+            const offset = { x: 20, y: 20 };
+
+            // Set content
+            set((state) => ({
+              textElementContents: {
+                ...state.textElementContents,
+                [newElementId]: clipboard.data.content || "Copied text",
+              },
+            }));
+
+            // Set style
+            if (clipboard.data.style) {
+              set((state) => ({
+                textElementStyles: {
+                  ...state.textElementStyles,
+                  [newElementId]: {
+                    ...clipboard.data.style,
+                    x: (clipboard.data.style.x || 0) + offset.x,
+                    y: (clipboard.data.style.y || 0) + offset.y,
+                  },
+                },
+              }));
+            }
+
+            // Set position
+            if (clipboard.data.position) {
+              set((state) => ({
+                textElementPositions: {
+                  ...state.textElementPositions,
+                  [newElementId]: {
+                    x: clipboard.data.position.x + offset.x,
+                    y: clipboard.data.position.y + offset.y,
+                  },
+                },
+              }));
+            }
+
+            // Select the new element
+            set({ selectedTextElement: newElementId });
+            console.log(`📋 Pasted text element: ${newElementId}`);
+            break;
+          }
+
+          case "image": {
+            const newElementId = `image-${timestamp}-${randomId}`;
+            const offset = { x: 20, y: 20 };
+
+            set((state) => ({
+              imageElements: {
+                ...state.imageElements,
+                [targetSlideNumber]: {
+                  ...state.imageElements[targetSlideNumber],
+                  [newElementId]: {
+                    ...clipboard.data,
+                    id: newElementId,
+                    position: {
+                      x: clipboard.data.position.x + offset.x,
+                      y: clipboard.data.position.y + offset.y,
+                    },
+                  },
+                },
+              },
+              selectedImageElement: newElementId,
+            }));
+            console.log(`📋 Pasted image element: ${newElementId}`);
+            break;
+          }
+
+          case "table": {
+            const newElementId = `table-${timestamp}-${randomId}`;
+            const offset = { x: 20, y: 20 };
+
+            set((state) => ({
+              tableElements: {
+                ...state.tableElements,
+                [targetSlideNumber]: {
+                  ...state.tableElements[targetSlideNumber],
+                  [newElementId]: {
+                    ...clipboard.data,
+                    id: newElementId,
+                    position: {
+                      x: clipboard.data.position.x + offset.x,
+                      y: clipboard.data.position.y + offset.y,
+                    },
+                  },
+                },
+              },
+              selectedTableElement: newElementId,
+            }));
+            console.log(`📋 Pasted table element: ${newElementId}`);
+            break;
+          }
+
+          case "infographics": {
+            const newElementId = `infographics-${timestamp}-${randomId}`;
+            const offset = { x: 20, y: 20 };
+
+            set((state) => ({
+              infographicsElements: {
+                ...state.infographicsElements,
+                [targetSlideNumber]: {
+                  ...state.infographicsElements[targetSlideNumber],
+                  [newElementId]: {
+                    ...clipboard.data,
+                    id: newElementId,
+                    position: {
+                      x: clipboard.data.position.x + offset.x,
+                      y: clipboard.data.position.y + offset.y,
+                    },
+                  },
+                },
+              },
+              selectedInfographicsElement: newElementId,
+            }));
+            console.log(`📋 Pasted infographics element: ${newElementId}`);
+            break;
+          }
+        }
+      },
+
+      clearClipboard: () => {
+        set({ clipboard: null });
+        console.log("📋 Clipboard cleared");
+      },
+
+      hasClipboardContent: () => {
+        const state = get();
+        return state.clipboard !== null;
       },
     };
   })

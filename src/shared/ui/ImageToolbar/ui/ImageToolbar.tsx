@@ -103,29 +103,29 @@ export const ImageToolbar: React.FC<ImageToolbarProps> = ({
       <button
         onClick={handleButtonClick(() => {
           console.log("ImageToolbar: Move Up button clicked");
-          handleMoveUp();
+          onMoveUp();
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"
-        title="Переместить вверх"
+        title="На передний план"
       >
         <MoveUpIcon />
       </button>
       <button
         onClick={handleButtonClick(() => {
           console.log("ImageToolbar: Move Down button clicked");
-          handleMoveDown();
+          onMoveDown();
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"
-        title="Переместить вниз"
+        title="На задний план"
       >
         <MoveDownIcon />
       </button>
       <button
         onClick={handleButtonClick(() => {
           console.log("ImageToolbar: Duplicate button clicked");
-          handleDuplicateImage();
+          onCopy();
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"
@@ -136,7 +136,7 @@ export const ImageToolbar: React.FC<ImageToolbarProps> = ({
       <button
         onClick={handleButtonClick(() => {
           console.log("ImageToolbar: Delete button clicked");
-          handleDelete();
+          onDelete();
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#FEE2E2] rounded-[8px] transition-colors p-[8px]"

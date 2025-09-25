@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { ResizableTextBox } from "@/shared/ui/ResizableTextBox";
@@ -6,7 +8,7 @@ import { ResizableTable } from "@/shared/ui/ResizableTable";
 import { EditableTable } from "@/features/TablePanel/ui/EditableTable";
 import { ResizableImageBox } from "@/shared/ui/ResizableImageBox";
 import { ResizableInfographicsBox } from "@/shared/ui/ResizableInfographicsBox";
-import { TemplateRenderer } from "@/entities/TemplateRenderer";
+import { PureTemplateRenderer } from "@/entities/PureTemplateRenderer";
 import { useRenderSlidesWithData } from "@/shared/api/presentation-generation";
 
 interface SlideContentProps {
@@ -15,10 +17,10 @@ interface SlideContentProps {
   isGenerating?: boolean;
 }
 
-export const SlideContent: React.FC<SlideContentProps> = ({
+export const SlideContent = ({
   slideNumber,
   slideType = "default",
-}) => {
+}: SlideContentProps) => {
   const [isDragging, setIsDragging] = React.useState(false);
   const [editingTableElement, setEditingTableElement] = React.useState<
     string | null
@@ -30,6 +32,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     Record<number, string>
   >({});
   const [isMounted, setIsMounted] = React.useState(false);
+  const initializedSlidesRef = React.useRef<Set<number>>(new Set());
 
   // Предотвращаем hydration errors
   React.useEffect(() => {
@@ -67,6 +70,9 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     selectedImageElement,
     setSelectedImageElement,
     deleteImageElement,
+    getImageElement,
+    addImageElement,
+    updateImageElement,
     // Table state
     tableElements,
     selectedTableElement,
@@ -86,6 +92,317 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   // Get image area selection for current slide
   const imageAreaSelection = getImageAreaSelection(slideNumber);
 
+  // Функция для замены изображений в HTML шаблоне на наши изображения
+  // Функция для обработки изменений текста в шаблоне
+  const handleTemplateTextChange = (field: string, value: string) => {
+    console.log(`📝 Template text changed - field: ${field}, value: ${value}`);
+
+    // Получаем текущие данные презентации
+    const generatedPresentationStr = localStorage.getItem(
+      "generatedPresentation"
+    );
+    if (!generatedPresentationStr) return;
+
+    try {
+      const generatedPresentation = JSON.parse(generatedPresentationStr);
+      const slides = generatedPresentation.data?.slides;
+
+      if (!slides || !slides[slideNumber - 1]) return;
+
+      const slideData = slides[slideNumber - 1];
+
+      // Обновляем соответствующее поле
+      switch (field) {
+        case "title":
+          slideData.title = value;
+          break;
+        case "subtitle":
+          slideData.subtitle = value;
+          break;
+        case "text1_title":
+          if (!slideData.text1) slideData.text1 = {};
+          slideData.text1.t1 = value;
+          break;
+        case "text1_content":
+          if (!slideData.text1) slideData.text1 = {};
+          slideData.text1.t2 = value;
+          break;
+        case "text2_title":
+          if (!slideData.text2) slideData.text2 = {};
+          slideData.text2.t1 = value;
+          break;
+        case "text2_content":
+          if (!slideData.text2) slideData.text2 = {};
+          slideData.text2.t2 = value;
+          break;
+        case "text3_title":
+          if (!slideData.text3) slideData.text3 = {};
+          slideData.text3.t1 = value;
+          break;
+        case "text3_content":
+          if (!slideData.text3) slideData.text3 = {};
+          slideData.text3.t2 = value;
+          break;
+      }
+
+      // Сохраняем обновленные данные
+      localStorage.setItem(
+        "generatedPresentation",
+        JSON.stringify(generatedPresentation)
+      );
+
+      // Обновляем кэш рендера
+      setRenderedSlides((prev) => {
+        const newSlides = { ...prev };
+        delete newSlides[slideNumber]; // Удаляем кэш, чтобы перерендерить
+        return newSlides;
+      });
+
+      // Форсируем перерендеринг
+      setRenderedHtml(null);
+
+      console.log(`✅ Updated ${field} for slide ${slideNumber}`);
+    } catch (error) {
+      console.error("❌ Error updating template text:", error);
+    }
+  };
+
+  const replaceTemplateImagesWithOurs = (html: string): string => {
+    if (!html) {
+      console.log("🖼️ No HTML provided for image replacement");
+      return html;
+    }
+
+    const generatedPresentation = localStorage.getItem("generatedPresentation");
+    if (!generatedPresentation) {
+      console.log("🖼️ No generated presentation found for image replacement");
+      return html;
+    }
+
+    try {
+      const presentationData = JSON.parse(generatedPresentation);
+      const slides = presentationData.data?.slides;
+
+      if (!slides || !slides[slideNumber - 1]) {
+        console.log(`🖼️ No slide data found for slide ${slideNumber}`);
+        return html;
+      }
+
+      const slideData = slides[slideNumber - 1];
+      const slideImages = slideData._images;
+
+      if (!slideImages || slideImages.length === 0) {
+        console.log(`🖼️ No images found for slide ${slideNumber}`);
+        return html;
+      }
+
+      let modifiedHtml = html;
+
+      // Заменяем изображения в HTML
+      slideImages.forEach((imageUrl: string, index: number) => {
+        console.log(
+          `🖼️ [Preview] Replaced template image ${index} with our image:`,
+          imageUrl
+        );
+
+        // Заменяем различные паттерны изображений в HTML
+        const imgPatterns = [
+          /src="[^"]*\.(jpg|jpeg|png|gif|webp|svg)[^"]*"/gi,
+          /background-image:\s*url\(['"]?[^'"]*\.(jpg|jpeg|png|gif|webp|svg)[^'"]*['"]?\)/gi,
+        ];
+
+        imgPatterns.forEach((pattern) => {
+          if (index === 0) {
+            // Заменяем только первое найденное изображение
+            modifiedHtml = modifiedHtml.replace(pattern, (match) => {
+              if (match.includes("src=")) {
+                return `src="${imageUrl}"`;
+              } else {
+                return `background-image: url('${imageUrl}')`;
+              }
+            });
+          }
+        });
+      });
+
+      return modifiedHtml;
+    } catch (error) {
+      console.error("🖼️ Error replacing images:", error);
+      return html;
+    }
+  };
+
+  // Функция для инициализации содержимого элементов из данных слайда
+  const initializeElementContents = React.useCallback(
+    (slideData: any) => {
+      console.log(
+        "🎯 [SlideContent] Initializing element contents for slide",
+        slideNumber,
+        slideData
+      );
+
+      // Функция для безопасной установки содержимого элемента
+      const safeSetContent = (elementId: string, content: string) => {
+        const existingContent = getTextElementContent(elementId);
+        if (!existingContent || existingContent === "New text element") {
+          setTextElementContent(elementId, content);
+          console.log(`Set content: ${content} for ${elementId}`);
+        } else {
+          console.log(
+            `Skipped setting content for ${elementId} - already has content: ${existingContent}`
+          );
+        }
+      };
+
+      // Инициализируем базовые элементы слайда только если их содержимое еще не установлено
+      if (slideData.title) {
+        const titleElementId = `slide-${slideNumber}-title`;
+        safeSetContent(titleElementId, slideData.title);
+      }
+
+      if (slideData.subtitle) {
+        const subtitleElementId = `slide-${slideNumber}-subtitle`;
+        safeSetContent(subtitleElementId, slideData.subtitle);
+      }
+
+      // Инициализируем text1 элементы
+      if (slideData.text1) {
+        if (slideData.text1.t1) {
+          const text1TitleId = `slide-${slideNumber}-text1-title`;
+          safeSetContent(text1TitleId, slideData.text1.t1);
+        }
+        if (slideData.text1.t2) {
+          const text1ContentId = `slide-${slideNumber}-text1-content`;
+          safeSetContent(text1ContentId, slideData.text1.t2);
+        }
+      }
+
+      // Инициализируем text2 элементы
+      if (slideData.text2) {
+        if (slideData.text2.t1) {
+          const text2TitleId = `slide-${slideNumber}-text2-title`;
+          safeSetContent(text2TitleId, slideData.text2.t1);
+        }
+        if (slideData.text2.t2) {
+          const text2ContentId = `slide-${slideNumber}-text2-content`;
+          safeSetContent(text2ContentId, slideData.text2.t2);
+        }
+      }
+
+      // Инициализируем text3 элементы
+      if (slideData.text3) {
+        if (slideData.text3.t1) {
+          const text3TitleId = `slide-${slideNumber}-text3-title`;
+          safeSetContent(text3TitleId, slideData.text3.t1);
+        }
+        if (slideData.text3.t2) {
+          const text3ContentId = `slide-${slideNumber}-text3-content`;
+          safeSetContent(text3ContentId, slideData.text3.t2);
+        }
+      }
+
+      // Инициализируем изображения - ВСЕГДА проверяем и восстанавливаем
+      if (slideData._images && Array.isArray(slideData._images)) {
+        console.log(
+          `🖼️ [SlideContent] Processing ${slideData._images.length} images for slide ${slideNumber}:`,
+          slideData._images
+        );
+
+        slideData._images.forEach((imageSrc: string, index: number) => {
+          // Получаем все изображения для данного слайда
+          const store = usePresentationStore.getState();
+          const slideImages = store.imageElements[slideNumber] || {};
+
+          // Ищем изображение с таким же src или по индексу
+          let existingImageId = null;
+          let existingImage = null;
+
+          // Сначала пробуем найти по src
+          for (const [id, img] of Object.entries(slideImages)) {
+            if (img.src === imageSrc) {
+              existingImageId = id;
+              existingImage = img;
+              break;
+            }
+          }
+
+          // Если не нашли по src, берем по индексу (если есть)
+          if (!existingImage) {
+            const imageIds = Object.keys(slideImages);
+            if (imageIds[index]) {
+              existingImageId = imageIds[index];
+              existingImage = slideImages[existingImageId];
+            }
+          }
+
+          console.log(
+            `🖼️ [SlideContent] Processing image ${index} for slide ${slideNumber}:`,
+            {
+              imageSrc,
+              existingImageId,
+              existingImage: !!existingImage,
+              existingSrc: existingImage?.src,
+              needsUpdate: !existingImage || existingImage.src !== imageSrc,
+            }
+          );
+
+          // Создаем или обновляем изображение
+          if (!existingImage) {
+            // Создаем новое изображение
+            const defaultPosition = {
+              x: 400 + index * 20, // Смещаем каждое следующее изображение
+              y: 100 + index * 20,
+            };
+            const defaultSize = { width: 300, height: 200 };
+
+            const newElementId = addImageElement(
+              slideNumber,
+              defaultPosition,
+              defaultSize
+            );
+            // Обновляем изображение с правильным src
+            updateImageElement(newElementId, slideNumber, {
+              src: imageSrc,
+              alt: `Slide ${slideNumber} Image ${index + 1}`,
+              placeholder: false,
+            });
+            console.log(
+              `✅ [SlideContent] Created new image ${imageSrc} as element ${newElementId} for slide ${slideNumber}`
+            );
+          } else if (existingImage.src !== imageSrc) {
+            // Обновляем существующий элемент с новым src
+            updateImageElement(existingImageId!, slideNumber, {
+              src: imageSrc,
+              alt: `Slide ${slideNumber} Image ${index + 1}`,
+              placeholder: false,
+            });
+            console.log(
+              `✅ [SlideContent] Updated existing image ${existingImageId} with new src ${imageSrc} for slide ${slideNumber}`
+            );
+          } else {
+            console.log(
+              `⏭️ [SlideContent] Image ${existingImageId} is up to date for slide ${slideNumber}, src: ${imageSrc}`
+            );
+          }
+        });
+      }
+    },
+    [
+      slideNumber,
+      setTextElementContent,
+      getTextElementContent,
+      getImageElement,
+      addImageElement,
+      updateImageElement,
+    ]
+  );
+
+  // Простой эффект для логирования изменений слайда
+  React.useEffect(() => {
+    if (!isMounted) return;
+    console.log(`🔄 [SlideContent] Switched to slide ${slideNumber}`);
+  }, [slideNumber, isMounted]);
+
   // Debug effect to track state changes
   React.useEffect(() => {
     console.log(
@@ -98,11 +415,77 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     console.log("selectedTextElement:", selectedTextElement);
   }, [slideNumber, slideType, textElementStyles, selectedTextElement]);
 
-  // Эффект для автоматического рендеринга слайдов с бэкенда
+  // Эффект для инициализации элементов слайда при переключении
   React.useEffect(() => {
     // Ждем клиентского рендеринга для предотвращения hydration errors
     if (!isMounted) {
       return;
+    }
+
+    // ВСЕГДА проверяем и инициализируем изображения для слайда
+    const generatedPresentationStr = localStorage.getItem(
+      "generatedPresentation"
+    );
+    if (generatedPresentationStr) {
+      try {
+        const generatedPresentation = JSON.parse(generatedPresentationStr);
+        const slides = generatedPresentation.data?.slides;
+        const currentSlideData = slides?.[slideNumber - 1];
+        if (currentSlideData) {
+          // Проверяем количество изображений в store vs в данных
+          const store = usePresentationStore.getState();
+          const currentImageElements = store.imageElements[slideNumber] || {};
+          const expectedImages = currentSlideData._images || [];
+          const actualImageCount = Object.keys(currentImageElements).length;
+          const expectedImageCount = expectedImages.length;
+
+          console.log(`🎯 [SlideContent] Slide ${slideNumber} image check:`, {
+            expected: expectedImageCount,
+            actual: actualImageCount,
+            hasImages: expectedImages.length > 0,
+          });
+
+          // Проверяем, есть ли изображения с правильными src
+          let needsImageInit = false;
+          if (expectedImageCount > 0) {
+            if (actualImageCount === 0) {
+              needsImageInit = true;
+            } else {
+              // Проверяем, совпадают ли src изображений
+              const currentImages = Object.values(currentImageElements);
+              const expectedSrcs = expectedImages;
+              const actualSrcs = currentImages
+                .map((img) => img.src)
+                .filter(Boolean);
+
+              const srcMismatch = expectedSrcs.some(
+                (expectedSrc: string) => !actualSrcs.includes(expectedSrc)
+              );
+
+              if (srcMismatch || expectedImageCount !== actualImageCount) {
+                needsImageInit = true;
+              }
+            }
+          }
+
+          if (needsImageInit) {
+            console.log(
+              `🎯 [SlideContent] Force initializing images for slide ${slideNumber}`
+            );
+            initializeElementContents(currentSlideData);
+          }
+          // Для текстовых элементов используем флаг инициализации
+          else if (!initializedSlidesRef.current.has(slideNumber)) {
+            console.log(
+              `🎯 [SlideContent] Initializing text elements for slide ${slideNumber}`
+            );
+            initializeElementContents(currentSlideData);
+            initializedSlidesRef.current.add(slideNumber);
+          }
+        }
+      } catch (error) {
+        console.error("Error initializing slide elements:", error);
+      }
     }
 
     // Проверяем, есть ли уже отрендеренный HTML для этого слайда
@@ -361,14 +744,132 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   // Handle keyboard shortcuts
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape key - clear image area selection
       if (e.key === "Escape" && isImageAreaSelectionMode) {
         clearImageAreaSelection(slideNumber);
+        return;
+      }
+
+      // Ignore if user is typing in input/textarea
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.contentEditable === "true"
+      ) {
+        return;
+      }
+
+      const store = usePresentationStore.getState();
+
+      // Ctrl+Z - Undo
+      if (e.ctrlKey && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        store.undo();
+        console.log("🔄 Undo triggered");
+        return;
+      }
+
+      // Ctrl+Shift+Z or Ctrl+Y - Redo
+      if (
+        (e.ctrlKey && e.shiftKey && e.key === "Z") ||
+        (e.ctrlKey && e.key === "y")
+      ) {
+        e.preventDefault();
+        store.redo();
+        console.log("🔄 Redo triggered");
+        return;
+      }
+
+      // Ctrl+C - Copy selected element
+      if (e.ctrlKey && e.key === "c") {
+        e.preventDefault();
+
+        if (selectedTextElement) {
+          store.copyElementToClipboard(
+            "text",
+            selectedTextElement,
+            slideNumber
+          );
+        } else if (selectedImageElement) {
+          store.copyElementToClipboard(
+            "image",
+            selectedImageElement,
+            slideNumber
+          );
+        } else if (selectedTableElement) {
+          store.copyElementToClipboard(
+            "table",
+            selectedTableElement,
+            slideNumber
+          );
+        } else if (selectedInfographicsElement) {
+          store.copyElementToClipboard(
+            "infographics",
+            selectedInfographicsElement,
+            slideNumber
+          );
+        }
+        console.log("📋 Copy triggered");
+        return;
+      }
+
+      // Ctrl+V - Paste from clipboard
+      if (e.ctrlKey && e.key === "v") {
+        e.preventDefault();
+        store.pasteElementFromClipboard(slideNumber);
+        console.log("📋 Paste triggered");
+        return;
+      }
+
+      // Delete key - delete selected element
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+
+        console.log("Delete key pressed. Current selections:", {
+          selectedTextElement,
+          selectedImageElement,
+          selectedTableElement,
+          selectedInfographicsElement,
+        });
+
+        if (selectedTextElement) {
+          console.log("Deleting text element:", selectedTextElement);
+          deleteTextElement(selectedTextElement);
+        } else if (selectedImageElement) {
+          console.log("Deleting image element:", selectedImageElement);
+          deleteImageElement(selectedImageElement, slideNumber);
+          setSelectedImageElement(null);
+        } else if (selectedTableElement) {
+          deleteTableElement(selectedTableElement);
+          setSelectedTableElement(null);
+        } else if (selectedInfographicsElement) {
+          deleteInfographicsElement(slideNumber, selectedInfographicsElement);
+          setSelectedInfographicsElement(null);
+        }
+        console.log("🗑️ Delete triggered");
+        return;
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isImageAreaSelectionMode, clearImageAreaSelection, slideNumber]);
+  }, [
+    isImageAreaSelectionMode,
+    clearImageAreaSelection,
+    slideNumber,
+    selectedTextElement,
+    selectedImageElement,
+    selectedTableElement,
+    selectedInfographicsElement,
+    deleteTextElement,
+    deleteImageElement,
+    setSelectedImageElement,
+    deleteTableElement,
+    setSelectedTableElement,
+    deleteInfographicsElement,
+    setSelectedInfographicsElement,
+  ]);
 
   const handleTextClick = (
     elementId: string,
@@ -477,81 +978,225 @@ export const SlideContent: React.FC<SlideContentProps> = ({
   };
 
   // Render dynamic text elements from store
-  const renderDynamicTextElements = () => {
-    const staticElementIds = [
-      "title-main",
-      "title-sub",
-      "content-main",
-      "content-sub",
-    ];
-
-    console.log("renderDynamicTextElements - slideNumber:", slideNumber);
-    console.log("textElementPositions:", textElementPositions);
-    console.log("textElementContents:", textElementContents);
-    console.log("textElementStyles:", textElementStyles);
-
-    // Use textElementStyles instead of textElementPositions to get all elements with styles
-    const allElementsWithStyles = Object.entries(textElementStyles).filter(
-      ([elementId]) => {
-        // Filter out static elements
-        if (staticElementIds.includes(elementId)) {
-          console.log("Filtering out static element:", elementId);
-          return false;
-        }
-        // Only show elements that belong to current slide
-        const belongsToSlide = elementId.includes(`slide-${slideNumber}-`);
-        console.log(
-          "Element",
-          elementId,
-          "belongs to slide",
-          slideNumber,
-          ":",
-          belongsToSlide
-        );
-        return belongsToSlide;
+  // Рендер интерактивных элементов с данными слайда
+  const renderSlideDataElements = () => {
+    // Получаем данные слайда из localStorage
+    let slideData = null;
+    const generatedPresentationStr = localStorage.getItem(
+      "generatedPresentation"
+    );
+    if (generatedPresentationStr) {
+      try {
+        const generatedPresentation = JSON.parse(generatedPresentationStr);
+        slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
+      } catch (error) {
+        console.error("Error parsing generated presentation:", error);
       }
-    );
+    }
 
-    console.log(
-      "Elements with styles for slide",
-      slideNumber,
-      ":",
-      allElementsWithStyles
-    );
+    const elements = [];
 
-    return allElementsWithStyles.map(([elementId, style]) => {
-      const content = textElementContents[elementId] || "New text element";
+    // Рендерим элементы из slideData если есть
+    if (slideData) {
+      // Рендерим title если есть
+      if (slideData.title) {
+        elements.push(
+          <ResizableTextBox
+            key={`slidedata-${slideNumber}-title`}
+            elementId={`slide-${slideNumber}-title`}
+            isSelected={selectedTextElements.includes(
+              `slide-${slideNumber}-title`
+            )}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-title`)}
+            onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-title`)}
+            onMoveDown={() => handleTextMoveDown(`slide-${slideNumber}-title`)}
+          >
+            <EditableText
+              elementId={`slide-${slideNumber}-title`}
+              initialText={slideData.title}
+              className="text-[32px] font-bold cursor-pointer transition-colors"
+              onClick={(e) => {
+                handleTextClick(
+                  `slide-${slideNumber}-title`,
+                  slideData.title,
+                  e
+                );
+              }}
+            />
+          </ResizableTextBox>
+        );
+      }
 
-      console.log(
-        "Rendering element:",
-        elementId,
-        "with content:",
-        content,
-        "style:",
-        style
-      );
+      // Рендерим subtitle если есть
+      if (slideData.subtitle) {
+        elements.push(
+          <ResizableTextBox
+            key={`slidedata-${slideNumber}-subtitle`}
+            elementId={`slide-${slideNumber}-subtitle`}
+            isSelected={selectedTextElements.includes(
+              `slide-${slideNumber}-subtitle`
+            )}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-subtitle`)}
+            onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-subtitle`)}
+            onMoveDown={() =>
+              handleTextMoveDown(`slide-${slideNumber}-subtitle`)
+            }
+          >
+            <EditableText
+              elementId={`slide-${slideNumber}-subtitle`}
+              initialText={slideData.subtitle}
+              className="text-[24px] font-medium cursor-pointer transition-colors"
+              onClick={(e) => {
+                handleTextClick(
+                  `slide-${slideNumber}-subtitle`,
+                  slideData.subtitle,
+                  e
+                );
+              }}
+            />
+          </ResizableTextBox>
+        );
+      }
 
-      return (
-        <ResizableTextBox
-          key={elementId}
-          isSelected={selectedTextElements.includes(elementId)}
-          elementId={elementId}
-          onDelete={handleTextDelete}
-          onCopy={() => handleTextCopy(elementId)}
-          onMoveUp={() => handleTextMoveUp(elementId)}
-          onMoveDown={() => handleTextMoveDown(elementId)}
-        >
-          <EditableText
-            elementId={elementId}
-            initialText={content}
-            className="text-[16px] cursor-pointer transition-colors"
-            onClick={(e) => {
-              handleTextClick(elementId, content, e);
-            }}
-          />
-        </ResizableTextBox>
-      );
-    });
+      // Рендерим text1 если есть
+      if (slideData.text1?.t1) {
+        elements.push(
+          <ResizableTextBox
+            key={`slidedata-${slideNumber}-text1-title`}
+            elementId={`slide-${slideNumber}-text1-title`}
+            isSelected={selectedTextElements.includes(
+              `slide-${slideNumber}-text1-title`
+            )}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-text1-title`)}
+            onMoveUp={() =>
+              handleTextMoveUp(`slide-${slideNumber}-text1-title`)
+            }
+            onMoveDown={() =>
+              handleTextMoveDown(`slide-${slideNumber}-text1-title`)
+            }
+          >
+            <EditableText
+              elementId={`slide-${slideNumber}-text1-title`}
+              initialText={slideData.text1.t1}
+              className="text-[20px] font-semibold cursor-pointer transition-colors"
+              onClick={(e) => {
+                handleTextClick(
+                  `slide-${slideNumber}-text1-title`,
+                  slideData.text1.t1,
+                  e
+                );
+              }}
+            />
+          </ResizableTextBox>
+        );
+      }
+
+      if (slideData.text1?.t2) {
+        elements.push(
+          <ResizableTextBox
+            key={`slidedata-${slideNumber}-text1-content`}
+            elementId={`slide-${slideNumber}-text1-content`}
+            isSelected={selectedTextElements.includes(
+              `slide-${slideNumber}-text1-content`
+            )}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-text1-content`)}
+            onMoveUp={() =>
+              handleTextMoveUp(`slide-${slideNumber}-text1-content`)
+            }
+            onMoveDown={() =>
+              handleTextMoveDown(`slide-${slideNumber}-text1-content`)
+            }
+          >
+            <EditableText
+              elementId={`slide-${slideNumber}-text1-content`}
+              initialText={slideData.text1.t2}
+              className="text-[16px] cursor-pointer transition-colors"
+              onClick={(e) => {
+                handleTextClick(
+                  `slide-${slideNumber}-text1-content`,
+                  slideData.text1.t2,
+                  e
+                );
+              }}
+            />
+          </ResizableTextBox>
+        );
+      }
+
+      // Аналогично для text2 и text3
+      if (slideData.text2?.t1) {
+        elements.push(
+          <ResizableTextBox
+            key={`slidedata-${slideNumber}-text2-title`}
+            elementId={`slide-${slideNumber}-text2-title`}
+            isSelected={selectedTextElements.includes(
+              `slide-${slideNumber}-text2-title`
+            )}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-text2-title`)}
+            onMoveUp={() =>
+              handleTextMoveUp(`slide-${slideNumber}-text2-title`)
+            }
+            onMoveDown={() =>
+              handleTextMoveDown(`slide-${slideNumber}-text2-title`)
+            }
+          >
+            <EditableText
+              elementId={`slide-${slideNumber}-text2-title`}
+              initialText={slideData.text2.t1}
+              className="text-[20px] font-semibold cursor-pointer transition-colors"
+              onClick={(e) => {
+                handleTextClick(
+                  `slide-${slideNumber}-text2-title`,
+                  slideData.text2.t1,
+                  e
+                );
+              }}
+            />
+          </ResizableTextBox>
+        );
+      }
+
+      if (slideData.text2?.t2) {
+        elements.push(
+          <ResizableTextBox
+            key={`slidedata-${slideNumber}-text2-content`}
+            elementId={`slide-${slideNumber}-text2-content`}
+            isSelected={selectedTextElements.includes(
+              `slide-${slideNumber}-text2-content`
+            )}
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-text2-content`)}
+            onMoveUp={() =>
+              handleTextMoveUp(`slide-${slideNumber}-text2-content`)
+            }
+            onMoveDown={() =>
+              handleTextMoveDown(`slide-${slideNumber}-text2-content`)
+            }
+          >
+            <EditableText
+              elementId={`slide-${slideNumber}-text2-content`}
+              initialText={slideData.text2.t2}
+              className="text-[16px] cursor-pointer transition-colors"
+              onClick={(e) => {
+                handleTextClick(
+                  `slide-${slideNumber}-text2-content`,
+                  slideData.text2.t2,
+                  e
+                );
+              }}
+            />
+          </ResizableTextBox>
+        );
+      }
+    } // Закрывающая скобка для if (slideData)
+
+    // УБИРАЕМ лишние пользовательские элементы! Рендерим только данные из API
+    return elements;
   };
 
   // Render table elements from store
@@ -615,24 +1260,60 @@ export const SlideContent: React.FC<SlideContentProps> = ({
     );
   };
 
-  // Render image elements from store
+  // Render image elements from store - показываем изображения только текущего слайда
   const renderImageElements = () => {
-    const currentSlideElements = imageElements[slideNumber] || {};
-    return Object.entries(currentSlideElements).map(
-      ([elementId, imageData]) => {
+    // Получаем изображения только для текущего слайда
+    const currentSlideImages = imageElements[slideNumber] || {};
+    const currentSlideImageElements = Object.entries(currentSlideImages);
+
+    const elementCount = currentSlideImageElements.length;
+
+    console.log(
+      `🎬 [SlideContent] Rendering ${elementCount} images for slide ${slideNumber}:`,
+      currentSlideImageElements.map(([id, data]) => ({ id, src: data.src }))
+    );
+
+    if (elementCount === 0) {
+      console.log(`🎬 [SlideContent] No images found for slide ${slideNumber}`);
+      console.log(
+        `🎬 [SlideContent] Current slide imageElements:`,
+        currentSlideImages
+      );
+    }
+
+    return currentSlideImageElements
+      .map(([elementId, imageData]) => {
+        // Проверяем, что imageData существует и имеет необходимые поля
+        if (!imageData || !imageData.position) {
+          console.warn(
+            "❌ [SlideContent] Invalid image data for element:",
+            elementId,
+            imageData
+          );
+          return null;
+        }
+
+        console.log(`✅ [SlideContent] Rendering image element ${elementId}:`, {
+          src: imageData.src,
+          position: imageData.position,
+          size: { width: imageData.width, height: imageData.height },
+        });
+
+        // Всегда показываем изображения как интерактивные элементы
         return (
           <ResizableImageBox
             key={elementId}
             elementId={elementId}
+            slideNumber={slideNumber}
             isSelected={selectedImageElement === elementId}
             onDelete={() => {
-              deleteImageElement(elementId);
+              deleteImageElement(elementId, slideNumber);
               setSelectedImageElement(null);
             }}
           />
         );
-      }
-    );
+      })
+      .filter(Boolean); // Убираем null элементы
   };
 
   // Render infographics elements from store
@@ -878,529 +1559,40 @@ export const SlideContent: React.FC<SlideContentProps> = ({
       );
     }
 
-    // Приоритет 1: Проверяем, есть ли готовый HTML с бэкенда
-    if (renderedHtml) {
-      console.log(
-        `🎯 [SlideContent] Rendering slide ${slideNumber} with backend HTML`
-      );
+    // УПРОЩАЕМ! Убираем всю сложную логику и рендерим ПРОСТОЕ содержимое как в preview
+    console.log(`🎯 [Main] Simple render for slide ${slideNumber}`);
 
-      // Получаем данные слайда для редактируемых элементов
-      const generatedPresentationStr = localStorage.getItem(
-        "generatedPresentation"
-      );
-      let slideData = null;
-
-      if (generatedPresentationStr) {
-        try {
-          const generatedPresentation = JSON.parse(generatedPresentationStr);
-          slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
-        } catch (error) {
-          console.error("Error parsing generated presentation:", error);
-        }
-      }
-
-      // Подготавливаем начальные позиции для элементов в store
-      const titleElementId = `slide-${slideNumber}-title`;
-      const subtitleElementId = `slide-${slideNumber}-subtitle`;
-      const text1ElementId = `slide-${slideNumber}-text1`;
-      const text2ElementId = `slide-${slideNumber}-text2`;
-
-      return (
+    return (
+      <div
+        className={`slide-container mx-auto w-[759px] h-[427px] bg-white rounded-[12px] overflow-hidden ${
+          isImageAreaSelectionMode ? "cursor-crosshair" : ""
+        }`}
+        onClick={handleSlideClick}
+        onDoubleClick={handleDoubleClick}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        style={{ position: "relative" }}
+      >
+        {/* Интерактивные элементы - ПРОСТАЯ логика как в preview */}
         <div
-          className={`slide-container mx-auto w-[759px] h-[427px] bg-white rounded-[12px] overflow-hidden ${
-            isImageAreaSelectionMode ? "cursor-crosshair" : ""
-          }`}
-          onClick={handleSlideClick}
-          onDoubleClick={handleDoubleClick}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          style={{ position: "relative" }}
+          className="interactive-layer absolute inset-0"
+          style={{ zIndex: 10 }}
         >
-          {/* Кнопка переключения режимов */}
-          <div className="absolute top-2 right-2 z-50">
-            <button
-              onClick={() => setIsTemplateMode(!isTemplateMode)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
-              title={isTemplateMode ? "Отключить шаблон" : "Включить шаблон"}
-            >
-              {isTemplateMode ? "Шаблон ВКЛ" : "Шаблон ВЫКЛ"}
-            </button>
-          </div>
-
-          {/* Фоновый HTML шаблон */}
-          {isTemplateMode && (
-            <div
-              className="template-background absolute inset-0 pointer-events-none"
-              style={{
-                zIndex: 0,
-                opacity: 0.3, // Делаем фон полупрозрачным
-                filter: "grayscale(0.5)", // Слегка обесцвечиваем фон
-              }}
-            >
-              <TemplateRenderer
-                html={renderedHtml}
-                templateId={`slide_${slideNumber}`}
-                className="w-full h-full"
-              />
-            </div>
-          )}
-
-          {/* Редактируемые элементы поверх шаблона */}
-          <div
-            className="editable-layer absolute inset-0"
-            style={{ zIndex: 10 }}
-          >
-            {/* Заголовок */}
-            <ResizableTextBox
-              isSelected={selectedTextElements.includes(titleElementId)}
-              elementId={titleElementId}
-              onDelete={handleTextDelete}
-              onCopy={() => handleTextCopy(titleElementId)}
-              onMoveUp={() => handleTextMoveUp(titleElementId)}
-              onMoveDown={() => handleTextMoveDown(titleElementId)}
-            >
-              <EditableText
-                elementId={titleElementId}
-                initialText={
-                  slideData?.title || `Заголовок слайда ${slideNumber}`
-                }
-                className="text-[32px] font-bold text-black cursor-pointer transition-colors"
-                style={{
-                  backgroundColor: isTemplateMode
-                    ? "rgba(255, 255, 255, 0.9)"
-                    : "transparent",
-                  padding: isTemplateMode ? "4px 8px" : "0",
-                  borderRadius: isTemplateMode ? "4px" : "0",
-                  textShadow: isTemplateMode
-                    ? "1px 1px 2px rgba(0,0,0,0.3)"
-                    : "none",
-                }}
-                onClick={(e) => {
-                  handleTextClick(
-                    titleElementId,
-                    getTextElementContent(titleElementId) ||
-                      slideData?.title ||
-                      `Заголовок слайда ${slideNumber}`,
-                    e
-                  );
-                }}
-              />
-            </ResizableTextBox>
-
-            {/* Подзаголовок */}
-            {slideData?.subtitle && (
-              <ResizableTextBox
-                isSelected={selectedTextElements.includes(subtitleElementId)}
-                elementId={subtitleElementId}
-                onDelete={handleTextDelete}
-                onCopy={() => handleTextCopy(subtitleElementId)}
-                onMoveUp={() => handleTextMoveUp(subtitleElementId)}
-                onMoveDown={() => handleTextMoveDown(subtitleElementId)}
-              >
-                <EditableText
-                  elementId={subtitleElementId}
-                  initialText={slideData.subtitle}
-                  className="text-[20px] font-normal text-gray-700 cursor-pointer transition-colors"
-                  style={{
-                    backgroundColor: isTemplateMode
-                      ? "rgba(255, 255, 255, 0.8)"
-                      : "transparent",
-                    padding: isTemplateMode ? "4px 8px" : "0",
-                    borderRadius: isTemplateMode ? "4px" : "0",
-                    textShadow: isTemplateMode
-                      ? "1px 1px 2px rgba(0,0,0,0.3)"
-                      : "none",
-                  }}
-                  onClick={(e) => {
-                    handleTextClick(
-                      subtitleElementId,
-                      getTextElementContent(subtitleElementId) ||
-                        slideData.subtitle,
-                      e
-                    );
-                  }}
-                />
-              </ResizableTextBox>
-            )}
-
-            {/* Первый текстовый блок */}
-            {slideData?.text1?.t2 && (
-              <ResizableTextBox
-                isSelected={selectedTextElements.includes(text1ElementId)}
-                elementId={text1ElementId}
-                onDelete={handleTextDelete}
-                onCopy={() => handleTextCopy(text1ElementId)}
-                onMoveUp={() => handleTextMoveUp(text1ElementId)}
-                onMoveDown={() => handleTextMoveDown(text1ElementId)}
-              >
-                <EditableText
-                  elementId={text1ElementId}
-                  initialText={slideData.text1.t2}
-                  className="text-[16px] font-normal text-gray-800 cursor-pointer transition-colors"
-                  style={{
-                    backgroundColor: isTemplateMode
-                      ? "rgba(255, 255, 255, 0.8)"
-                      : "transparent",
-                    padding: isTemplateMode ? "4px 8px" : "0",
-                    borderRadius: isTemplateMode ? "4px" : "0",
-                    textShadow: isTemplateMode
-                      ? "1px 1px 2px rgba(0,0,0,0.3)"
-                      : "none",
-                  }}
-                  onClick={(e) => {
-                    handleTextClick(
-                      text1ElementId,
-                      getTextElementContent(text1ElementId) ||
-                        slideData.text1.t2,
-                      e
-                    );
-                  }}
-                />
-              </ResizableTextBox>
-            )}
-
-            {/* Второй текстовый блок */}
-            {slideData?.text2?.t2 && (
-              <ResizableTextBox
-                isSelected={selectedTextElements.includes(text2ElementId)}
-                elementId={text2ElementId}
-                onDelete={handleTextDelete}
-                onCopy={() => handleTextCopy(text2ElementId)}
-                onMoveUp={() => handleTextMoveUp(text2ElementId)}
-                onMoveDown={() => handleTextMoveDown(text2ElementId)}
-              >
-                <EditableText
-                  elementId={text2ElementId}
-                  initialText={slideData.text2.t2}
-                  className="text-[16px] font-normal text-gray-800 cursor-pointer transition-colors"
-                  style={{
-                    backgroundColor: isTemplateMode
-                      ? "rgba(255, 255, 255, 0.8)"
-                      : "transparent",
-                    padding: isTemplateMode ? "4px 8px" : "0",
-                    borderRadius: isTemplateMode ? "4px" : "0",
-                    textShadow: isTemplateMode
-                      ? "1px 1px 2px rgba(0,0,0,0.3)"
-                      : "none",
-                  }}
-                  onClick={(e) => {
-                    handleTextClick(
-                      text2ElementId,
-                      getTextElementContent(text2ElementId) ||
-                        slideData.text2.t2,
-                      e
-                    );
-                  }}
-                />
-              </ResizableTextBox>
-            )}
-
-            {/* Динамические элементы */}
-            {renderDynamicTextElements()}
-            {renderTableElements()}
-            {renderImageElements()}
-            {renderInfographicsElements()}
-            {renderAlignmentGuides()}
-            {renderImageAreaSelection()}
-          </div>
+          {/* Рендерим данные слайда */}
+          {renderSlideDataElements()}
+          {/* Рендерим изображения */}
+          {renderImageElements()}
+          {/* Остальные элементы */}
+          {renderTableElements()}
+          {renderInfographicsElements()}
+          {renderAlignmentGuides()}
+          {renderImageAreaSelection()}
         </div>
-      );
-    }
-
-    // Приоритет 2: Показываем лоадер, если HTML загружается
-    if (isLoadingRender) {
-      return (
-        <div
-          className="slide-container mx-auto w-[759px] h-[427px] bg-white rounded-[12px] flex items-center justify-center"
-          style={{ position: "relative" }}
-        >
-          <div className="text-gray-500">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-2"></div>
-            Загрузка слайда {slideNumber}...
-          </div>
-        </div>
-      );
-    }
-
-    // Приоритет 3: Fallback к старой логике (локальные шаблоны)
-    console.log("🔄 [SlideContent] Falling back to local template logic");
-
-    // Получаем данные презентации из localStorage
-    const generatedPresentationStr = localStorage.getItem(
-      "generatedPresentation"
+      </div>
     );
-    console.log(
-      "localStorage generatedPresentation:",
-      generatedPresentationStr
-    );
-
-    // Debug: показываем все ключи в localStorage
-    console.log("All localStorage keys:", Object.keys(localStorage));
-
-    // Debug: показываем доступные шаблоны
-    console.log("Available slideTemplates:", Object.keys(slideTemplates));
-    console.log("slideTemplates data:", slideTemplates);
-
-    // Debug: показываем все что есть в localStorage
-    const allLocalStorageData: Record<string, string | null> = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        allLocalStorageData[key] = localStorage.getItem(key);
-      }
-    }
-    console.log("All localStorage data:", allLocalStorageData);
-    let slideData = null;
-
-    if (generatedPresentationStr) {
-      try {
-        const generatedPresentation = JSON.parse(generatedPresentationStr);
-        console.log("Parsed generatedPresentation:", generatedPresentation);
-        console.log("Available slides:", generatedPresentation.data?.slides);
-
-        // Получаем данные для текущего слайда (slideNumber - 1, так как массив начинается с 0)
-        slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
-        console.log(`Slide data for slide ${slideNumber}:`, slideData);
-      } catch (error) {
-        console.error("Error parsing generated presentation:", error);
-      }
-    }
-
-    // Проверяем, есть ли HTML шаблон для текущего слайда
-    console.log(`Looking for template for slide ${slideNumber}`);
-    console.log("Available template keys:", Object.keys(slideTemplates));
-
-    const slideTemplateKey = Object.keys(slideTemplates).find((templateId) => {
-      // Попробуем найти шаблон по разным возможным именам
-      const matches =
-        templateId === `slide_${slideNumber}` ||
-        templateId === `slide_${slideNumber.toString().padStart(3, "0")}` ||
-        templateId === `proto_${slideNumber.toString().padStart(3, "0")}` ||
-        templateId === `proto_${slideNumber}`;
-      console.log(
-        `Checking template ${templateId} for slide ${slideNumber}: ${matches}`
-      );
-      return matches;
-    });
-
-    console.log(`Found template key: ${slideTemplateKey}`);
-
-    if (slideTemplateKey && slideTemplates[slideTemplateKey] && slideData) {
-      console.log(
-        `Rendering HTML template for slide ${slideNumber}:`,
-        slideTemplateKey
-      );
-
-      // Заполняем шаблон данными слайда
-      let filledHtml = slideTemplates[slideTemplateKey];
-      console.log("Original template HTML length:", filledHtml.length);
-      console.log("Template preview:", filledHtml.substring(0, 200) + "...");
-
-      // Заменяем плейсхолдеры данными слайда
-      if (slideData.title) {
-        console.log("Replacing {{title}} with:", slideData.title);
-        filledHtml = filledHtml.replace(/\{\{title\}\}/g, slideData.title);
-      }
-      if (slideData.subtitle) {
-        console.log("Replacing {{subtitle}} with:", slideData.subtitle);
-        filledHtml = filledHtml.replace(
-          /\{\{subtitle\}\}/g,
-          slideData.subtitle
-        );
-      }
-      if (slideData.text1?.t1) {
-        console.log("Replacing {{text1_title}} with:", slideData.text1.t1);
-        filledHtml = filledHtml.replace(
-          /\{\{text1_title\}\}/g,
-          slideData.text1.t1
-        );
-      }
-      if (slideData.text1?.t2) {
-        console.log("Replacing {{text1_content}} with:", slideData.text1.t2);
-        filledHtml = filledHtml.replace(
-          /\{\{text1_content\}\}/g,
-          slideData.text1.t2
-        );
-      }
-      if (slideData.text2?.t1) {
-        filledHtml = filledHtml.replace(
-          /\{\{text2_title\}\}/g,
-          slideData.text2.t1
-        );
-      }
-      if (slideData.text2?.t2) {
-        filledHtml = filledHtml.replace(
-          /\{\{text2_content\}\}/g,
-          slideData.text2.t2
-        );
-      }
-      if (slideData.text3?.t1) {
-        filledHtml = filledHtml.replace(
-          /\{\{text3_title\}\}/g,
-          slideData.text3.t1
-        );
-      }
-      if (slideData.text3?.t2) {
-        filledHtml = filledHtml.replace(
-          /\{\{text3_content\}\}/g,
-          slideData.text3.t2
-        );
-      }
-      if (slideData._images?.[0]) {
-        console.log("Replacing {{image}} with:", slideData._images[0]);
-        filledHtml = filledHtml.replace(/\{\{image\}\}/g, slideData._images[0]);
-      }
-
-      console.log("Final filled HTML length:", filledHtml.length);
-      console.log("Final HTML preview:", filledHtml.substring(0, 500) + "...");
-
-      return (
-        <div
-          className={`slide-container mx-auto w-[759px] h-[427px] bg-white rounded-[12px] overflow-hidden ${
-            isImageAreaSelectionMode ? "cursor-crosshair" : ""
-          }`}
-          onClick={handleSlideClick}
-          onDoubleClick={handleDoubleClick}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          style={{ position: "relative" }}
-        >
-          <TemplateRenderer
-            html={filledHtml}
-            templateId={slideTemplateKey}
-            className="w-full h-full"
-          />
-        </div>
-      );
-    }
-
-    // Если нет HTML шаблона, рендерим обычный слайд
-    switch (slideType) {
-      case "title":
-        return (
-          <div
-            className={`slide-container mx-auto w-[759px] h-[427px] bg-gradient-to-br from-[#2D3748] to-[#1A202C] rounded-[12px] p-12 text-white relative ${
-              isImageAreaSelectionMode ? "cursor-crosshair" : ""
-            }`}
-            onClick={handleSlideClick}
-            onDoubleClick={handleDoubleClick}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-            style={{ position: "relative" }}
-          >
-            <ResizableTextBox
-              isSelected={selectedTextElements.includes("title-main")}
-              elementId="title-main"
-              onDelete={handleTextDelete}
-              onCopy={() => handleTextCopy("title-main")}
-              onMoveUp={() => handleTextMoveUp("title-main")}
-              onMoveDown={() => handleTextMoveDown("title-main")}
-            >
-              <EditableText
-                elementId="title-main"
-                initialText="ЗАГОЛОВОК\nВ ДВЕ СТРОКИ"
-                className="text-[48px] font-bold leading-tight cursor-pointer transition-colors"
-                onClick={(e) => {
-                  handleTextClick("title-main", "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ", e);
-                }}
-              />
-            </ResizableTextBox>
-
-            <ResizableTextBox
-              isSelected={selectedTextElements.includes("title-sub")}
-              elementId="title-sub"
-              onDelete={handleTextDelete}
-              onCopy={() => handleTextCopy("title-sub")}
-              onMoveUp={() => handleTextMoveUp("title-sub")}
-              onMoveDown={() => handleTextMoveDown("title-sub")}
-            >
-              <EditableText
-                elementId="title-sub"
-                initialText="Подзаголовок\nв две строки"
-                className="text-[20px] font-light cursor-pointer transition-colors"
-                onClick={(e) => {
-                  handleTextClick("title-sub", "Подзаголовок\nв две строки", e);
-                }}
-              />
-            </ResizableTextBox>
-
-            {renderDynamicTextElements()}
-
-            {renderTableElements()}
-
-            {renderImageElements()}
-
-            {renderInfographicsElements()}
-
-            {renderAlignmentGuides()}
-
-            {renderImageAreaSelection()}
-          </div>
-        );
-
-      default:
-        return (
-          <div
-            className={`slide-container mx-auto w-[759px] h-[427px] bg-[#F7FAFC] rounded-[12px] ${
-              isImageAreaSelectionMode ? "cursor-crosshair" : ""
-            }`}
-            onClick={handleSlideClick}
-            onDoubleClick={handleDoubleClick}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-            style={{ position: "relative" }}
-          >
-            {/* Render slide title if exists */}
-            <ResizableTextBox
-              isSelected={selectedTextElements.includes(
-                `slide-${slideNumber}-title`
-              )}
-              elementId={`slide-${slideNumber}-title`}
-              onDelete={handleTextDelete}
-              onCopy={() => handleTextCopy(`slide-${slideNumber}-title`)}
-              onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-title`)}
-              onMoveDown={() =>
-                handleTextMoveDown(`slide-${slideNumber}-title`)
-              }
-            >
-              <EditableText
-                elementId={`slide-${slideNumber}-title`}
-                initialText={`Слайд ${slideNumber} - Заголовок`}
-                className="text-[#1F2937] text-[24px] font-bold cursor-pointer transition-colors"
-                onClick={(e) => {
-                  handleTextClick(
-                    `slide-${slideNumber}-title`,
-                    getTextElementContent(`slide-${slideNumber}-title`) ||
-                      `Слайд ${slideNumber} - Заголовок`,
-                    e
-                  );
-                }}
-              />
-            </ResizableTextBox>
-
-            {renderDynamicTextElements()}
-
-            {renderTableElements()}
-
-            {renderImageElements()}
-
-            {renderInfographicsElements()}
-
-            {renderAlignmentGuides()}
-
-            {renderImageAreaSelection()}
-          </div>
-        );
-    }
-  };
+  }; // Конец функции renderSlideByType
 
   return renderSlideByType();
 };

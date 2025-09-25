@@ -78,7 +78,7 @@ const AddSlideModal: React.FC<AddSlideModalProps> = ({
                 value={slideText}
                 onChange={(e) => setSlideText(e.target.value)}
                 placeholder="Введите тему слайда"
-                className="flex-1 resize-none border-none outline-none text-[14px] font-normal text-[#BEBEC0] leading-[1.2] tracking-[-0.42px] placeholder:text-[#BEBEC0]"
+                className="flex-1 resize-none border-none w-full outline-none text-[14px] font-normal text-[#BEBEC0] leading-[1.2] tracking-[-0.42px] placeholder:text-[#BEBEC0]"
                 maxLength={500}
                 onKeyDown={handleKeyDown}
                 autoFocus

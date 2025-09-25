@@ -285,18 +285,16 @@ export const PresentationCreationWizard: React.FC = () => {
 
   // Check if all steps are completed based on required fields for each step
   const isDescriptionComplete =
-    !!presentationData.topic &&
-    !!presentationData.goal &&
-    !!presentationData.audience;
+    !!brief?.topic && !!brief?.goal && !!brief?.audience;
   const isStructureComplete =
-    presentationData.slideCount > 0 &&
-    !!presentationData.textVolume &&
-    !!presentationData.imageSource;
+    slides.length > 0 && !!textVolume && !!imageSource;
   const isStyleComplete =
     !!presentationData.selectedTemplate || !!presentationData.selectedStyle;
 
   const isCompleted =
     isDescriptionComplete && isStructureComplete && isStyleComplete;
+
+  // Debug logging
 
   const handleTemplateSelect = (templateId: string) => {
     updatePresentationData({ selectedTemplate: templateId });
@@ -474,6 +472,13 @@ export const PresentationCreationWizard: React.FC = () => {
     } else {
       const prevIndex = currentStepIndex - 1;
       if (prevIndex >= 0) {
+        // Если возвращаемся на шаг описания, сбрасываем структуру
+        if (steps[prevIndex].key === "description") {
+          setUiSlides([]);
+          setHasGeneratedStructure(false);
+          setVisibleSlidesCount(0);
+          hasCalledApi.current = false;
+        }
         setCurrentStep(steps[prevIndex].key);
       }
     }
@@ -482,6 +487,16 @@ export const PresentationCreationWizard: React.FC = () => {
   const handleNext = () => {
     const nextIndex = currentStepIndex + 1;
     if (nextIndex < steps.length) {
+      // Если переходим с описания на структуру, сбрасываем структуру для регенерации
+      if (
+        currentStep === "description" &&
+        steps[nextIndex].key === "structure"
+      ) {
+        setUiSlides([]);
+        setHasGeneratedStructure(false);
+        setVisibleSlidesCount(0);
+        hasCalledApi.current = false;
+      }
       setCurrentStep(steps[nextIndex].key);
     }
   };
@@ -609,6 +624,46 @@ export const PresentationCreationWizard: React.FC = () => {
                 <button
                   onClick={() => {
                     if (isCompleted) {
+                      // Сохраняем данные в localStorage перед переходом
+                      if (
+                        !brief ||
+                        !deckTitle ||
+                        !uiSlides ||
+                        uiSlides.length === 0
+                      ) {
+                        console.error(
+                          "Missing required data for presentation generation"
+                        );
+                        return;
+                      }
+
+                      const presentationData = {
+                        deckTitle,
+                        uiSlides,
+                        userData: {
+                          topic: brief.topic,
+                          goal: brief.goal,
+                          audience: brief.audience,
+                          expectedAction: brief.expectedAction,
+                          keyIdea: brief.keyIdea,
+                          tones: brief.tones || [],
+                          files: extractedFiles || [],
+                        },
+                        volume: textVolume || "Средний",
+                        imageSource: imageSource || "Смешанный",
+                        seed: 42,
+                        concurrency: 5,
+                      };
+
+                      console.log(
+                        "💾 Saving presentation data to localStorage:",
+                        presentationData
+                      );
+                      localStorage.setItem(
+                        "presentationGenerationData",
+                        JSON.stringify(presentationData)
+                      );
+
                       // Navigate to presentation generation page
                       router.push("/presentation-generation");
                     }
@@ -705,7 +760,7 @@ export const PresentationCreationWizard: React.FC = () => {
                             <DotsSixIcon width={32} height={32} />
                           </div>
                         </div>
-                        <div className="flex flex-col gap-1 min-w-[200px] flex-1">
+                        <div className="flex flex-col gap-1 flex-1 min-w-0 mr-4">
                           {/* Заголовок слайда */}
                           {editingSlideId === index &&
                           editingField === "title" ? (
@@ -718,7 +773,7 @@ export const PresentationCreationWizard: React.FC = () => {
                               onKeyDown={handleSlideKeyPress}
                               onBlur={handleSaveSlideEdit}
                               autoFocus
-                              className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none"
+                              className="text-[18px] w-full min-w-[400px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none"
                             />
                           ) : (
                             <h3
@@ -742,7 +797,7 @@ export const PresentationCreationWizard: React.FC = () => {
                               onBlur={handleSaveSlideEdit}
                               autoFocus
                               rows={3}
-                              className="text-[14px] font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none resize-none"
+                              className="text-[14px] w-full min-w-[100%] font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none resize-none"
                             />
                           ) : (
                             <p
@@ -867,7 +922,7 @@ export const PresentationCreationWizard: React.FC = () => {
                             <DotsSixIcon width={32} height={32} />
                           </div>
                         </div>
-                        <div className="flex flex-col gap-1 min-w-[200px] flex-1">
+                        <div className="flex flex-col gap-1 min-w-[200px] flex-1 mr-4">
                           {/* Заголовок слайда */}
                           {editingSlideId === index &&
                           editingField === "title" ? (
@@ -880,7 +935,7 @@ export const PresentationCreationWizard: React.FC = () => {
                               onKeyDown={handleSlideKeyPress}
                               onBlur={handleSaveSlideEdit}
                               autoFocus
-                              className="text-[18px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none"
+                              className="text-[18px] w-full min-w-[400px] font-semibold text-[#0B0911] leading-[1.2] tracking-[-0.36px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none"
                             />
                           ) : (
                             <h3
@@ -904,7 +959,7 @@ export const PresentationCreationWizard: React.FC = () => {
                               onBlur={handleSaveSlideEdit}
                               autoFocus
                               rows={3}
-                              className="text-[14px] font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none resize-none"
+                              className="text-[14px] w-full min-w-[500px] font-normal text-[#8F8F92] leading-[1.2] tracking-[-0.42px] bg-white border border-[#BBA2FE] rounded-md px-2 py-1 outline-none resize-none"
                             />
                           ) : (
                             <p

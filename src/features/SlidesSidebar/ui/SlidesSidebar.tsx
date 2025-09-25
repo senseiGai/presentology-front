@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useRef, useEffect } from "react";
 import { SlidePreview } from "@/entities/Slide";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
@@ -18,6 +20,7 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
   );
   const [isAddSlidePopupOpen, setIsAddSlidePopupOpen] = useState(false);
   const [insertAfterSlide, setInsertAfterSlide] = useState<number | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<Record<number, HTMLDivElement>>({});
@@ -63,6 +66,11 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
     setInsertAfterSlide(null);
   };
 
+  // Предотвращаем hydration errors
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Auto-scroll when currentSlide changes (from canvas scroll)
   useEffect(() => {
     if (!isGenerating && generatedSlides.includes(currentSlide)) {
@@ -77,6 +85,17 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
 
   if (isSidebarCollapsed) {
     return null;
+  }
+
+  // Простая заглушка для предотвращения hydration error
+  if (!isMounted) {
+    return (
+      <div className="flex flex-col gap-y-[24px] w-[140px] h-full bg-white p-2">
+        <div className="w-full h-[79px] bg-gray-100 rounded-md animate-pulse" />
+        <div className="w-full h-[79px] bg-gray-100 rounded-md animate-pulse" />
+        <div className="w-full h-[79px] bg-gray-100 rounded-md animate-pulse" />
+      </div>
+    );
   }
 
   return (

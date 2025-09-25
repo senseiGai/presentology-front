@@ -10,10 +10,12 @@ export const useSlideGeneration = () => {
     generatedSlides,
     totalSlides,
     addGeneratedSlide,
+    setAllSlidesGenerated,
     setIsGenerating,
     setShowFeedback,
     startGeneration,
     setTotalSlides,
+    reloadDataFromStorage,
   } = usePresentationStore();
 
   const hasInitialized = useRef(false);
@@ -33,6 +35,33 @@ export const useSlideGeneration = () => {
 
       console.log("📦 localStorage structureData:", structureData);
       console.log("📦 localStorage briefData:", briefData);
+
+      // Check if we already have generated presentation data in localStorage
+      const generatedPresentationData = localStorage.getItem(
+        "generatedPresentation"
+      );
+
+      if (generatedPresentationData) {
+        console.log(
+          "📋 Found generated presentation data, skipping generation"
+        );
+        const mockData = JSON.parse(generatedPresentationData);
+        const totalSlides =
+          mockData?.data?.slides?.length || mockData?.slides?.length || 5;
+        console.log(
+          `🎯 Setting total slides to ${totalSlides} and marking all as generated`
+        );
+        setTotalSlides(totalSlides);
+        // Mark all slides as generated since we have the data
+        setAllSlidesGenerated(totalSlides);
+        console.log(
+          `✅ All slides marked as generated: [${Array.from(
+            { length: totalSlides },
+            (_, i) => i + 1
+          ).join(", ")}]`
+        );
+        return;
+      }
 
       if (structureData || briefData) {
         console.log(
@@ -172,9 +201,21 @@ export const useSlideGeneration = () => {
         console.log("✅ API generation successful!");
         console.log("📊 Generated slides:", response.data.slides);
         toast.success("Слайды успешно сгенерированы!");
-        // Here you would process the actual generated slides
-        // For now, we'll use the mock generation
-        startGeneration();
+
+        // Save API data to localStorage
+        localStorage.setItem(
+          "generatedPresentation",
+          JSON.stringify(response.data)
+        );
+
+        // Reload store with new data from localStorage
+        reloadDataFromStorage();
+
+        // Set slides as generated without starting animation
+        const slidesCount = response.data.slides.length;
+        setTotalSlides(slidesCount);
+        setAllSlidesGenerated(slidesCount);
+        setIsGenerating(false); // ОСТАНАВЛИВАЕМ ГЕНЕРАЦИЮ!
       } else {
         console.log("❌ API generation failed:", response.error);
         throw new Error(response.error || "Ошибка при генерации слайдов");
@@ -189,9 +230,23 @@ export const useSlideGeneration = () => {
       toast.error(
         "Произошла ошибка при генерации слайдов. Используется демо-режим."
       );
-      // Fallback to mock generation
+      // Fallback to mock generation only if no data exists
       console.log("🔄 Falling back to mock generation");
-      startGeneration();
+
+      // Check if we have existing mock data, if not start fresh generation
+      const existingData = localStorage.getItem("generatedPresentation");
+      if (!existingData) {
+        console.log("🆕 No existing data, starting fresh generation");
+        startGeneration();
+      } else {
+        console.log("📋 Using existing mock data");
+        const mockData = JSON.parse(existingData);
+        const totalSlides =
+          mockData?.data?.slides?.length || mockData?.slides?.length || 5;
+        setTotalSlides(totalSlides);
+        setAllSlidesGenerated(totalSlides);
+        setIsGenerating(false); // ОСТАНАВЛИВАЕМ ГЕНЕРАЦИЮ!
+      }
     }
   };
 
@@ -214,8 +269,10 @@ export const useSlideGeneration = () => {
     generatedSlides.length,
     totalSlides,
     addGeneratedSlide,
+    setAllSlidesGenerated,
     setIsGenerating,
     setShowFeedback,
+    reloadDataFromStorage,
   ]);
 
   return {

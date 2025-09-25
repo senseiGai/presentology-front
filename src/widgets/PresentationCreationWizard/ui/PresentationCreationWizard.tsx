@@ -624,6 +624,46 @@ export const PresentationCreationWizard: React.FC = () => {
                 <button
                   onClick={() => {
                     if (isCompleted) {
+                      // Сохраняем данные в localStorage перед переходом
+                      if (
+                        !brief ||
+                        !deckTitle ||
+                        !uiSlides ||
+                        uiSlides.length === 0
+                      ) {
+                        console.error(
+                          "Missing required data for presentation generation"
+                        );
+                        return;
+                      }
+
+                      const presentationData = {
+                        deckTitle,
+                        uiSlides,
+                        userData: {
+                          topic: brief.topic,
+                          goal: brief.goal,
+                          audience: brief.audience,
+                          expectedAction: brief.expectedAction,
+                          keyIdea: brief.keyIdea,
+                          tones: brief.tones || [],
+                          files: extractedFiles || [],
+                        },
+                        volume: textVolume || "Средний",
+                        imageSource: imageSource || "Смешанный",
+                        seed: 42,
+                        concurrency: 5,
+                      };
+
+                      console.log(
+                        "💾 Saving presentation data to localStorage:",
+                        presentationData
+                      );
+                      localStorage.setItem(
+                        "presentationGenerationData",
+                        JSON.stringify(presentationData)
+                      );
+
                       // Navigate to presentation generation page
                       router.push("/presentation-generation");
                     }

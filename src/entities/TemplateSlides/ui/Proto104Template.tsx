@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { ResizableTextBox } from "@/shared/ui/ResizableTextBox";
-import { ResizableImageBox } from "@/shared/ui/ResizableImageBox";
 import { ResizableTable } from "@/shared/ui/ResizableTable";
 import { EditableText } from "@/shared/ui/EditableText";
 import { EditableTable } from "@/features/TablePanel/ui/EditableTable";

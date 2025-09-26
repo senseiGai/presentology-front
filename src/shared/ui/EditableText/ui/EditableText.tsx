@@ -81,7 +81,7 @@ export const EditableText: React.FC<EditableTextProps> = ({
         "Started dragging text element, initial position:",
         currentPosition
       );
-    }, 150); // 150ms delay before drag starts
+    }, 50); // Уменьшена задержка до 50ms для более отзывчивого перетаскивания
   };
 
   const handleMouseUp = (e: React.MouseEvent) => {
@@ -109,8 +109,8 @@ export const EditableText: React.FC<EditableTextProps> = ({
       const deltaX = e.clientX - dragStart.x;
       const deltaY = e.clientY - dragStart.y;
 
-      // Mark as dragged if we moved more than a few pixels
-      if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+      // Mark as dragged if we moved more than a few pixels (уменьшаем порог)
+      if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1) {
         setHasDragged(true);
       }
 
@@ -119,38 +119,22 @@ export const EditableText: React.FC<EditableTextProps> = ({
       const newX = currentX + deltaX;
       const newY = currentY + deltaY;
 
-      // Slide dimensions
+      // Slide dimensions с увеличенными границами для свободного перетаскивания
       const slideWidth = 759;
       const slideHeight = 427;
 
-      // Get element rotation
-      const rotation = elementStyle.rotation || 0;
+      // Используем очень мягкие ограничения, позволяющие элементам выходить за границы
+      const padding = 200; // Большой отступ для свободы движения
+      const minX = -padding;
+      const maxX = slideWidth + padding;
+      const minY = -padding;
+      const maxY = slideHeight + padding;
 
-      // If element is not rotated, use simple boundary check
-      if (Math.abs(rotation) < 1) {
-        const minX = 0;
-        const maxX = slideWidth - 100; // Assume minimum element width
-        const minY = 0;
-        const maxY = slideHeight - 50; // Assume minimum element height
+      // Применяем мягкие границы без учета размера элемента
+      const boundedX = Math.max(minX, Math.min(maxX, newX));
+      const boundedY = Math.max(minY, Math.min(maxY, newY));
 
-        const boundedX = Math.max(minX, Math.min(maxX, newX));
-        const boundedY = Math.max(minY, Math.min(maxY, newY));
-
-        updateTextElementStyle(elementId, { x: boundedX, y: boundedY });
-      } else {
-        // For rotated elements, use more permissive bounds to avoid getting stuck
-        // Allow the element center to move within a larger area
-        const padding = 100; // Extra padding for rotated elements
-        const minX = -padding;
-        const maxX = slideWidth + padding;
-        const minY = -padding;
-        const maxY = slideHeight + padding;
-
-        const boundedX = Math.max(minX, Math.min(maxX, newX));
-        const boundedY = Math.max(minY, Math.min(maxY, newY));
-
-        updateTextElementStyle(elementId, { x: boundedX, y: boundedY });
-      }
+      updateTextElementStyle(elementId, { x: boundedX, y: boundedY });
 
       setDragStart({ x: e.clientX, y: e.clientY });
     },
@@ -217,10 +201,14 @@ export const EditableText: React.FC<EditableTextProps> = ({
   // Add global mouse event listeners for dragging
   useEffect(() => {
     if (isDragging) {
+      // Устанавливаем глобальный курсор перетаскивания
+      document.body.style.cursor = "grabbing";
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleGlobalMouseUp);
 
       return () => {
+        // Убираем глобальный курсор
+        document.body.style.cursor = "";
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleGlobalMouseUp);
       };
@@ -636,7 +624,7 @@ export const EditableText: React.FC<EditableTextProps> = ({
         minHeight: "1.2em",
         pointerEvents: "auto",
         userSelect: isEditing ? "text" : "none", // Allow text selection only when editing
-        cursor: isEditing ? "text" : isDragging ? "grabbing" : "grab", // Show drag cursor when not editing
+        cursor: isEditing ? "text" : isDragging ? "grabbing" : "move", // Показываем курсор перемещения
         wordWrap: "break-word",
         overflowWrap: "break-word",
         whiteSpace: "pre-wrap", // Preserve formatting but wrap text

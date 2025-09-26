@@ -27,12 +27,10 @@ export const Proto005Template = ({
   >(null);
   const [renderedHtml, setRenderedHtml] = React.useState<string | null>(null);
   const [isLoadingRender, setIsLoadingRender] = React.useState(false);
-  const [isTemplateMode, setIsTemplateMode] = React.useState(true);
   const [renderedSlides, setRenderedSlides] = React.useState<
     Record<number, string>
   >({});
   const [isMounted, setIsMounted] = React.useState(false);
-  const initializedSlidesRef = React.useRef<Set<number>>(new Set());
 
   // Предотвращаем hydration errors
   React.useEffect(() => {
@@ -785,7 +783,7 @@ export const Proto005Template = ({
               onClick={(e) => {
                 handleTextClick(
                   `slide-${slideNumber}-t2-content`,
-                  "{{t2_content}}",
+                  slideData?.text3,
                   e
                 );
               }}
@@ -867,10 +865,8 @@ export const Proto005Template = ({
       );
     }
 
-    // Всегда показываем t2-content элемент, независимо от наличия данных
     {
       const t2ContentPosition = getElementPosition("t2-content");
-      const t2Content = slideData?.t2_content || "{{t2_content}}";
       elements.push(
         <div
           key={`slidedata-${slideNumber}-t2-content-wrapper`}
@@ -891,12 +887,12 @@ export const Proto005Template = ({
           >
             <EditableText
               elementId={`slide-${slideNumber}-t2-content`}
-              initialText={t2Content}
+              initialText={slideData?.text3 || "{{t2_content}}"}
               className="text-[20px] cursor-pointer transition-colors text-white font-bold px-6 py-3 rounded-lg inline-block"
               onClick={(e) => {
                 handleTextClick(
                   `slide-${slideNumber}-t2-content`,
-                  t2Content,
+                  slideData?.text3,
                   e
                 );
               }}

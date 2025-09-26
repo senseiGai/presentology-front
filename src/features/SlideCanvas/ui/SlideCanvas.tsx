@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { SlideContent, getSlideType } from "@/entities/SlideContent";
-import { Proto002Template } from "@/entities/TemplateSlides";
+import { Proto001Template, Proto002Template } from "@/entities/TemplateSlides";
 import { DeleteConfirmationModal } from "@/shared/ui/DeleteConfirmationModal";
 import { SlideTypeChangePopup } from "@/shared/ui/SlideTypeChangePopup/SlideTypeChangePopup";
 import { useSlideTypeChangePopup } from "@/shared/hooks/useSlideTypeChangePopup";
@@ -437,6 +437,14 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
     );
 
     // Используем специфичный компонент шаблона если templateId соответствует
+    if (templateId === "proto_001") {
+      return (
+        <div>
+          <Proto001Template slideNumber={slideNumber} />
+        </div>
+      );
+    }
+
     if (templateId === "proto_002") {
       return (
         <div>

@@ -8,8 +8,8 @@ import { ResizableTable } from "@/shared/ui/ResizableTable";
 import { EditableTable } from "@/features/TablePanel/ui/EditableTable";
 import { ResizableImageBox } from "@/shared/ui/ResizableImageBox";
 import { ResizableInfographicsBox } from "@/shared/ui/ResizableInfographicsBox";
-import { PureTemplateRenderer } from "@/entities/PureTemplateRenderer";
 import { useRenderSlidesWithData } from "@/shared/api/presentation-generation";
+import Image from "next/image";
 
 interface SlideContentProps {
   slideNumber: number;
@@ -121,31 +121,33 @@ export const Proto005Template = ({
         }
       }
 
-      // Image initialization - добавляем изображения из _images массива
-      if (slideData?._images && Array.isArray(slideData._images)) {
-        slideData._images.forEach((imageSrc: string, index: number) => {
-          const imageId = `slide-${slideNumber}-image-${index + 1}`;
-          const existingImage = getImageElement(slideNumber, imageId);
+      // T2 content initialization
+      if (slideData?.t2_content) {
+        const t2ContentId = `slide-${slideNumber}-t2-content`;
+        const currentT2Content = getTextElementContent(t2ContentId);
+        if (!currentT2Content || currentT2Content !== slideData.t2_content) {
+          setTextElementContent(t2ContentId, slideData.t2_content);
+          console.log(
+            `✅ T2 content initialized: ${t2ContentId} = "${slideData.t2_content}"`
+          );
+        }
+      }
 
-          if (!existingImage) {
-            console.log(`🖼️ Adding image ${imageId}:`, imageSrc);
-            addImageElement(slideNumber, imageId, {
-              src: imageSrc,
-              position: { x: 50 + index * 20, y: 50 + index * 20 },
-              width: 200,
-              height: 150,
-            });
-          } else {
-            // Обновляем src если изменился
-            if (existingImage.src !== imageSrc) {
-              console.log(`🖼️ Updating image ${imageId}:`, imageSrc);
-              updateImageElement(slideNumber, imageId, {
-                ...existingImage,
-                src: imageSrc,
-              });
-            }
-          }
-        });
+      // Proto005Template использует первое изображение как фон
+      // Остальные изображения могут быть добавлены как элементы если нужно
+      if (slideData?._images && Array.isArray(slideData._images)) {
+        console.log(
+          `🖼️ Proto005Template: Found ${slideData._images.length} images for slide ${slideNumber}:`,
+          slideData._images
+        );
+
+        // Первое изображение используется как фон (уже обработано выше)
+        // Дополнительные изображения можно добавить как элементы если понадобится
+        if (slideData._images.length > 1) {
+          console.log(
+            `📋 Proto005Template: Additional images available but not used in this template`
+          );
+        }
       }
     },
     [
@@ -182,6 +184,9 @@ export const Proto005Template = ({
 
   // Эффект для инициализации элементов слайда при переключении
   React.useEffect(() => {
+    const generatedPresentationStr = localStorage.getItem(
+      "generatedPresentation"
+    );
     if (generatedPresentationStr) {
       try {
         const generatedPresentation = JSON.parse(generatedPresentationStr);
@@ -228,6 +233,11 @@ export const Proto005Template = ({
 
         const generatedPresentation = JSON.parse(generatedPresentationStr);
         const slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
+        const templateIds = generatedPresentation.data?.templateIds;
+        const templateId =
+          templateIds?.[slideNumber - 1] ||
+          slideData?._template_id ||
+          "proto005";
 
         if (!slideData) {
           console.log(
@@ -243,7 +253,7 @@ export const Proto005Template = ({
 
         const result = await renderSlidesWithDataMutation.mutateAsync({
           slides: [slideData],
-          slideNumbers: [slideNumber],
+          templateIds: [templateId],
         });
 
         console.log(
@@ -251,8 +261,13 @@ export const Proto005Template = ({
           result
         );
 
-        if (result?.renderedSlides?.[slideNumber]) {
-          const htmlContent = result.renderedSlides[slideNumber];
+        // Находим HTML для текущего слайда
+        const currentSlideResult = result.find(
+          (slide) => slide.slideNumber === slideNumber
+        );
+
+        if (currentSlideResult) {
+          const htmlContent = currentSlideResult.html;
           setRenderedHtml(htmlContent);
 
           // Сохраняем в кеш
@@ -310,35 +325,11 @@ export const Proto005Template = ({
         break;
 
       default:
-        // Initialize positions for slide elements from API data structure
-        initializeElementPosition(`slide-${slideNumber}-title`, 40, 40);
-        initializeElementPosition(`slide-${slideNumber}-subtitle`, 40, 80);
-
-        // Initialize text1 elements (both object and string formats)
-        initializeElementPosition(`slide-${slideNumber}-text1-title`, 40, 130);
-        initializeElementPosition(
-          `slide-${slideNumber}-text1-content`,
-          40,
-          160
-        );
-        initializeElementPosition(`slide-${slideNumber}-text1`, 40, 130);
-
-        // Initialize text2 elements (both object and string formats)
-        initializeElementPosition(`slide-${slideNumber}-text2-title`, 40, 220);
-        initializeElementPosition(
-          `slide-${slideNumber}-text2-content`,
-          40,
-          250
-        );
-        initializeElementPosition(`slide-${slideNumber}-text2`, 40, 220);
-
-        // Initialize text3 elements
-        initializeElementPosition(`slide-${slideNumber}-text3-title`, 40, 310);
-        initializeElementPosition(
-          `slide-${slideNumber}-text3-content`,
-          40,
-          340
-        );
+        // Initialize positions for Proto005Template layout
+        initializeElementPosition(`slide-${slideNumber}-title`, 60, 60);
+        initializeElementPosition(`slide-${slideNumber}-subtitle`, 60, 120);
+        initializeElementPosition(`slide-${slideNumber}-t2-content`, 60, 440);
+        initializeElementPosition(`slide-${slideNumber}-t2-content`, 60, 320);
         break;
     }
   }, [slideType, slideNumber, textElementStyles, updateTextElementStyle]);
@@ -659,90 +650,54 @@ export const Proto005Template = ({
     const getElementPosition = (elementType: string): React.CSSProperties => {
       switch (elementType) {
         case "title":
-          // Центрированный заголовок
+          // Заголовок в левом верхнем углу
           return {
             position: "absolute",
-            left: "60px",
-            right: "60px",
-            top: "150px",
-            textAlign: "center",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
+            left: "0px",
+            top: "0px",
+            width: "auto",
+            maxWidth: "calc(100% - 120px)",
+            textAlign: "left",
           };
         case "subtitle":
-          // Центрированный подзаголовок под заголовком
           return {
             position: "absolute",
-            left: "60px",
-            right: "60px",
-            top: "210px",
+            left: "0px",
+            top: "30px",
+            width: "auto",
+            maxWidth: "calc(100% - 120px)",
+            textAlign: "left",
+          };
+        case "t2-content":
+          return {
+            position: "absolute",
+            left: "30px",
+            top: "220px",
             textAlign: "center",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
+            zIndex: 99999,
+            fontSize: "20px",
+            fontWeight: "bold",
           };
         case "text1-title":
-          // Центрированный text1 title
-          return {
-            position: "absolute",
-            left: "60px",
-            right: "60px",
-            top: "270px",
-            textAlign: "center",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          };
         case "text1-content":
-          // Центрированный text1 content
-          return {
-            position: "absolute",
-            left: "60px",
-            right: "60px",
-            top: "310px",
-            textAlign: "center",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          };
         case "text2-title":
-          // Центрированный text2 title
-          return {
-            position: "absolute",
-            left: "60px",
-            right: "60px",
-            top: "370px",
-            textAlign: "center",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          };
         case "text2-content":
-          // Центрированный text2 content
           return {
             position: "absolute",
-            left: "60px",
-            right: "60px",
-            top: "410px",
-            textAlign: "center",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
+            left: "-9999px",
+            visibility: "hidden",
           };
         default:
           return { position: "absolute", left: 0, top: 0 };
       }
     };
 
-    // Если нет данных слайда, показываем плейсхолдеры
     if (!slideData) {
       console.log(
         `⚠️ No slide data found for slide ${slideNumber}, showing placeholders`
       );
       const elements = [];
 
-      // Плейсхолдер для title
       const titlePosition = getElementPosition("title");
       elements.push(
         <div
@@ -761,7 +716,7 @@ export const Proto005Template = ({
             <EditableText
               elementId={`slide-${slideNumber}-title`}
               initialText="{{title}}"
-              className="text-[32px] font-bold cursor-pointer transition-colors text-[#2563EB] text-center w-full"
+              className="text-[32px] font-bold cursor-pointer transition-colors text-[#2563EB]"
               onClick={(e) => {
                 handleTextClick(`slide-${slideNumber}-title`, "{{title}}", e);
               }}
@@ -791,11 +746,46 @@ export const Proto005Template = ({
             <EditableText
               elementId={`slide-${slideNumber}-subtitle`}
               initialText="{{subtitle}}"
-              className="text-[18px] cursor-pointer transition-colors text-gray-600 text-center w-full"
+              className="text-[18px] cursor-pointer transition-colors text-black"
               onClick={(e) => {
                 handleTextClick(
                   `slide-${slideNumber}-subtitle`,
                   "{{subtitle}}",
+                  e
+                );
+              }}
+            />
+          </ResizableTextBox>
+        </div>
+      );
+
+      const t2ContentPosition = getElementPosition("t2-content");
+      elements.push(
+        <div
+          key={`slidedata-${slideNumber}-t2-content-placeholder`}
+          style={t2ContentPosition}
+        >
+          <ResizableTextBox
+            minWidth={200}
+            elementId={`slide-${slideNumber}-t2-content`}
+            isSelected={
+              selectedTextElement === `slide-${slideNumber}-t2-content`
+            }
+            onDelete={handleTextDelete}
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-t2-content`)}
+            onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-t2-content`)}
+            onMoveDown={() =>
+              handleTextMoveDown(`slide-${slideNumber}-t2-content`)
+            }
+          >
+            <EditableText
+              elementId={`slide-${slideNumber}-t2-content`}
+              initialText="{{t2_content}}"
+              className="text-[20px] cursor-pointer transition-colors text-white font-bold px-6 py-3 rounded-lg inline-block"
+              onClick={(e) => {
+                handleTextClick(
+                  `slide-${slideNumber}-t2-content`,
+                  "{{t2_content}}",
                   e
                 );
               }}
@@ -809,7 +799,6 @@ export const Proto005Template = ({
 
     const elements = [];
 
-    // Рендерим title если есть
     if (slideData.title) {
       const titlePosition = getElementPosition("title");
       elements.push(
@@ -829,7 +818,7 @@ export const Proto005Template = ({
             <EditableText
               elementId={`slide-${slideNumber}-title`}
               initialText={slideData.title}
-              className="text-[32px] font-bold cursor-pointer transition-colors text-[#2563EB] text-center w-full"
+              className="text-[32px] font-bold cursor-pointer transition-colors text-[#2563EB]"
               onClick={(e) => {
                 handleTextClick(
                   `slide-${slideNumber}-title`,
@@ -843,7 +832,6 @@ export const Proto005Template = ({
       );
     }
 
-    // Рендерим subtitle если есть
     if (slideData.subtitle) {
       const subtitlePosition = getElementPosition("subtitle");
       elements.push(
@@ -865,7 +853,7 @@ export const Proto005Template = ({
             <EditableText
               elementId={`slide-${slideNumber}-subtitle`}
               initialText={slideData.subtitle}
-              className="text-[18px] cursor-pointer transition-colors text-gray-600 text-center w-full"
+              className="text-[18px] cursor-pointer transition-colors text-black"
               onClick={(e) => {
                 handleTextClick(
                   `slide-${slideNumber}-subtitle`,
@@ -879,150 +867,36 @@ export const Proto005Template = ({
       );
     }
 
-    // Рендерим text1 если есть
-    if (slideData.text1?.t1) {
-      const text1TitlePosition = getElementPosition("text1-title");
+    // Всегда показываем t2-content элемент, независимо от наличия данных
+    {
+      const t2ContentPosition = getElementPosition("t2-content");
+      const t2Content = slideData?.t2_content || "{{t2_content}}";
       elements.push(
         <div
-          key={`slidedata-${slideNumber}-text1-title-wrapper`}
-          style={text1TitlePosition}
+          key={`slidedata-${slideNumber}-t2-content-wrapper`}
+          style={t2ContentPosition}
         >
           <ResizableTextBox
-            elementId={`slide-${slideNumber}-text1-title`}
+            minWidth={200}
+            elementId={`slide-${slideNumber}-t2-content`}
             isSelected={
-              selectedTextElement === `slide-${slideNumber}-text1-title`
+              selectedTextElement === `slide-${slideNumber}-t2-content`
             }
             onDelete={handleTextDelete}
-            onCopy={() => handleTextCopy(`slide-${slideNumber}-text1-title`)}
-            onMoveUp={() =>
-              handleTextMoveUp(`slide-${slideNumber}-text1-title`)
-            }
+            onCopy={() => handleTextCopy(`slide-${slideNumber}-t2-content`)}
+            onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-t2-content`)}
             onMoveDown={() =>
-              handleTextMoveDown(`slide-${slideNumber}-text1-title`)
+              handleTextMoveDown(`slide-${slideNumber}-t2-content`)
             }
           >
             <EditableText
-              elementId={`slide-${slideNumber}-text1-title`}
-              initialText={slideData.text1.t1}
-              className="text-[16px] font-semibold cursor-pointer transition-colors text-center w-full"
+              elementId={`slide-${slideNumber}-t2-content`}
+              initialText={t2Content}
+              className="text-[20px] cursor-pointer transition-colors text-white font-bold px-6 py-3 rounded-lg inline-block"
               onClick={(e) => {
                 handleTextClick(
-                  `slide-${slideNumber}-text1-title`,
-                  slideData.text1.t1,
-                  e
-                );
-              }}
-            />
-          </ResizableTextBox>
-        </div>
-      );
-    }
-
-    if (slideData.text1?.t2) {
-      const text1ContentPosition = getElementPosition("text1-content");
-      elements.push(
-        <div
-          key={`slidedata-${slideNumber}-text1-content-wrapper`}
-          style={text1ContentPosition}
-        >
-          <ResizableTextBox
-            elementId={`slide-${slideNumber}-text1-content`}
-            isSelected={
-              selectedTextElement === `slide-${slideNumber}-text1-content`
-            }
-            onDelete={handleTextDelete}
-            onCopy={() => handleTextCopy(`slide-${slideNumber}-text1-content`)}
-            onMoveUp={() =>
-              handleTextMoveUp(`slide-${slideNumber}-text1-content`)
-            }
-            onMoveDown={() =>
-              handleTextMoveDown(`slide-${slideNumber}-text1-content`)
-            }
-          >
-            <EditableText
-              elementId={`slide-${slideNumber}-text1-content`}
-              initialText={slideData.text1.t2}
-              className="text-[16px] cursor-pointer transition-colors text-center w-full"
-              onClick={(e) => {
-                handleTextClick(
-                  `slide-${slideNumber}-text1-content`,
-                  slideData.text1.t2,
-                  e
-                );
-              }}
-            />
-          </ResizableTextBox>
-        </div>
-      );
-    }
-
-    if (slideData.text2?.t1) {
-      const text2TitlePosition = getElementPosition("text2-title");
-      elements.push(
-        <div
-          key={`slidedata-${slideNumber}-text2-title-wrapper`}
-          style={text2TitlePosition}
-        >
-          <ResizableTextBox
-            elementId={`slide-${slideNumber}-text2-title`}
-            isSelected={
-              selectedTextElement === `slide-${slideNumber}-text2-title`
-            }
-            onDelete={handleTextDelete}
-            onCopy={() => handleTextCopy(`slide-${slideNumber}-text2-title`)}
-            onMoveUp={() =>
-              handleTextMoveUp(`slide-${slideNumber}-text2-title`)
-            }
-            onMoveDown={() =>
-              handleTextMoveDown(`slide-${slideNumber}-text2-title`)
-            }
-          >
-            <EditableText
-              elementId={`slide-${slideNumber}-text2-title`}
-              initialText={slideData.text2.t1}
-              className="text-[16px] font-semibold cursor-pointer transition-colors text-center w-full"
-              onClick={(e) => {
-                handleTextClick(
-                  `slide-${slideNumber}-text2-title`,
-                  slideData.text2.t1,
-                  e
-                );
-              }}
-            />
-          </ResizableTextBox>
-        </div>
-      );
-    }
-
-    if (slideData.text2?.t2) {
-      const text2ContentPosition = getElementPosition("text2-content");
-      elements.push(
-        <div
-          key={`slidedata-${slideNumber}-text2-content-wrapper`}
-          style={text2ContentPosition}
-        >
-          <ResizableTextBox
-            elementId={`slide-${slideNumber}-text2-content`}
-            isSelected={
-              selectedTextElement === `slide-${slideNumber}-text2-content`
-            }
-            onDelete={handleTextDelete}
-            onCopy={() => handleTextCopy(`slide-${slideNumber}-text2-content`)}
-            onMoveUp={() =>
-              handleTextMoveUp(`slide-${slideNumber}-text2-content`)
-            }
-            onMoveDown={() =>
-              handleTextMoveDown(`slide-${slideNumber}-text2-content`)
-            }
-          >
-            <EditableText
-              elementId={`slide-${slideNumber}-text2-content`}
-              initialText={slideData.text2.t2}
-              className="text-[16px] cursor-pointer transition-colors text-center w-full"
-              onClick={(e) => {
-                handleTextClick(
-                  `slide-${slideNumber}-text2-content`,
-                  slideData.text2.t2,
+                  `slide-${slideNumber}-t2-content`,
+                  t2Content,
                   e
                 );
               }}
@@ -1096,10 +970,11 @@ export const Proto005Template = ({
     );
   };
 
-  // Render image elements from store - для Proto005Template не показываем интерактивные изображения
+  // Render image elements from store - для Proto005Template создаем интерактивные изображения
   const renderImageElements = () => {
-    // Проверяем templateId для специального позиционирования
+    // Получаем templateId и backgroundImage для специального позиционирования
     let templateId = null;
+    let backgroundImage = null;
     const generatedPresentationStr = localStorage.getItem(
       "generatedPresentation"
     );
@@ -1107,18 +982,96 @@ export const Proto005Template = ({
       try {
         const generatedPresentation = JSON.parse(generatedPresentationStr);
         const templateIds = generatedPresentation.data?.templateIds;
+        const slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
         templateId = templateIds?.[slideNumber - 1];
+
+        // Получаем фоновое изображение
+        if (
+          slideData?._images &&
+          Array.isArray(slideData._images) &&
+          slideData._images.length > 0
+        ) {
+          backgroundImage = slideData._images[0];
+        }
       } catch (error) {
         console.error("Error parsing generated presentation:", error);
       }
     }
 
-    // proto_005 изображения используются как фон, не как интерактивные элементы
-    if (templateId === "proto_005") {
-      console.log(
-        `🎯 Proto005Template: Skipping interactive images - using as background`
+    const elements = [];
+
+    // Для proto_005 создаем редактируемое фоновое изображение если оно есть
+    console.log(
+      `🔍 Debug renderImageElements: templateId = "${templateId}", backgroundImage = "${backgroundImage}"`
+    );
+
+    if (templateId === "proto_005" && backgroundImage) {
+      console.log(`✅ Creating interactive background for proto_005`);
+      // Ищем существующее фоновое изображение среди элементов
+      let backgroundElementId = null;
+      const currentSlideImages = imageElements[slideNumber] || {};
+
+      // Ищем элемент с фоновым изображением (по src)
+      console.log(`🔍 Looking for existing background in:`, currentSlideImages);
+      for (const [elementId, imageData] of Object.entries(currentSlideImages)) {
+        console.log(
+          `🔍 Checking element ${elementId} with src: "${imageData.src}" vs background: "${backgroundImage}"`
+        );
+        if (imageData.src === backgroundImage) {
+          backgroundElementId = elementId;
+          console.log(`✅ Found existing background element: ${elementId}`);
+
+          // Принудительно исправляем позицию если она неправильная
+          if (imageData.position?.y !== 213 || imageData.position?.x !== 0) {
+            console.log(
+              `🔧 Fixing background position for ${elementId}: current y=${imageData.position?.y}, setting to y=213`
+            );
+            updateImageElement(elementId, slideNumber, {
+              src: backgroundImage,
+              position: { x: 0, y: 213 },
+              width: 759,
+              height: 214,
+            });
+          }
+          break;
+        }
+      }
+
+      // Если нет в store, добавляем
+      if (!backgroundElementId) {
+        console.log(`➕ Creating new background element`);
+        backgroundElementId = addImageElement(
+          slideNumber,
+          { x: 0, y: 213 }, // Позиция - точно нижняя половина слайда (427/2 = 213.5 ≈ 213)
+          { width: 759, height: 214 } // Размеры - нижняя половина слайда
+        );
+
+        // Обновляем элемент с правильным src
+        updateImageElement(backgroundElementId, slideNumber, {
+          src: backgroundImage,
+          position: { x: 0, y: 213 },
+          width: 759,
+          height: 214,
+        });
+
+        console.log(
+          `🎯 Proto005Template: Added background image as editable element with ID: ${backgroundElementId}`
+        );
+      }
+
+      // Рендерим как интерактивный элемент
+      elements.push(
+        <ResizableImageBox
+          key={backgroundElementId}
+          elementId={backgroundElementId}
+          slideNumber={slideNumber}
+          isSelected={selectedImageElement === backgroundElementId}
+          onDelete={() => {
+            deleteImageElement(backgroundElementId, slideNumber);
+            setSelectedImageElement(null);
+          }}
+        />
       );
-      return []; // Пустой массив для proto_005
     }
 
     // Обычная логика для других шаблонов
@@ -1140,7 +1093,8 @@ export const Proto005Template = ({
       );
     }
 
-    return currentSlideImageElements
+    // Добавляем остальные изображения (не фоновые)
+    const otherImageElements = currentSlideImageElements
       .map(([elementId, imageData]) => {
         // Проверяем, что imageData существует и имеет необходимые поля
         if (!imageData || !imageData.position) {
@@ -1173,6 +1127,8 @@ export const Proto005Template = ({
         );
       })
       .filter(Boolean); // Убираем null элементы
+
+    return [...elements, ...otherImageElements];
   };
 
   // Render infographics elements from store
@@ -1239,7 +1195,6 @@ export const Proto005Template = ({
 
     return (
       <>
-        {/* Left guide */}
         <div
           className="absolute pointer-events-none"
           style={{
@@ -1252,20 +1207,7 @@ export const Proto005Template = ({
             zIndex: 998,
           }}
         />
-        {/* Center vertical guide */}
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            left: "50%",
-            top: "0px",
-            width: "1px",
-            height: "100%",
-            background:
-              "repeating-linear-gradient(to bottom, #bba2fe 0px, #bba2fe 4px, transparent 4px, transparent 8px)",
-            zIndex: 998,
-            transform: "translateX(-50%)",
-          }}
-        />
+
         {/* Right guide */}
         <div
           className="absolute pointer-events-none"
@@ -1292,20 +1234,7 @@ export const Proto005Template = ({
             zIndex: 998,
           }}
         />
-        {/* Center horizontal guide */}
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            top: "50%",
-            left: "0px",
-            height: "1px",
-            width: "100%",
-            background:
-              "repeating-linear-gradient(to right, #bba2fe 0px, #bba2fe 4px, transparent 4px, transparent 8px)",
-            zIndex: 998,
-            transform: "translateY(-50%)",
-          }}
-        />
+
         {/* Bottom guide */}
         <div
           className="absolute pointer-events-none"
@@ -1338,7 +1267,7 @@ export const Proto005Template = ({
 
     return (
       <div
-        className="absolute border-2 border-blue-500 bg-blue-200 bg-opacity-20 pointer-events-none"
+        className="absolute   bg-blue-200 bg-opacity-20 pointer-events-none"
         style={{
           left: `${left}px`,
           top: `${top}px`,
@@ -1354,6 +1283,7 @@ export const Proto005Template = ({
     // Only clear selection if clicking on the slide background
     if (e.target === e.currentTarget) {
       clearTextSelection();
+      setSelectedTextElement(null);
       setSelectedImageElement(null);
       setSelectedTableElement(null);
       setSelectedInfographicsElement(null);
@@ -1361,9 +1291,10 @@ export const Proto005Template = ({
   };
 
   // Get background image from slideData
-  let backgroundImage = null;
-  let slideData = null;
-  let templateId = null;
+  let backgroundImage: string | null = null;
+  let slideData: any = null;
+  let templateId: string | null = null;
+  let hasInteractiveBackground = false;
 
   const generatedPresentationStr = localStorage.getItem(
     "generatedPresentation"
@@ -1382,32 +1313,36 @@ export const Proto005Template = ({
         slideData._images.length > 0
       ) {
         backgroundImage = slideData._images[0];
+
+        // Проверяем, есть ли уже интерактивное фоновое изображение
+        if (templateId === "proto_005") {
+          const currentSlideImages = imageElements[slideNumber] || {};
+          for (const [, imageData] of Object.entries(currentSlideImages)) {
+            if (imageData.src === backgroundImage) {
+              hasInteractiveBackground = true;
+              break;
+            }
+          }
+        }
+
+        console.log(
+          `🖼️ Proto005Template: Using background image for slide ${slideNumber}:`,
+          backgroundImage,
+          `Interactive: ${hasInteractiveBackground}`
+        );
+      } else {
+        console.log(
+          `📋 Proto005Template: No background image found for slide ${slideNumber}, using fallback gradient`
+        );
       }
     } catch (error) {
       console.error("Error parsing generated presentation:", error);
     }
   }
 
-  const backgroundStyle = backgroundImage
-    ? {
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }
-    : {
-        // Fallback gradient
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      };
-
   return (
     <div
-      className="slide-canvas relative w-full h-full overflow-hidden cursor-crosshair"
-      style={{
-        width: "860px",
-        height: "484px",
-        ...backgroundStyle,
-      }}
+      className="relative  w-[759px] h-[427px] rounded-[12px] bg-white"
       onClick={handleSlideClick}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -1416,16 +1351,24 @@ export const Proto005Template = ({
       onDoubleClick={handleDoubleClick}
     >
       {/* Render slide data elements */}
-      {renderSlideDataElements()}
+      <div style={{ position: "relative", zIndex: 10 }}>
+        {renderSlideDataElements()}
+      </div>
 
       {/* Render interactive table elements */}
-      {renderTableElements()}
+      <div style={{ position: "relative", zIndex: 3 }}>
+        {renderTableElements()}
+      </div>
 
       {/* Render interactive image elements */}
-      {renderImageElements()}
+      <div style={{ position: "relative", zIndex: 3 }}>
+        {renderImageElements()}
+      </div>
 
       {/* Render interactive infographics elements */}
-      {renderInfographicsElements()}
+      <div style={{ position: "relative", zIndex: 3 }}>
+        {renderInfographicsElements()}
+      </div>
 
       {/* Render alignment guides */}
       {renderAlignmentGuides()}

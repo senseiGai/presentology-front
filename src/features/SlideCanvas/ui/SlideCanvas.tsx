@@ -22,6 +22,7 @@ import GenerationLoaderIcon from "../../../../public/icons/GenerationLoaderIcon"
 import { Proto003Template } from "@/entities/TemplateSlides/ui/Proto003Template";
 import { Proto104Template } from "@/entities/TemplateSlides/ui/Proto104Template";
 import { Proto004Template } from "@/entities/TemplateSlides/ui/Proto004Template";
+import { Proto005Template } from "@/entities/TemplateSlides/ui/Proto005Template";
 interface SlideCanvasProps {
   children?: React.ReactNode;
 }
@@ -470,6 +471,14 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
       return (
         <div>
           <Proto004Template slideNumber={slideNumber} />
+        </div>
+      );
+    }
+
+    if (templateId === "proto_005") {
+      return (
+        <div>
+          <Proto005Template slideNumber={slideNumber} />
         </div>
       );
     }

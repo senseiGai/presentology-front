@@ -152,7 +152,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
           </div>
           <div className="text-[14px] text-[#6B7280] mb-4">
             <span className="text-[#BBA2FE] font-medium text-[47px]">
-              {generatedSlides.length} / {totalSlides}
+              {totalSlides} / {totalSlides}
             </span>
           </div>
         </div>

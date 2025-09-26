@@ -80,7 +80,7 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
     setSelectedTheme(styleId);
     setSelectedStyleIndex(styleIndex);
     setIsSaving(true);
-    
+
     try {
       // Автоматически сохраняем презентацию при выборе стиля
       await handleCreatePresentation();
@@ -177,11 +177,13 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
         <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
           <div className="flex flex-col items-center gap-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#BBA2FE]"></div>
-            <div className="text-[#0B0911] font-medium">Сохраняем презентацию...</div>
+            <div className="text-[#0B0911] font-medium">
+              Сохраняем презентацию...
+            </div>
           </div>
         </div>
       )}
-      
+
       <div className="pt-6 px-10">
         <div className="font-medium text-[#0B0911] text-[24px] w-[356px] mb-[27px]">
           Визуальный стиль

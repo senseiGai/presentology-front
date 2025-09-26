@@ -23,6 +23,7 @@ import { Proto003Template } from "@/entities/TemplateSlides/ui/Proto003Template"
 import { Proto104Template } from "@/entities/TemplateSlides/ui/Proto104Template";
 import { Proto004Template } from "@/entities/TemplateSlides/ui/Proto004Template";
 import { Proto005Template } from "@/entities/TemplateSlides/ui/Proto005Template";
+import { Proto006Template } from "@/entities/TemplateSlides/ui/Proto006Template";
 interface SlideCanvasProps {
   children?: React.ReactNode;
 }
@@ -479,6 +480,14 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
       return (
         <div>
           <Proto005Template slideNumber={slideNumber} />
+        </div>
+      );
+    }
+
+    if (templateId === "proto_006") {
+      return (
+        <div>
+          <Proto006Template slideNumber={slideNumber} />
         </div>
       );
     }

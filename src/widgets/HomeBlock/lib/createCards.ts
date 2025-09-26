@@ -18,7 +18,7 @@ export const createCards = (router: AppRouterInstance) => [
     label: "Улучши файл",
     description: "Загрузи готовую презентацию и ИИ улучшит текст и дизайн",
     image: "/assets/home/home03.png",
-    onClick: () => router.push("/presentation-generation"),
+    onClick: () => router.push("/improving-file-wizard"),
   },
   {
     label: "По брендбуку",

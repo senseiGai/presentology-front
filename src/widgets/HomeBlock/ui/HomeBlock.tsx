@@ -20,7 +20,7 @@ import { PresentationSkeleton } from "@/shared/ui/PresentationSkeleton";
 import { useSubscriptionStore } from "@/shared/stores";
 import { CancelSubPopup, OfferPopup } from "@/entities/SubscriptionPopup";
 import { useSurveyStatus } from "@/shared/hooks/useSurvey";
-import { useUserPresentations } from "@/shared/api/presentations";
+import { usePresentations } from "@/shared/hooks/usePresentations";
 import { formatPresentationsForDisplay } from "@/shared/utils/formatPresentations";
 import { useRouter } from "next/navigation";
 import { showDeletedToast } from "@/shared/lib/toasts";
@@ -43,7 +43,7 @@ export const HomeBlock = () => {
     data: presentationsData,
     isLoading: presentationsLoading,
     error: presentationsError,
-  } = useUserPresentations();
+  } = usePresentations();
 
   const {
     isPremium,
@@ -74,12 +74,20 @@ export const HomeBlock = () => {
     presentationsData,
     presentationsLoading,
     presentationsError,
+    dataType: typeof presentationsData,
+    isArray: Array.isArray(presentationsData),
+    length: presentationsData?.length,
   });
 
   // Форматируем презентации для отображения
-  const formattedPresentations = presentationsData?.presentations
-    ? formatPresentationsForDisplay(presentationsData.presentations)
+  const formattedPresentations = presentationsData
+    ? formatPresentationsForDisplay(presentationsData)
     : [];
+
+  console.log("Formatted Presentations:", {
+    formattedPresentations,
+    count: formattedPresentations.length,
+  });
 
   // Моковые данные для истории платежей
   const paymentHistory: PaymentHistoryItem[] = [

@@ -12,7 +12,7 @@ export const usePresentations = () => {
   return useQuery({
     queryKey: QUERY_KEYS.PRESENTATIONS.LIST,
     queryFn: () => PresentationsApi.getAll(),
-    enabled: !!localStorage.getItem("accessToken"),
+    enabled: true, // Токен проверяется в apiClient interceptor
     staleTime: 1000 * 60 * 5, // 5 минут
   });
 };
@@ -22,7 +22,7 @@ export const usePresentation = (id: string) => {
   return useQuery({
     queryKey: QUERY_KEYS.PRESENTATIONS.DETAIL(id),
     queryFn: () => PresentationsApi.getById(id),
-    enabled: !!id && !!localStorage.getItem("accessToken"),
+    enabled: !!id, // Токен проверяется в apiClient interceptor
     staleTime: 1000 * 60 * 5, // 5 минут
   });
 };

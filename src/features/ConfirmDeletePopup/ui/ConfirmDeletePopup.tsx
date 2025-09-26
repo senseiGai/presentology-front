@@ -2,11 +2,11 @@
 import React, { useEffect } from "react";
 import { useConfirmDeleteStore } from "../model/use-confirm-delete-popup";
 import { X } from "lucide-react";
-import { showDeletedToast } from "@/shared/lib/toasts";
 import { GlassModal } from "@/shared/ui/GlassModal";
 
 export function ConfirmDeleteModal() {
-  const { open, title, description, closeModal } = useConfirmDeleteStore();
+  const { open, title, description, onConfirm, closeModal } =
+    useConfirmDeleteStore();
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -59,13 +59,16 @@ export function ConfirmDeleteModal() {
           </button>
           <button
             onClick={async () => {
-              showDeletedToast({
-                title,
-                onUndo: () => {
-                  console.log("Undo delete presentation:");
-                },
-                durationMs: 5000,
-              });
+              console.log(
+                "Delete confirm button clicked, onConfirm exists:",
+                !!onConfirm
+              );
+              if (onConfirm) {
+                console.log("Executing onConfirm function");
+                await onConfirm();
+                console.log("onConfirm completed");
+              }
+              console.log("Closing modal");
               closeModal();
             }}
             className="h-[52px] rounded-[8px] text-white bg-[#FF514F] hover:bg-[#FF3030] transition-colors cursor-pointer ease-in-out duration-300"

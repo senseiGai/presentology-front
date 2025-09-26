@@ -75,18 +75,29 @@ export const PresentationCard = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              console.log("Delete button clicked for ID:", id);
+
               if (!id) {
                 console.error("No presentation ID available");
                 return;
               }
 
+              console.log(
+                "Opening delete modal for presentation:",
+                label,
+                "with ID:",
+                id
+              );
               openModal({
                 title: label,
                 description:
                   "После удаления восстановить презентацию будет невозможно",
                 onConfirm: async () => {
+                  console.log("Confirming delete for presentation ID:", id);
                   try {
+                    console.log("Calling delete mutation for ID:", id);
                     await deletePresentationMutation.mutateAsync(id);
+                    console.log("Delete mutation completed successfully");
                     showDeletedToast({
                       title: `Презентация "${label}" удалена`,
                       onUndo: () => {

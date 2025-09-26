@@ -102,12 +102,16 @@ export const useCreatePresentationWithData = () => {
 export const deletePresentation = async (
   id: string
 ): Promise<{ message: string }> => {
+  console.log("deletePresentation called with ID:", id);
   try {
+    console.log("Making DELETE request to /presentations/" + id);
     const response = await apiClient.delete<{ message: string }>(
       `/presentations/${id}`
     );
+    console.log("Delete response:", response);
     return response;
   } catch (error) {
+    console.error("Delete presentation API error:", error);
     throw new Error("Failed to delete presentation");
   }
 };
@@ -118,11 +122,24 @@ export const useDeletePresentation = () => {
 
   return useMutation({
     mutationFn: deletePresentation,
-    onSuccess: () => {
-      // Инвалидируем кэш презентаций после удаления
-      queryClient.invalidateQueries({ queryKey: ["presentations"] });
-      // Также инвалидируем все связанные с презентациями запросы
-      queryClient.invalidateQueries({ queryKey: ["presentations", "list"] });
+    onSuccess: (data, variables) => {
+      console.log("Delete successful, invalidating queries...");
+      // Инвалидируем все запросы, которые начинаются с "presentations"
+      queryClient.invalidateQueries({
+        queryKey: ["presentations"],
+        exact: false, // Это важно - инвалидирует все вложенные ключи
+      });
+
+      // Также можно принудительно обновить данные
+      queryClient.refetchQueries({
+        queryKey: ["presentations"],
+        exact: false,
+      });
+
+      console.log("Queries invalidated and refetched");
+    },
+    onError: (error) => {
+      console.error("Delete failed:", error);
     },
   });
 };

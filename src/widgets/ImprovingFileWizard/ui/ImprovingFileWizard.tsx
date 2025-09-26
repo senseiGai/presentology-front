@@ -18,9 +18,7 @@ import PaintIcon from "../../../../public/icons/PainIcon";
 
 import LogoIllustration from "../../../../public/icons/LogoIllustration";
 import { PresentationMascot } from "@/shared/ui/PesentationMascot";
-import GrayFolderIcon from "../../../../public/icons/GrayFolderIcon";
 import BigFolderIcon from "../../../../public/icons/BigFolderIcon";
-import CheckIcon from "../../../../public/icons/CheckIcon";
 import SquareCheckIcon from "../../../../public/icons/SquareCheckIcon";
 import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
 

@@ -118,15 +118,13 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
 
         // 2. Генерируем бриф
         const briefResponse = await generateBriefMutation.mutateAsync({
-          files: extractResponse.data.files,
+          texts: extractResponse.data.files.map((file) => file.text),
         });
 
         // 3. Анализируем структуру
         const structureResponse = await analyzeStructureMutation.mutateAsync({
-          files: extractResponse.data.files,
-        });
-
-        // Обновляем статус файлов на успех
+          texts: extractResponse.data.files.map((file) => file.text),
+        }); // Обновляем статус файлов на успех
         setUploadedFiles((prev) =>
           prev.map((f) => ({ ...f, status: "success" as const, progress: 100 }))
         );

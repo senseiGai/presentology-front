@@ -26,7 +26,7 @@ export interface ExtractFilesResponse {
 }
 
 export interface BriefRequest {
-  files: ExtractedFile[];
+  texts: string[];
 }
 
 export interface BriefResponse {
@@ -41,7 +41,7 @@ export interface BriefResponse {
 }
 
 export interface AnalyzeStructureRequest {
-  files: ExtractedFile[];
+  texts: string[];
 }
 
 export interface AnalyzeStructureResponse {
@@ -104,7 +104,7 @@ const analyzeStructure = async (
 ): Promise<AnalyzeStructureResponse> => {
   try {
     return await apiClient.post<AnalyzeStructureResponse>(
-      "/ai-proxy/openai/analyze-structure",
+      "ai-proxy/openai/analyze-structure",
       request
     );
   } catch (error) {

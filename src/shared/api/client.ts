@@ -12,7 +12,10 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
+    // Убираем дублирующиеся слэши
+    const cleanBaseUrl = this.baseUrl.replace(/\/+$/, "");
+    const cleanEndpoint = endpoint.replace(/^\/+/, "/");
+    const url = `${cleanBaseUrl}${cleanEndpoint}`;
 
     const config: RequestInit = {
       headers: {
@@ -60,20 +63,20 @@ class ApiClient {
 
   private getToken(): string | null {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("auth_token");
+      return localStorage.getItem("accessToken");
     }
     return null;
   }
 
   public setToken(token: string): void {
     if (typeof window !== "undefined") {
-      localStorage.setItem("auth_token", token);
+      localStorage.setItem("accessToken", token);
     }
   }
 
   public removeToken(): void {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("auth_token");
+      localStorage.removeItem("accessToken");
     }
   }
 
@@ -114,7 +117,10 @@ class ApiClient {
     formData: FormData,
     options?: Omit<RequestInit, "body" | "method">
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
+    // Убираем дублирующиеся слэши
+    const cleanBaseUrl = this.baseUrl.replace(/\/+$/, "");
+    const cleanEndpoint = endpoint.replace(/^\/+/, "/");
+    const url = `${cleanBaseUrl}${cleanEndpoint}`;
 
     const config: RequestInit = {
       method: "POST",

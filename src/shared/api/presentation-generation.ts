@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { getAuthToken } from "@/shared/stores/auth.store";
+import { apiClient } from "./client";
 
 // ==================== Базовые типы ====================
 
@@ -17,6 +18,12 @@ export interface FileLiteIn {
   type: string;
   size: number;
   text: string;
+}
+
+// Ответ API для рендера слайдов
+export interface RenderSlidesResponse {
+  success: boolean;
+  renderedSlides: RenderedSlide[];
 }
 
 // Расширенный формат файла для анализа структуры
@@ -1272,37 +1279,16 @@ export const renderSlidesWithData = async (data: {
   slides: SlideRenderData[];
   templateIds: string[];
 }): Promise<RenderedSlide[]> => {
-  const token = getAuthToken();
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://presentology-back-production.up.railway.app";
-
   console.log("🎨 [API] Rendering slides with data", {
     slidesCount: data.slides?.length,
     templateIds: data.templateIds,
-    baseUrl,
   });
 
-  const response = await fetch(`${baseUrl}/ai-proxy/slides/render-with-data`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-    body: JSON.stringify(data),
-  });
+  const result = await apiClient.post<RenderSlidesResponse>(
+    "ai-proxy/slides/render-with-data",
+    data
+  );
 
-  if (!response.ok) {
-    const errorData = await response.text();
-    console.error("❌ [API] Failed to render slides", {
-      status: response.status,
-      statusText: response.statusText,
-      error: errorData,
-    });
-    throw new Error(`Failed to render slides: ${response.statusText}`);
-  }
-
-  const result = await response.json();
   console.log("✅ [API] Slides rendered successfully", {
     success: result.success,
     renderedCount: result.renderedSlides?.length,

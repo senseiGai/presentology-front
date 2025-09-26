@@ -202,9 +202,37 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
         prev.map((f) => ({ ...f, status: "processing" as const, progress: 80 }))
       );
 
-      const structureResponse = await analyzeStructureMutation.mutateAsync({
-        texts: allExtractedFiles.map((file) => file.text),
-      });
+      let structureData = undefined;
+
+      // Анализируем структуру только если есть извлеченные тексты
+      if (allExtractedFiles.length > 0) {
+        const texts = allExtractedFiles
+          .map((file) => file.text)
+          .filter((text) => text && text.trim().length > 0);
+
+        if (texts.length > 0) {
+          try {
+            console.log(
+              "Analyzing structure with texts:",
+              texts.length,
+              "texts"
+            );
+            const structureResponse =
+              await analyzeStructureMutation.mutateAsync({
+                texts,
+              });
+
+            if (structureResponse.success) {
+              structureData = structureResponse.data;
+            }
+          } catch (error) {
+            console.error("Structure analysis failed:", error);
+            // Продолжаем выполнение даже если анализ структуры не удался
+          }
+        } else {
+          console.log("No valid texts found for structure analysis");
+        }
+      }
 
       // Обновляем статус файлов на успех
       setUploadedFiles((prev) =>
@@ -218,9 +246,7 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
         uploadedFiles: filesArray,
         extractedFiles: allExtractedFiles,
         brief: briefData,
-        structure: structureResponse.success
-          ? structureResponse.data
-          : undefined,
+        structure: structureData,
       });
     } catch (error: any) {
       console.error("File processing error:", error);
@@ -234,7 +260,16 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
       if (error.message === "Добавьте хотя бы один файл") {
         alert("Добавьте хотя бы один файл");
       } else {
-        alert("Не удалось обработать файлы. Попробуйте еще раз.");
+        console.error("Detailed error:", {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        alert(
+          `Не удалось обработать файлы: ${
+            error.message || "Неизвестная ошибка"
+          }`
+        );
       }
     }
   };

@@ -27,14 +27,9 @@ export const extractPdfAndGenerateBrief = async (
   });
 
   try {
-    const response = await apiClient.post<PdfExtractAndBriefResponse>(
+    const response = await apiClient.postFormData<PdfExtractAndBriefResponse>(
       "/pdf/extract-and-brief",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+      formData
     );
 
     return response;

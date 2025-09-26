@@ -6,6 +6,7 @@ export interface Presentation {
   title: string;
   description?: string;
   htmlContent: string;
+  type: "GENERATED" | "IMPROVED" | "BRANDBOOK";
   thumbnail?: string;
   isPublic: boolean;
   createdAt: string;

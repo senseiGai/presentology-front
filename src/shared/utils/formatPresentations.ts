@@ -35,17 +35,20 @@ export const formatPresentationsForDisplay = (
       }
     };
 
-    // Определяем тег на основе статуса или других данных
+    // Определяем тег на основе типа презентации
     const getTag = (
       presentation: Presentation
     ): FormattedPresentation["tag"] => {
-      // Пока что возвращаем случайный тег, позже можно добавить логику
-      const tags: FormattedPresentation["tag"][] = [
-        "Сгенерированная",
-        "Улучшенная",
-        "По брендбуку",
-      ];
-      return tags[Math.floor(Math.random() * tags.length)];
+      switch (presentation.type) {
+        case "GENERATED":
+          return "Сгенерированная";
+        case "IMPROVED":
+          return "Улучшенная";
+        case "BRANDBOOK":
+          return "По брендбуку";
+        default:
+          return "Сгенерированная";
+      }
     };
 
     // Используем превью если есть, иначе заглушки

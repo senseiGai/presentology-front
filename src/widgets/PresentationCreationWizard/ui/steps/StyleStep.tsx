@@ -34,6 +34,7 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
 
   const [selectedTemplateIndex, setSelectedTemplateIndex] = useState(0);
   const [selectedStyleIndex, setSelectedStyleIndex] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
   const templates = [
     {
       title: "ЗАГОЛОВОК\nВ ДВЕ СТРОКИ",
@@ -75,8 +76,19 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
     setSelectedTemplate(templateId);
   };
 
-  const handleStyleSelect = (styleId: string) => {
+  const handleStyleSelect = async (styleId: string, styleIndex: number) => {
     setSelectedTheme(styleId);
+    setSelectedStyleIndex(styleIndex);
+    setIsSaving(true);
+    
+    try {
+      // Автоматически сохраняем презентацию при выборе стиля
+      await handleCreatePresentation();
+    } catch (error) {
+      console.error("Error saving presentation:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCreatePresentation = async () => {
@@ -160,6 +172,16 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
 
   return (
     <div className="h-full flex flex-col relative bg-white overflow-y-auto">
+      {/* Loading Overlay */}
+      {isSaving && (
+        <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#BBA2FE]"></div>
+            <div className="text-[#0B0911] font-medium">Сохраняем презентацию...</div>
+          </div>
+        </div>
+      )}
+      
       <div className="pt-6 px-10">
         <div className="font-medium text-[#0B0911] text-[24px] w-[356px] mb-[27px]">
           Визуальный стиль
@@ -168,12 +190,13 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
         <div className="w-[356px] flex flex-col gap-4 pb-4">
           <div
             onClick={() => {
-              setSelectedStyleIndex(0);
-              handleStyleSelect("modern");
+              if (!isSaving) {
+                handleStyleSelect("modern", 0);
+              }
             }}
-            className={`p-4 rounded-lg relative cursor-pointer ${
-              selectedStyleIndex === 0 ? "bg-[#BBA2FE]" : "bg-[#F4F4F4]"
-            }`}
+            className={`p-4 rounded-lg relative ${
+              isSaving ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+            } ${selectedStyleIndex === 0 ? "bg-[#BBA2FE]" : "bg-[#F4F4F4]"}`}
           >
             {selectedStyleIndex === 0 && (
               <div className="absolute top-2 right-2 ">
@@ -214,12 +237,13 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
           {/* Корпоративный */}
           <div
             onClick={() => {
-              setSelectedStyleIndex(1);
-              handleStyleSelect("corporate");
+              if (!isSaving) {
+                handleStyleSelect("corporate", 1);
+              }
             }}
-            className={`p-4 rounded-lg relative cursor-pointer ${
-              selectedStyleIndex === 1 ? "bg-[#BBA2FE]" : "bg-[#F4F4F4]"
-            }`}
+            className={`p-4 rounded-lg relative ${
+              isSaving ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+            } ${selectedStyleIndex === 1 ? "bg-[#BBA2FE]" : "bg-[#F4F4F4]"}`}
           >
             {selectedStyleIndex === 1 && (
               <div className="absolute top-2 right-2  flex items-center justify-center">
@@ -259,12 +283,13 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
           {/* Креативный */}
           <div
             onClick={() => {
-              setSelectedStyleIndex(2);
-              handleStyleSelect("creative");
+              if (!isSaving) {
+                handleStyleSelect("creative", 2);
+              }
             }}
-            className={`p-4 rounded-lg relative cursor-pointer ${
-              selectedStyleIndex === 2 ? "bg-[#BBA2FE]" : "bg-[#F4F4F4]"
-            }`}
+            className={`p-4 rounded-lg relative ${
+              isSaving ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+            } ${selectedStyleIndex === 2 ? "bg-[#BBA2FE]" : "bg-[#F4F4F4]"}`}
           >
             {selectedStyleIndex === 2 && (
               <div className="absolute top-2 right-2  flex items-center justify-center">

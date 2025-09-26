@@ -14,6 +14,7 @@ import {
   useCreateTitleAndSlidesNew,
   useAddSlideToStructureNew,
 } from "@/shared/api/presentation-generation";
+import { useCreatePresentationWithData } from "@/shared/api/presentations";
 import { useWindowWidth } from "@/shared/hooks/useWindowWidth";
 import Image from "next/image";
 
@@ -59,6 +60,9 @@ export const PresentationCreationWizard: React.FC = () => {
   const selectStructureMutation = useSelectStructureNew();
   const createTitleAndSlidesMutation = useCreateTitleAndSlidesNew();
   const addSlideMutation = useAddSlideToStructureNew();
+
+  // Хук для создания презентации в базе данных
+  const createPresentationMutation = useCreatePresentationWithData();
 
   // Local state for template selection
   const [selectedTemplateIndex, setSelectedTemplateIndex] = useState(0);
@@ -622,49 +626,91 @@ export const PresentationCreationWizard: React.FC = () => {
                   </span>
                 </button>
                 <button
-                  onClick={() => {
-                    if (isCompleted) {
-                      // Сохраняем данные в localStorage перед переходом
-                      if (
-                        !brief ||
-                        !deckTitle ||
-                        !uiSlides ||
-                        uiSlides.length === 0
-                      ) {
-                        console.error(
-                          "Missing required data for presentation generation"
-                        );
-                        return;
-                      }
+                  onClick={async () => {
+                    if (
+                      !brief ||
+                      !deckTitle ||
+                      !uiSlides ||
+                      uiSlides.length === 0
+                    ) {
+                      console.error(
+                        "Missing required data for presentation generation"
+                      );
+                      return;
+                    }
 
-                      const presentationData = {
-                        deckTitle,
-                        uiSlides,
-                        userData: {
-                          topic: brief.topic,
-                          goal: brief.goal,
-                          audience: brief.audience,
-                          expectedAction: brief.expectedAction,
-                          keyIdea: brief.keyIdea,
-                          tones: brief.tones || [],
-                          files: extractedFiles || [],
-                        },
-                        volume: textVolume || "Средний",
-                        imageSource: imageSource || "Смешанный",
-                        seed: 42,
-                        concurrency: 5,
-                      };
+                    const presentationData = {
+                      deckTitle,
+                      uiSlides,
+                      userData: {
+                        topic: brief.topic,
+                        goal: brief.goal,
+                        audience: brief.audience,
+                        expectedAction: brief.expectedAction,
+                        keyIdea: brief.keyIdea,
+                        tones: brief.tones || [],
+                        files: extractedFiles || [],
+                      },
+                      volume: textVolume || "Средний",
+                      imageSource: imageSource || "Смешанный",
+                      seed: 42,
+                      concurrency: 5,
+                    };
 
+                    try {
+                      // Создаем уникальный slug на основе заголовка и времени
+                      const slug = `${deckTitle
+                        .toLowerCase()
+                        .replace(/\s+/g, "-")}-${Date.now()}`;
+
+                      // Создаем презентацию в базе данных
+                      const createdPresentation =
+                        await createPresentationMutation.mutateAsync({
+                          title: deckTitle,
+                          description:
+                            brief.topic || "Презентация создана через мастер",
+                          slug,
+                          generatedData: presentationData,
+                          presentationState: {
+                            textElementPositions: {},
+                            textElementContents: {},
+                            textElementStyles: {},
+                            imageElements: {},
+                            tableElements: {},
+                            selectedTemplateIndex,
+                            selectedStyleIndex: 0, // По умолчанию
+                          },
+                          templateIds: ["proto_001"], // По умолчанию
+                          isPublic: false,
+                        });
+
+                      console.log(
+                        "Presentation created in database:",
+                        createdPresentation
+                      );
+
+                      // Сохраняем данные в localStorage с ID презентации
                       console.log(
                         "💾 Saving presentation data to localStorage:",
                         presentationData
                       );
                       localStorage.setItem(
                         "presentationGenerationData",
-                        JSON.stringify(presentationData)
+                        JSON.stringify({
+                          ...presentationData,
+                          presentationId: createdPresentation.id,
+                        })
                       );
 
                       // Navigate to presentation generation page
+                      router.push("/presentation-generation");
+                    } catch (error) {
+                      console.error("Error creating presentation:", error);
+                      // В случае ошибки все равно переходим на страницу генерации
+                      localStorage.setItem(
+                        "presentationGenerationData",
+                        JSON.stringify(presentationData)
+                      );
                       router.push("/presentation-generation");
                     }
                   }}

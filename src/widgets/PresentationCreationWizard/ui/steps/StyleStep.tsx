@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePresentationCreationStore } from "../../model/usePresentationCreationStore";
 import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
+import { useCreatePresentationWithData } from "@/shared/api/presentations";
 import SquareCheckIcon from "../../../../../public/icons/SquareCheckIcon";
 import Image from "next/image";
 
@@ -13,6 +14,9 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
   const router = useRouter();
   const { presentationData, updatePresentationData } =
     usePresentationCreationStore();
+
+  // Хук для создания презентации в базе данных
+  const createPresentationMutation = useCreatePresentationWithData();
 
   // Новое store для workflow
   const {
@@ -75,7 +79,7 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
     setSelectedTheme(styleId);
   };
 
-  const handleCreatePresentation = () => {
+  const handleCreatePresentation = async () => {
     if (!brief || !deckTitle || !uiSlides || uiSlides.length === 0) {
       console.error("Missing required data for presentation generation");
       return;
@@ -102,14 +106,56 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
 
     console.log("Preparing presentation data:", presentationData);
 
-    // Сохраняем данные в localStorage для передачи на страницу генерации
-    localStorage.setItem(
-      "presentationGenerationData",
-      JSON.stringify(presentationData)
-    );
+    try {
+      // Создаем уникальный slug на основе заголовка и времени
+      const slug = `${deckTitle
+        .toLowerCase()
+        .replace(/\s+/g, "-")}-${Date.now()}`;
 
-    // Переходим на страницу редактора слайдов
-    router.push("/presentation-generation");
+      // Создаем презентацию в базе данных
+      const createdPresentation = await createPresentationMutation.mutateAsync({
+        title: deckTitle,
+        description: brief.topic || "Презентация создана через мастер",
+        slug,
+        generatedData: presentationData,
+        presentationState: {
+          textElementPositions: {},
+          textElementContents: {},
+          textElementStyles: {},
+          imageElements: {},
+          tableElements: {},
+          selectedTemplateIndex,
+          selectedStyleIndex,
+          selectedTemplate: selectedTemplate || "proto_001",
+          selectedTheme: selectedTheme || "modern",
+        },
+        templateIds: [selectedTemplate || "proto_001"],
+        isPublic: false,
+      });
+
+      console.log("Presentation created in database:", createdPresentation);
+
+      // Сохраняем данные в localStorage для передачи на страницу генерации
+      localStorage.setItem(
+        "presentationGenerationData",
+        JSON.stringify({
+          ...presentationData,
+          presentationId: createdPresentation.id,
+        })
+      );
+
+      // Переходим на страницу редактора слайдов
+      router.push("/presentation-generation");
+    } catch (error) {
+      console.error("Error creating presentation:", error);
+      // В случае ошибки все равно переходим на страницу генерации
+      // чтобы не блокировать пользователя
+      localStorage.setItem(
+        "presentationGenerationData",
+        JSON.stringify(presentationData)
+      );
+      router.push("/presentation-generation");
+    }
   };
 
   return (

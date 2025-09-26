@@ -29,6 +29,23 @@ export class PresentationsApi {
     return response.data;
   }
 
+  // Создать презентацию с полными данными (сгенерированными данными + кастомным состоянием)
+  static async createWithData(data: {
+    title: string;
+    description?: string;
+    slug: string;
+    generatedData: any;
+    presentationState: any;
+    templateIds?: string[];
+    isPublic?: boolean;
+  }): Promise<Presentation> {
+    const response = await apiClient.post(
+      "/presentations/create-with-data",
+      data
+    );
+    return response.data;
+  }
+
   // Обновить презентацию
   static async update(
     id: string,

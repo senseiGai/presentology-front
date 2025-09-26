@@ -1,8 +1,35 @@
 export type PresentationCreationStep = "file-upload" | "description" | "style";
 
+export interface ExtractedFile {
+  name: string;
+  type: string;
+  size: number;
+  text: string;
+}
+
+export interface BriefData {
+  topic: string;
+  goal: string;
+  audience: string;
+  keyIdea: string;
+  expectedAction: string;
+}
+
+export interface StructureData {
+  hasStructure: boolean;
+  slideCount: number;
+  slides: Array<{
+    title: string;
+    summary: string;
+  }>;
+}
+
 export interface PresentationData {
   // File upload step
   uploadedFiles?: File[];
+  extractedFiles?: ExtractedFile[];
+  brief?: BriefData;
+  structure?: StructureData;
 
   // Description step
   topic: string;

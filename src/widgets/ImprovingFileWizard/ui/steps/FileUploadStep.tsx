@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { usePresentationCreationStore } from "../../model/useImproveFileWizard";
+import {
+  useExtractFiles,
+  useGenerateBrief,
+  useAnalyzeStructure,
+} from "@/shared/api/uploads";
+import type { ExtractedFile } from "../../model/types";
 import BigFolderIcon from "../../../../../public/icons/BigFolderIcon";
 import DocIcon from "../../../../../public/icons/DocIcon";
 import CsvIcon from "../../../../../public/icons/CsvIcon";
@@ -19,7 +25,7 @@ interface FileUploadStepProps {
 
 interface UploadedFile {
   file: File;
-  status: "uploading" | "success" | "error";
+  status: "uploading" | "success" | "error" | "processing";
   progress: number;
 }
 
@@ -49,7 +55,13 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
     usePresentationCreationStore();
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [extractedFiles, setExtractedFiles] = useState<ExtractedFile[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // API хуки
+  const extractFilesMutation = useExtractFiles();
+  const generateBriefMutation = useGenerateBrief();
+  const analyzeStructureMutation = useAnalyzeStructure();
 
   // Initialize uploaded files from store on mount
   useEffect(() => {
@@ -63,47 +75,89 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
     }
   }, [presentationData.uploadedFiles]);
 
-  const handleFileSelect = (files: FileList) => {
-    const newFiles = Array.from(files).map((file) => ({
+  const handleFileSelect = async (files: FileList) => {
+    const filesArray = Array.from(files);
+
+    // Валидация файлов для режима "Улучши файл"
+    if (!isDesignMode) {
+      const invalidFiles = filesArray.filter((file) => {
+        const ext = file.name.toLowerCase().split(".").pop();
+        return ext !== "pdf" && ext !== "pptx";
+      });
+
+      if (invalidFiles.length > 0) {
+        alert(
+          `Для режима "Улучши файл" доступны только PDF и PPTX файлы. Недопустимые файлы: ${invalidFiles
+            .map((f) => f.name)
+            .join(", ")}`
+        );
+        return;
+      }
+    }
+
+    const newFiles = filesArray.map((file) => ({
       file,
       status: "uploading" as const,
-      progress: 0,
+      progress: 50,
     }));
 
     setUploadedFiles((prev) => [...prev, ...newFiles]);
 
-    // Simulate file upload
-    newFiles.forEach((fileObj, index) => {
-      simulateUpload(uploadedFiles.length + index, fileObj.file);
-    });
-  };
+    try {
+      // 1. Извлекаем текст из файлов
+      setUploadedFiles((prev) =>
+        prev.map((f) => ({ ...f, status: "processing" as const, progress: 75 }))
+      );
 
-  const simulateUpload = (fileIndex: number, file: File) => {
-    const interval = setInterval(() => {
-      setUploadedFiles((prev) => {
-        const updated = [...prev];
-        if (updated[fileIndex]) {
-          updated[fileIndex].progress += 20;
+      const extractResponse = await extractFilesMutation.mutateAsync(
+        filesArray
+      );
 
-          if (updated[fileIndex].progress >= 100) {
-            // Randomly set success or error for demo
-            const isSuccess = Math.random() > 0.3; // 70% success rate
-            updated[fileIndex].status = isSuccess ? "success" : "error";
-            updated[fileIndex].progress = 100;
-            clearInterval(interval);
+      if (extractResponse.success) {
+        setExtractedFiles(extractResponse.data.files);
 
-            // Update presentation store with successfully uploaded files
-            if (isSuccess) {
-              const successfulFiles = updated
-                .filter((f) => f.status === "success")
-                .map((f) => f.file);
-              updatePresentationData({ uploadedFiles: successfulFiles });
-            }
-          }
-        }
-        return updated;
-      });
-    }, 200);
+        // 2. Генерируем бриф
+        const briefResponse = await generateBriefMutation.mutateAsync({
+          files: extractResponse.data.files,
+        });
+
+        // 3. Анализируем структуру
+        const structureResponse = await analyzeStructureMutation.mutateAsync({
+          files: extractResponse.data.files,
+        });
+
+        // Обновляем статус файлов на успех
+        setUploadedFiles((prev) =>
+          prev.map((f) => ({ ...f, status: "success" as const, progress: 100 }))
+        );
+
+        // Сохраняем результаты в store
+        updatePresentationData({
+          uploadedFiles: filesArray,
+          extractedFiles: extractResponse.data.files,
+          brief: briefResponse.success ? briefResponse.data : undefined,
+          structure: structureResponse.success
+            ? structureResponse.data
+            : undefined,
+        });
+      } else {
+        throw new Error("Не удалось извлечь текст из файлов");
+      }
+    } catch (error: any) {
+      console.error("File processing error:", error);
+
+      // Обновляем статус файлов на ошибку
+      setUploadedFiles((prev) =>
+        prev.map((f) => ({ ...f, status: "error" as const, progress: 100 }))
+      );
+
+      // Показываем ошибку пользователю
+      if (error.message === "Добавьте хотя бы один файл") {
+        alert("Добавьте хотя бы один файл");
+      } else {
+        alert("Не удалось обработать файлы. Попробуйте еще раз.");
+      }
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -132,6 +186,21 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
 
   const removeFile = (index: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+
+    // Также очищаем извлеченные данные если удаляются все файлы
+    setUploadedFiles((prev) => {
+      const remaining = prev.filter((_, i) => i !== index);
+      if (remaining.length === 0) {
+        setExtractedFiles([]);
+        updatePresentationData({
+          uploadedFiles: [],
+          extractedFiles: [],
+          brief: undefined,
+          structure: undefined,
+        });
+      }
+      return remaining;
+    });
   };
 
   const getFileIcon = (fileName: string) => {
@@ -166,10 +235,14 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
     switch (status) {
       case "uploading":
         return { text: "Загружается", color: "#BEBEC0" };
+      case "processing":
+        return { text: "Обработка", color: "#386AFF" };
       case "success":
         return { text: "Загружено", color: "#00CF1B" };
       case "error":
         return { text: "Ошибка", color: "#FF514F" };
+      default:
+        return { text: "Неизвестно", color: "#BEBEC0" };
     }
   };
 
@@ -177,10 +250,14 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
     switch (status) {
       case "uploading":
         return "#386AFF";
+      case "processing":
+        return "#386AFF";
       case "success":
         return "#00CF1B";
       case "error":
         return "#FF514F";
+      default:
+        return "#BEBEC0";
     }
   };
 
@@ -273,7 +350,8 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {file.status === "uploading" && (
+                    {(file.status === "uploading" ||
+                      file.status === "processing") && (
                       <SandWatchIcon className="size-6" />
                     )}
                     {file.status === "success" && (

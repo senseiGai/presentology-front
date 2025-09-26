@@ -613,8 +613,7 @@ export const PresentationCreationWizard: React.FC = () => {
             <StyleStep onBack={handleBack} />
           </div>
 
-          {/* Bottom Action Buttons */}
-          <div className="bg-white h-[100px] border-t rounded-tl-[16px] rounded-tr-[16px] border-[#f0f0f0] shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)]">
+          <div className="bg-white mx-4 h-[100px] border-t rounded-tl-[16px] rounded-tr-[16px] border-[#f0f0f0] shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)]">
             <div className="flex items-center justify-center h-full px-10">
               <div className="flex gap-2 w-[356px] h-[52px]">
                 <button
@@ -725,7 +724,7 @@ export const PresentationCreationWizard: React.FC = () => {
                   }`}
                 >
                   <span
-                    className={`font-normal text-[18px] ${
+                    className={`font-normal text-[18px] text-nowrap ${
                       isCompleted ? "text-white" : "text-white"
                     }`}
                   >

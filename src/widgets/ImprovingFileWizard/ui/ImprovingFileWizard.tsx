@@ -283,7 +283,7 @@ export const ImprovingFileWizard: React.FC = () => {
           </div>
 
           {/* Bottom Action Buttons */}
-          <div className="bg-white h-[100px] border-t rounded-tl-[16px] rounded-tr-[16px] border-[#f0f0f0] shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)]">
+          <div className="bg-white mx-4 h-[100px] border-t rounded-tl-[16px] rounded-tr-[16px] border-[#f0f0f0] shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)]">
             <div className="flex items-center justify-center h-full px-10">
               <div className="flex gap-2 w-[356px] h-[52px]">
                 <button
@@ -296,7 +296,7 @@ export const ImprovingFileWizard: React.FC = () => {
                 </button>
                 <button
                   onClick={handleNext}
-                  className="flex-1 bg-[#BBA2FE] rounded-lg px-6 py-2 h-[52px] flex items-center justify-center"
+                  className="flex-1 bg-[#BBA2FE] text-nowrap rounded-lg px-6 py-2 h-[52px] flex items-center justify-center"
                 >
                   <span className="font-normal text-white text-[18px]">
                     Создать презентацию

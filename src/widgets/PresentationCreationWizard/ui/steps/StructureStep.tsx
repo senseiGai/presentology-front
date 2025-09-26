@@ -126,7 +126,7 @@ export const StructureStep: React.FC<StructureStepProps> = ({
         </div>
       </div>
 
-      <div className="w-full h-[110px] bg-white rounded-tl-[16px] rounded-tr-[16px] shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)]">
+      <div className="w-full mx-4 h-[110px] bg-white rounded-tl-[16px] rounded-tr-[16px] shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)]">
         <div className="flex items-center justify-center gap-2 mt-6 px-10">
           <button
             onClick={onBack}

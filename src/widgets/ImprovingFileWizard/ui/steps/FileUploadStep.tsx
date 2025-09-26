@@ -528,11 +528,11 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="bg-white border-t border-[#f0f0f0] rounded-tl-[16px] rounded-tr-[16px] shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)] px-10 py-6">
+      <div className="bg-white mx-4 border-t border-[#f0f0f0] rounded-tl-[16px] rounded-tr-[16px] shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)] px-10 py-6">
         <div className="flex gap-2 h-[52px]">
           <button
             onClick={onBack}
-            className="w-[174px] h-[52px] bg-white border border-[#c0c0c1] rounded-[8px] flex items-center justify-center font-['Onest'] text-[#0b0911] text-[18px] leading-[1.2] tracking-[-0.36px] font-normal hover:bg-gray-50 transition-colors"
+            className="flex-1 h-[52px] bg-white border border-[#c0c0c1] rounded-[8px] flex items-center justify-center font-['Onest'] text-[#0b0911] text-[18px] leading-[1.2] tracking-[-0.36px] font-normal hover:bg-gray-50 transition-colors"
           >
             Назад
           </button>

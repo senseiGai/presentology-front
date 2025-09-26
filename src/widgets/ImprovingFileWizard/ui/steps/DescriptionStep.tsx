@@ -58,9 +58,13 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
 
   // Update store whenever form data changes
   useEffect(() => {
-    const goals = selectedGoals.length > 0 ? selectedGoals.join(", ") : customGoal;
-    const audience = selectedAudience.length > 0 ? selectedAudience.join(", ") : customAudience;
-    
+    const goals =
+      selectedGoals.length > 0 ? selectedGoals.join(", ") : customGoal;
+    const audience =
+      selectedAudience.length > 0
+        ? selectedAudience.join(", ")
+        : customAudience;
+
     updatePresentationData({
       topic,
       goal: goals,
@@ -70,7 +74,19 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
       imageSource,
       slideCount: slideCountMode === "auto" ? 8 : customSlideCount,
     });
-  }, [topic, selectedGoals, customGoal, selectedAudience, customAudience, keyIdea, textVolume, imageSource, slideCountMode, customSlideCount, updatePresentationData]);
+  }, [
+    topic,
+    selectedGoals,
+    customGoal,
+    selectedAudience,
+    customAudience,
+    keyIdea,
+    textVolume,
+    imageSource,
+    slideCountMode,
+    customSlideCount,
+    updatePresentationData,
+  ]);
 
   // Options data
   const goalOptions: GoalOption[] = [
@@ -223,11 +239,15 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
 
   const handleNext = () => {
     if (!checkCanProceed()) return;
-    
+
     // Update store with latest data before proceeding
-    const goals = selectedGoals.length > 0 ? selectedGoals.join(", ") : customGoal;
-    const audience = selectedAudience.length > 0 ? selectedAudience.join(", ") : customAudience;
-    
+    const goals =
+      selectedGoals.length > 0 ? selectedGoals.join(", ") : customGoal;
+    const audience =
+      selectedAudience.length > 0
+        ? selectedAudience.join(", ")
+        : customAudience;
+
     updatePresentationData({
       topic,
       goal: goals,
@@ -728,7 +748,7 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="bg-white border-t border-[#f0f0f0] rounded-t-2xl shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)] mx-[11px] px-10 py-6">
+      <div className="bg-white mx-4 border-t border-[#f0f0f0] rounded-t-2xl shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)] mx-[11px] px-10 py-6">
         <div className="flex gap-2">
           <button
             onClick={onBack}

@@ -108,6 +108,50 @@ class ApiClient {
   public async delete<T>(endpoint: string, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, { method: "DELETE", ...options });
   }
+
+  public async postFormData<T>(
+    endpoint: string,
+    formData: FormData,
+    options?: Omit<RequestInit, "body" | "method">
+  ): Promise<T> {
+    const url = `${this.baseUrl}${endpoint}`;
+
+    const config: RequestInit = {
+      method: "POST",
+      body: formData,
+      ...options,
+    };
+
+    // Не устанавливаем Content-Type для FormData - браузер сделает это автоматически с boundary
+    const token = this.getToken();
+    if (token) {
+      config.headers = {
+        ...config.headers,
+        Authorization: `Bearer ${token}`,
+      };
+    }
+
+    try {
+      const response = await fetch(url, config);
+
+      if (!response.ok) {
+        const errorData: ApiError = await response.json().catch(() => ({
+          message: "Network error occurred",
+          statusCode: response.status,
+          error: response.statusText,
+        }));
+
+        throw new Error(errorData.message || "An error occurred");
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("An unexpected error occurred");
+    }
+  }
 }
 
 export const apiClient = new ApiClient();

@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useAuthStore } from "@/shared/stores";
+import { apiClient } from "./client";
 
 export interface UploadResponse {
   success: boolean;
@@ -61,24 +61,7 @@ const uploadFile = async (file: File): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://presentology-back-production.up.railway.app";
-  const token = useAuthStore.getState().accessToken;
-
-  const response = await fetch(`${baseUrl}/uploads/image`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to upload file");
-  }
-
-  return response.json();
+  return apiClient.postFormData<UploadResponse>("/uploads/image", formData);
 };
 
 // API функция для извлечения текста из файлов
@@ -90,75 +73,43 @@ const extractTextFromFiles = async (
     formData.append("files", file);
   });
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://presentology-back-production.up.railway.app";
-  const token = useAuthStore.getState().accessToken;
-
-  const response = await fetch(`${baseUrl}/api/files/extract`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: formData,
-  });
-
-  if (!response.ok) {
-    if (response.status === 400) {
+  try {
+    return await apiClient.postFormData<ExtractFilesResponse>(
+      "/ai-proxy/files/extract",
+      formData
+    );
+  } catch (error: any) {
+    if (error.message.includes("400") || error.message.includes("файл")) {
       throw new Error("Добавьте хотя бы один файл");
     }
     throw new Error("Не удалось обработать файлы");
   }
-
-  return response.json();
 };
 
 // API функция для создания брифа
 const generateBrief = async (request: BriefRequest): Promise<BriefResponse> => {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://presentology-back-production.up.railway.app";
-  const token = useAuthStore.getState().accessToken;
-
-  const response = await fetch(`${baseUrl}/api/openai/brief`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(request),
-  });
-
-  if (!response.ok) {
+  try {
+    return await apiClient.post<BriefResponse>(
+      "/ai-proxy/openai/brief",
+      request
+    );
+  } catch (error) {
     throw new Error("Не удалось создать бриф");
   }
-
-  return response.json();
 };
 
 // API функция для анализа структуры
 const analyzeStructure = async (
   request: AnalyzeStructureRequest
 ): Promise<AnalyzeStructureResponse> => {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://presentology-back-production.up.railway.app";
-  const token = useAuthStore.getState().accessToken;
-
-  const response = await fetch(`${baseUrl}/api/openai/analyze-structure`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(request),
-  });
-
-  if (!response.ok) {
+  try {
+    return await apiClient.post<AnalyzeStructureResponse>(
+      "/ai-proxy/openai/analyze-structure",
+      request
+    );
+  } catch (error) {
     throw new Error("Не удалось проанализировать структуру");
   }
-
-  return response.json();
 };
 
 // React Query хуки

@@ -92,6 +92,9 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
   };
 
   const handleCreatePresentation = async () => {
+    // Удаляем предыдущую сгенерированную презентацию перед созданием новой
+    localStorage.removeItem("generatedPresentation");
+
     if (!brief || !deckTitle || !uiSlides || uiSlides.length === 0) {
       console.error("Missing required data for presentation generation");
       return;

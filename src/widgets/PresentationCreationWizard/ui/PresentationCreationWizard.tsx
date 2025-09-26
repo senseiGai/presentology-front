@@ -627,6 +627,9 @@ export const PresentationCreationWizard: React.FC = () => {
                 </button>
                 <button
                   onClick={async () => {
+                    // Удаляем предыдущую сгенерированную презентацию перед созданием новой
+                    localStorage.removeItem("generatedPresentation");
+
                     if (
                       !brief ||
                       !deckTitle ||

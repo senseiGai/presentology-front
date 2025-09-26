@@ -11,6 +11,9 @@ export default function PresentationCreation() {
   const [isAddSlideModalOpen, setIsAddSlideModalOpen] = useState(false);
 
   const handleAddSlide = (slideText: string) => {
+    // Удаляем предыдущую сгенерированную презентацию перед созданием новой
+    localStorage.removeItem("generatedPresentation");
+
     // TODO: Интегрировать с новым flow store если нужно
     console.log("Adding slide:", slideText);
     setIsAddSlideModalOpen(false);

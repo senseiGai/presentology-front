@@ -7,6 +7,7 @@ import {
   useAnalyzeStructure,
 } from "@/shared/api/uploads";
 import type { ExtractedFile } from "../../model/types";
+import { useExtractPdfAndGenerateBrief } from "@/shared/api/pdfProcessing";
 import BigFolderIcon from "../../../../../public/icons/BigFolderIcon";
 import DocIcon from "../../../../../public/icons/DocIcon";
 import CsvIcon from "../../../../../public/icons/CsvIcon";
@@ -62,6 +63,28 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
   const extractFilesMutation = useExtractFiles();
   const generateBriefMutation = useGenerateBrief();
   const analyzeStructureMutation = useAnalyzeStructure();
+  const pdfExtractAndBriefMutation = useExtractPdfAndGenerateBrief();
+
+  // Функция для разделения файлов по типам
+  const categorizeFiles = (
+    files: File[]
+  ): { pdfFiles: File[]; otherFiles: File[] } => {
+    const pdfFiles: File[] = [];
+    const otherFiles: File[] = [];
+
+    files.forEach((file) => {
+      if (
+        file.type === "application/pdf" ||
+        file.name.toLowerCase().endsWith(".pdf")
+      ) {
+        pdfFiles.push(file);
+      } else {
+        otherFiles.push(file);
+      }
+    });
+
+    return { pdfFiles, otherFiles };
+  };
 
   // Initialize uploaded files from store on mount
   useEffect(() => {
@@ -104,43 +127,101 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
     setUploadedFiles((prev) => [...prev, ...newFiles]);
 
     try {
-      // 1. Извлекаем текст из файлов
+      // 1. Разделяем файлы по типам
       setUploadedFiles((prev) =>
-        prev.map((f) => ({ ...f, status: "processing" as const, progress: 75 }))
+        prev.map((f) => ({ ...f, status: "processing" as const, progress: 25 }))
       );
 
-      const extractResponse = await extractFilesMutation.mutateAsync(
-        filesArray
-      );
+      const { pdfFiles, otherFiles } = categorizeFiles(filesArray);
+      let allExtractedFiles: ExtractedFile[] = [];
+      let briefData: any = undefined;
 
-      if (extractResponse.success) {
-        setExtractedFiles(extractResponse.data.files);
-
-        // 2. Генерируем бриф
-        const briefResponse = await generateBriefMutation.mutateAsync({
-          texts: extractResponse.data.files.map((file) => file.text),
-        });
-
-        // 3. Анализируем структуру
-        const structureResponse = await analyzeStructureMutation.mutateAsync({
-          texts: extractResponse.data.files.map((file) => file.text),
-        }); // Обновляем статус файлов на успех
+      // 2. Обрабатываем PDF файлы через специальный эндпоинт
+      if (pdfFiles.length > 0) {
         setUploadedFiles((prev) =>
-          prev.map((f) => ({ ...f, status: "success" as const, progress: 100 }))
+          prev.map((f) => ({
+            ...f,
+            status: "processing" as const,
+            progress: 40,
+          }))
         );
 
-        // Сохраняем результаты в store
-        updatePresentationData({
-          uploadedFiles: filesArray,
-          extractedFiles: extractResponse.data.files,
-          brief: briefResponse.success ? briefResponse.data : undefined,
-          structure: structureResponse.success
-            ? structureResponse.data
-            : undefined,
-        });
-      } else {
-        throw new Error("Не удалось извлечь текст из файлов");
+        const pdfResponse = await pdfExtractAndBriefMutation.mutateAsync(
+          pdfFiles
+        );
+
+        if (pdfResponse.success) {
+          // Создаем ExtractedFile объекты из ответа
+          const pdfExtractedFiles: ExtractedFile[] =
+            pdfResponse.data.extractedTexts.map(
+              (text: string, index: number) => ({
+                name: pdfFiles[index]?.name || `pdf-file-${index + 1}.pdf`,
+                type: "application/pdf",
+                size: pdfFiles[index]?.size || 0,
+                text: text,
+              })
+            );
+
+          allExtractedFiles.push(...pdfExtractedFiles);
+          briefData = pdfResponse.data.brief;
+        }
       }
+
+      // 3. Обрабатываем остальные файлы через обычный эндпоинт
+      if (otherFiles.length > 0) {
+        setUploadedFiles((prev) =>
+          prev.map((f) => ({
+            ...f,
+            status: "processing" as const,
+            progress: 60,
+          }))
+        );
+
+        const extractResponse = await extractFilesMutation.mutateAsync(
+          otherFiles
+        );
+
+        if (extractResponse.success) {
+          allExtractedFiles.push(...extractResponse.data.files);
+
+          // Если у нас еще нет брифа (не было PDF файлов), генерируем его
+          if (!briefData) {
+            const briefResponse = await generateBriefMutation.mutateAsync({
+              texts: extractResponse.data.files.map((file) => file.text),
+            });
+
+            if (briefResponse.success) {
+              briefData = briefResponse.data;
+            }
+          }
+        }
+      }
+
+      // 4. Анализируем структуру всех файлов
+      setUploadedFiles((prev) =>
+        prev.map((f) => ({ ...f, status: "processing" as const, progress: 80 }))
+      );
+
+      const structureResponse = await analyzeStructureMutation.mutateAsync({
+        texts: allExtractedFiles.map((file) => file.text),
+      });
+
+      // Обновляем статус файлов на успех
+      setUploadedFiles((prev) =>
+        prev.map((f) => ({ ...f, status: "success" as const, progress: 100 }))
+      );
+
+      setExtractedFiles(allExtractedFiles);
+
+      // Сохраняем результаты в store
+      updatePresentationData({
+        uploadedFiles: filesArray,
+        extractedFiles: allExtractedFiles,
+        brief: briefData,
+        structure: structureResponse.success
+          ? structureResponse.data
+          : undefined,
+      });
     } catch (error: any) {
       console.error("File processing error:", error);
 

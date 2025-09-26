@@ -114,6 +114,9 @@ export const useSlideGeneration = () => {
     console.log("📥 briefData:", briefData);
 
     try {
+      // Удаляем предыдущую сгенерированную презентацию перед созданием новой
+      localStorage.removeItem("generatedPresentation");
+
       console.log("🔄 Setting isGenerating to true");
       setIsGenerating(true);
 

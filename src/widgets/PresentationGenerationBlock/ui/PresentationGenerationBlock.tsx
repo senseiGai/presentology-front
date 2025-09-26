@@ -405,15 +405,16 @@ export const PresentationGenerationBlock: React.FC<
 
         try {
           // Вызываем API генерации презентации
+          // Исключаем presentationId из данных для API
+          const { presentationId, ...apiData } = presentationData;
           console.log("🚀 Calling generateSlidesMutation with data:", {
-            ...presentationData,
-            uiSlides: presentationData.uiSlides?.length || 0,
+            ...apiData,
+            uiSlides: apiData.uiSlides?.length || 0,
           });
           console.log("📊 Full presentation data:", presentationData);
+          console.log("📊 API data (without presentationId):", apiData);
 
-          const result = await generateSlidesMutation.mutateAsync(
-            presentationData
-          );
+          const result = await generateSlidesMutation.mutateAsync(apiData);
 
           console.log("✅ Presentation generated successfully:", result);
 

@@ -12,7 +12,7 @@ export const createCards = (router: AppRouterInstance) => [
     label: "Сделай дизайн",
     description: "Загрузи свой текст. ИИ превратит его в стильную презентацию",
     image: "/assets/home/home02.png",
-    onClick: () => router.push("/design-from-text"),
+    onClick: () => router.push("/improving-file-wizard?mode=design"),
   },
   {
     label: "Улучши файл",

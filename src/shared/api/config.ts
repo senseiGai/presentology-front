@@ -165,6 +165,8 @@ export const API_ENDPOINTS = {
     GET_BY_ID: (id: string) => `/presentations/${id}`,
     UPDATE: (id: string) => `/presentations/${id}`,
     DELETE: (id: string) => `/presentations/${id}`,
+    DOWNLOAD_PPTX: (id: string) => `/presentations/${id}/download/pptx`,
+    DOWNLOAD_PPTX_CUSTOM: (id: string) => `/presentations/${id}/download/pptx`,
   },
   AI_PROXY: {
     STRUCTURE: {

@@ -14,6 +14,7 @@ import {
   useGenerateSlidesForStructureNew,
   getMultipleTemplates,
 } from "@/shared/api/presentation-generation";
+import { PresentationsApi } from "@/shared/api/presentations.api";
 import {
   useMixedImageGeneration,
   useFluxImageGeneration,
@@ -26,7 +27,13 @@ import GrayTableIcon from "../../../../public/icons/GrayTableIcon";
 import GraphIcon from "../../../../public/icons/GraphIcon";
 import { Mascot } from "@/shared/ui/Mascot";
 
-export const PresentationGenerationBlock = () => {
+interface PresentationGenerationBlockProps {
+  presentationSlug?: string;
+}
+
+export const PresentationGenerationBlock: React.FC<
+  PresentationGenerationBlockProps
+> = ({ presentationSlug }) => {
   const {
     currentSlide,
     generatedSlides,
@@ -537,6 +544,80 @@ export const PresentationGenerationBlock = () => {
     // Implement download logic
   };
 
+  const handleDownloadPPTX = async () => {
+    try {
+      console.log("Downloading PPTX with customization...");
+
+      // Получаем данные презентации из localStorage
+      const generatedPresentationStr = localStorage.getItem(
+        "generatedPresentation"
+      );
+      if (!generatedPresentationStr) {
+        console.error("No presentation data found");
+        return;
+      }
+
+      const presentationData = JSON.parse(generatedPresentationStr);
+      const presentationId = presentationData.data?.id || presentationData.id;
+
+      if (!presentationId) {
+        console.error("Presentation ID not found");
+        return;
+      }
+
+      // Получаем актуальные данные из store (включая кастомизацию)
+      const storeState = usePresentationStore.getState();
+
+      // Собираем полные данные презентации с кастомизацией
+      const customPresentationData = {
+        // Оригинальные данные API
+        ...presentationData,
+
+        // Кастомизированные элементы из store
+        textElementContents: storeState.textElementContents,
+        textElementPositions: storeState.textElementPositions,
+        textElementStyles: storeState.textElementStyles,
+        imageElements: storeState.imageElements,
+        tableElements: storeState.tableElements,
+        infographicsElements: storeState.infographicsElements,
+
+        // Метаданные
+        generatedSlides: storeState.generatedSlides,
+        totalSlides: storeState.totalSlides,
+        currentSlide: storeState.currentSlide,
+
+        // Дополнительные настройки
+        zoomLevel: storeState.zoomLevel,
+        exportTimestamp: new Date().toISOString(),
+      };
+
+      console.log("Custom presentation data for PPTX:", customPresentationData);
+
+      // Вызываем API для скачивания PPTX с кастомными данными
+      const response = await PresentationsApi.downloadPPTXWithCustomData(
+        presentationId,
+        customPresentationData
+      );
+
+      // Создаем ссылку для скачивания
+      const url = window.URL.createObjectURL(response);
+      const link = document.createElement("a");
+      link.href = url;
+      const filename = `${
+        presentationData.deckTitle || "presentation"
+      }_${new Date().getTime()}.pptx`;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log("PPTX download completed with customization");
+    } catch (error) {
+      console.error("Error downloading PPTX:", error);
+    }
+  };
+
   const handleShare = () => {
     console.log("Share presentation");
     // Implement share logic
@@ -583,6 +664,7 @@ export const PresentationGenerationBlock = () => {
         <PresentationHeader
           onBack={handleBack}
           onDownload={handleDownload}
+          onDownloadPPTX={handleDownloadPPTX}
           onChangeDesign={handleChangeDesign}
           onShare={handleShare}
           isGenerating={isGenerating}

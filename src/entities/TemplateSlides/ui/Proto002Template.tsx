@@ -55,7 +55,7 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
   React.useEffect(() => {
     if (titleRef && !isManuallyMoved.subtitle && !isManuallyMoved.title) {
       const titleHeight = titleRef.offsetHeight;
-      const newSubtitleTop = titlePosition.top + titleHeight + 60; // 20px отступ
+      const newSubtitleTop = titlePosition.top + titleHeight + 70; // 20px отступ
       setDynamicSubtitlePosition({
         left: baseSubtitlePosition.left,
         top: newSubtitleTop,

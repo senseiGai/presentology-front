@@ -151,6 +151,12 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
         );
 
         if (pdfResponse.success) {
+          console.log("📄 PDF processing successful:", {
+            extractedTexts: pdfResponse.data.extractedTexts,
+            brief: pdfResponse.data.brief,
+            filesProcessed: pdfResponse.data.filesProcessed,
+          });
+
           // Создаем ExtractedFile объекты из ответа
           const pdfExtractedFiles: ExtractedFile[] =
             pdfResponse.data.extractedTexts.map(
@@ -162,8 +168,20 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
               })
             );
 
+          console.log("📁 Created PDF extracted files:", pdfExtractedFiles);
+
           allExtractedFiles.push(...pdfExtractedFiles);
           briefData = pdfResponse.data.brief;
+
+          console.log("📚 All extracted files after PDF processing:", {
+            count: allExtractedFiles.length,
+            files: allExtractedFiles.map((f) => ({
+              name: f.name,
+              textLength: f.text?.length,
+            })),
+          });
+        } else {
+          console.error("❌ PDF processing failed:", pdfResponse);
         }
       }
 
@@ -204,34 +222,59 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
 
       let structureData = undefined;
 
-      // Анализируем структуру только если есть извлеченные тексты
-      if (allExtractedFiles.length > 0) {
-        const texts = allExtractedFiles
-          .map((file) => file.text)
-          .filter((text) => text && text.trim().length > 0);
+      console.log("📊 Structure Analysis Debug:", {
+        allExtractedFilesCount: allExtractedFiles.length,
+        allExtractedFiles: allExtractedFiles.map((f) => ({
+          name: f.name,
+          textLength: f.text?.length || 0,
+          textPreview: f.text?.substring(0, 100) + "...",
+        })),
+      });
 
-        if (texts.length > 0) {
+      // Анализируем структуру только если есть извлеченные файлы
+      if (allExtractedFiles.length > 0) {
+        const validFiles = allExtractedFiles.filter(
+          (file) => file.text && file.text.trim().length > 0
+        );
+
+        console.log("📋 Files for structure analysis:", {
+          extractedFilesCount: validFiles.length,
+          filesPreview: validFiles.map(
+            (file, i) => `${i}: ${file.name} (${file.text.substring(0, 50)}...)`
+          ),
+        });
+
+        if (validFiles.length > 0) {
           try {
             console.log(
-              "Analyzing structure with texts:",
-              texts.length,
-              "texts"
+              "🔍 Starting structure analysis with",
+              validFiles.length,
+              "files"
             );
             const structureResponse =
               await analyzeStructureMutation.mutateAsync({
-                texts,
+                files: allExtractedFiles,
               });
+
+            console.log("✅ Structure analysis response:", structureResponse);
 
             if (structureResponse.success) {
               structureData = structureResponse.data;
             }
           } catch (error) {
-            console.error("Structure analysis failed:", error);
+            console.error("❌ Structure analysis failed:", error);
+            console.error("Error details:", {
+              message: error instanceof Error ? error.message : "Unknown error",
+              name: error instanceof Error ? error.name : "Unknown",
+              stack: error instanceof Error ? error.stack : "No stack trace",
+            });
             // Продолжаем выполнение даже если анализ структуры не удался
           }
         } else {
-          console.log("No valid texts found for structure analysis");
+          console.log("⚠️ No valid files found for structure analysis");
         }
+      } else {
+        console.log("⚠️ No extracted files available for structure analysis");
       }
 
       // Обновляем статус файлов на успех

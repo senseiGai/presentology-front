@@ -41,7 +41,7 @@ export interface BriefResponse {
 }
 
 export interface AnalyzeStructureRequest {
-  texts: string[];
+  files: ExtractedFile[];
 }
 
 export interface AnalyzeStructureResponse {
@@ -102,12 +102,16 @@ const generateBrief = async (request: BriefRequest): Promise<BriefResponse> => {
 const analyzeStructure = async (
   request: AnalyzeStructureRequest
 ): Promise<AnalyzeStructureResponse> => {
+  console.log("🔍 Calling analyzeStructure API with request:", request);
   try {
-    return await apiClient.post<AnalyzeStructureResponse>(
-      "ai-proxy/openai/analyze-structure",
+    const response = await apiClient.post<AnalyzeStructureResponse>(
+      "/ai-proxy/openai/analyze-structure",
       request
     );
+    console.log("✅ analyzeStructure API response:", response);
+    return response;
   } catch (error) {
+    console.error("❌ analyzeStructure API error:", error);
     throw new Error("Не удалось проанализировать структуру");
   }
 };

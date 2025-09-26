@@ -3,11 +3,11 @@ import axios from "axios";
 import { useAuthStore, forceLogout } from "@/shared/stores";
 
 export const API_BASE_URL =
-  "https://presentology-back-production.up.railway.app/";
+  "https://presentology-back-production.up.railway.app";
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 60000, // Увеличиваем до 60 секунд для AI операций
   headers: {
     "Content-Type": "application/json",
   },
@@ -15,17 +15,6 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    // Middleware для удаления двойных слэшей из URL
-    if (config.url) {
-      // Заменяем все двойные слэши на одинарные, кроме протокола (http:// или https://)
-      config.url = config.url.replace(/([^:]\/)\/+/g, "$1");
-    }
-
-    // Аналогично для baseURL, если он есть
-    if (config.baseURL) {
-      config.baseURL = config.baseURL.replace(/([^:]\/)\/+/g, "$1");
-    }
-
     // Получаем токен из Zustand store
     const token = useAuthStore.getState().accessToken;
     console.log(
@@ -33,6 +22,10 @@ apiClient.interceptors.request.use(
       token ? "Token exists" : "No token"
     );
     console.log("🔗 [API Request] Original URL:", config.url);
+
+    // Логируем полный URL для отладки
+    const fullUrl = `${config.baseURL}${config.url}`;
+    console.log("🌐 [API Request] Full URL:", fullUrl);
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

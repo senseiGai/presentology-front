@@ -37,11 +37,41 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
 
   const [isDragging, setIsDragging] = React.useState(false);
   const [slideData, setSlideData] = React.useState<any>(null);
+  const [titleRef, setTitleRef] = React.useState<HTMLDivElement | null>(null);
+  const [isManuallyMoved, setIsManuallyMoved] = React.useState({
+    title: false,
+    subtitle: false,
+  });
 
   // Позиции элементов
   const titlePosition = { left: -20, top: 95 };
-  const subtitlePosition = { left: -20, top: 165 };
+  const baseSubtitlePosition = { left: -20, top: 165 };
   const text2Position = { left: 20, top: 350 };
+
+  // Динамический расчет позиции subtitle относительно title
+  const [dynamicSubtitlePosition, setDynamicSubtitlePosition] =
+    React.useState(baseSubtitlePosition);
+
+  React.useEffect(() => {
+    if (titleRef && !isManuallyMoved.subtitle && !isManuallyMoved.title) {
+      const titleHeight = titleRef.offsetHeight;
+      const newSubtitleTop = titlePosition.top + titleHeight + 60; // 20px отступ
+      setDynamicSubtitlePosition({
+        left: baseSubtitlePosition.left,
+        top: newSubtitleTop,
+      });
+    }
+  }, [
+    slideData?.title,
+    titleRef,
+    isManuallyMoved.title,
+    isManuallyMoved.subtitle,
+  ]);
+
+  const subtitlePosition =
+    isManuallyMoved.subtitle || isManuallyMoved.title
+      ? baseSubtitlePosition
+      : dynamicSubtitlePosition;
 
   // Загружаем данные слайда
   React.useEffect(() => {
@@ -54,6 +84,8 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
         const currentSlideData =
           generatedPresentation.data?.slides?.[slideNumber - 1];
         setSlideData(currentSlideData);
+        // Сбрасываем состояние ручного перемещения при смене слайда
+        setIsManuallyMoved({ title: false, subtitle: false });
         console.log(
           `🎨 Proto002Template - Loaded slide ${slideNumber}:`,
           currentSlideData
@@ -256,6 +288,7 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
       {/* Title - полная ширина сверху */}
       {slideData.title && (
         <div
+          ref={setTitleRef}
           style={{
             position: "absolute",
             left: `${titlePosition.left}px`,
@@ -270,8 +303,14 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
             )}
             onDelete={handleTextDelete}
             onCopy={() => handleTextCopy(`slide-${slideNumber}-title`)}
-            onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-title`)}
-            onMoveDown={() => handleTextMoveDown(`slide-${slideNumber}-title`)}
+            onMoveUp={() => {
+              handleTextMoveUp(`slide-${slideNumber}-title`);
+              setIsManuallyMoved((prev) => ({ ...prev, title: true }));
+            }}
+            onMoveDown={() => {
+              handleTextMoveDown(`slide-${slideNumber}-title`);
+              setIsManuallyMoved((prev) => ({ ...prev, title: true }));
+            }}
           >
             <EditableText
               elementId={`slide-${slideNumber}-title`}
@@ -306,10 +345,14 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
             )}
             onDelete={handleTextDelete}
             onCopy={() => handleTextCopy(`slide-${slideNumber}-subtitle`)}
-            onMoveUp={() => handleTextMoveUp(`slide-${slideNumber}-subtitle`)}
-            onMoveDown={() =>
-              handleTextMoveDown(`slide-${slideNumber}-subtitle`)
-            }
+            onMoveUp={() => {
+              handleTextMoveUp(`slide-${slideNumber}-subtitle`);
+              setIsManuallyMoved((prev) => ({ ...prev, subtitle: true }));
+            }}
+            onMoveDown={() => {
+              handleTextMoveDown(`slide-${slideNumber}-subtitle`);
+              setIsManuallyMoved((prev) => ({ ...prev, subtitle: true }));
+            }}
           >
             <EditableText
               elementId={`slide-${slideNumber}-subtitle`}

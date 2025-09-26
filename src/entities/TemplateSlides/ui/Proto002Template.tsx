@@ -88,9 +88,9 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
               ...(state.imageElements[slideNumber] || {}),
               [elementId]: {
                 id: elementId,
-                position: { x: 430, y: 130 }, // Позиция относительно слайда (не контейнера)
-                width: 280, // Почти вся доступная ширина (720 - 430 - 10px отступ)
-                height: 260, // Почти вся доступная высота (405 - 130 - 15px отступ)
+                position: { x: 340, y: 0 }, // Позиция относительно слайда (не контейнера)
+                width: 380, // Почти вся доступная ширина (720 - 430 - 10px отступ)
+                height: 405, // Почти вся доступная высота (405 - 130 - 15px отступ)
                 placeholder: false,
                 alt: "Proto002 Image",
                 zIndex: 2,

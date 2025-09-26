@@ -166,20 +166,21 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
       const slideHeight = 427;
 
       if (isDragging) {
-        // Use initial position + delta for smooth dragging
-        const newX = Math.max(
-          0,
-          Math.min(initialPosition.x + deltaX, slideWidth - imageElement.width)
-        );
-        const newY = Math.max(
-          0,
-          Math.min(
-            initialPosition.y + deltaY,
-            slideHeight - imageElement.height
-          )
-        );
+        // Calculate new position with slide boundary constraints
+        const newX = initialPosition.x + deltaX;
+        const newY = initialPosition.y + deltaY;
+
+        // Constrain within slide boundaries (759x427)
+        const minX = 0;
+        const maxX = slideWidth - imageElement.width;
+        const minY = 0;
+        const maxY = slideHeight - imageElement.height;
+
+        const boundedX = Math.max(minX, Math.min(maxX, newX));
+        const boundedY = Math.max(minY, Math.min(maxY, newY));
+
         updateImageElement(elementId, slideNumber, {
-          position: { x: newX, y: newY },
+          position: { x: boundedX, y: boundedY },
         });
       } else if (isResizing) {
         let newWidth = initialDimensions.width;
@@ -190,19 +191,15 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
         // Calculate new dimensions based on initial values + delta
         switch (resizeDirection) {
           case "se":
+            const maxWidthSE = slideWidth - initialPosition.x;
+            const maxHeightSE = slideHeight - initialPosition.y;
             newWidth = Math.max(
               50,
-              Math.min(
-                initialDimensions.width + deltaX,
-                slideWidth - initialPosition.x
-              )
+              Math.min(initialDimensions.width + deltaX, maxWidthSE)
             );
             newHeight = Math.max(
               50,
-              Math.min(
-                initialDimensions.height + deltaY,
-                slideHeight - initialPosition.y
-              )
+              Math.min(initialDimensions.height + deltaY, maxHeightSE)
             );
             break;
           case "nw":
@@ -220,12 +217,10 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
             newY = Math.max(0, initialPosition.y + deltaHeight);
             break;
           case "ne":
+            const maxWidthNE = slideWidth - initialPosition.x;
             newWidth = Math.max(
               50,
-              Math.min(
-                initialDimensions.width + deltaX,
-                slideWidth - initialPosition.x
-              )
+              Math.min(initialDimensions.width + deltaX, maxWidthNE)
             );
             const targetHeightNE = initialDimensions.height - deltaY;
             newHeight = Math.max(50, targetHeightNE);
@@ -236,24 +231,16 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
           case "sw":
             const targetWidthSW = initialDimensions.width - deltaX;
             newWidth = Math.max(50, targetWidthSW);
-            newHeight = Math.max(
-              50,
-              Math.min(
-                initialDimensions.height + deltaY,
-                slideHeight - initialPosition.y
-              )
-            );
+            newHeight = Math.max(50, initialDimensions.height + deltaY);
 
             const deltaWidthSW = initialDimensions.width - newWidth;
             newX = Math.max(0, initialPosition.x + deltaWidthSW);
             break;
           case "e":
+            const maxWidthE = slideWidth - initialPosition.x;
             newWidth = Math.max(
               50,
-              Math.min(
-                initialDimensions.width + deltaX,
-                slideWidth - initialPosition.x
-              )
+              Math.min(initialDimensions.width + deltaX, maxWidthE)
             );
             break;
           case "w":
@@ -264,12 +251,10 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
             newX = Math.max(0, initialPosition.x + deltaWidthW);
             break;
           case "s":
+            const maxHeightS = slideHeight - initialPosition.y;
             newHeight = Math.max(
               50,
-              Math.min(
-                initialDimensions.height + deltaY,
-                slideHeight - initialPosition.y
-              )
+              Math.min(initialDimensions.height + deltaY, maxHeightS)
             );
             break;
           case "n":

@@ -47,7 +47,7 @@ export const Proto003Template: React.FC<Proto003TemplateProps> = ({
   // Позиции элементов (соответствуют slide_003.html)
   // Center the title horizontally and position it near the top
   const titlePosition = { left: 220, top: 30 }; // 720 is slide width, 680 is assumed title box width
-  const baseSubtitlePosition = { left: 220, top: 230 };
+  const baseSubtitlePosition = { left: 220, top: 260 };
   const baseText3Position = { left: 220, top: 330 };
 
   // Динамический расчет позиции subtitle относительно title

@@ -90,8 +90,8 @@ export const PresentationCard = ({
             <TrashIcon />
           </button>
         </div>
-        <div className="flex flex-col ">
-          <span className="text-[14px] font-medium text-[#0B0911] truncate flex-1">
+        <div className="flex flex-col overflow-hidden pr-[60px]">
+          <span className="text-[14px] font-medium text-[#0B0911] truncate">
             {label}
           </span>
           <span className="text-[12px] font-normal text-[#8F8F92] whitespace-nowrap mt-1">

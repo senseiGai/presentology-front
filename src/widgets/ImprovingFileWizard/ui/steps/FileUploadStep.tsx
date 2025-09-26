@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePresentationCreationStore } from "../../model/useImproveFileWizard";
 import BigFolderIcon from "../../../../../public/icons/BigFolderIcon";
 import DocIcon from "../../../../../public/icons/DocIcon";
@@ -40,6 +41,10 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
   canProceed = true,
   isCompleted = false,
 }) => {
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode");
+  const isDesignMode = mode === "design";
+
   const { presentationData, updatePresentationData } =
     usePresentationCreationStore();
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -198,16 +203,15 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Main Content */}
       <div className="flex-1 px-10 pt-8 overflow-y-auto">
         <div className="flex flex-col gap-6 w-full max-w-[356px]">
-          {/* Title */}
           <h2 className="font-['Onest'] text-[#0b0911] text-[24px] font-medium leading-[1.3] tracking-[-0.48px]">
             Основа презентации
           </h2>
-
           <div className="flex flex-wrap gap-1 max-w-[226px]">
-            {FILE_EXTENSIONS.map(({ ext, color, bg }) => (
+            {FILE_EXTENSIONS.filter(
+              ({ ext }) => isDesignMode || ext === ".pdf" || ext === ".pptx"
+            ).map(({ ext, color, bg }) => (
               <div
                 key={ext}
                 className="px-2 py-1 rounded-[4px] font-['Onest'] text-[12px] font-medium leading-[1.3] tracking-[-0.36px]"
@@ -316,7 +320,11 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
         ref={fileInputRef}
         type="file"
         multiple
-        accept=".docx,.csv,.pdf,.txt,.pptx,.xlsx,.jpeg,.jpg,.png"
+        accept={
+          isDesignMode
+            ? ".docx,.csv,.pdf,.txt,.pptx,.xlsx,.jpeg,.jpg,.png"
+            : ".pdf,.pptx"
+        }
         onChange={handleFileInputChange}
         className="hidden"
       />

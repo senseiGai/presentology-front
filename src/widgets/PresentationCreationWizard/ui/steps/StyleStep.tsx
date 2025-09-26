@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePresentationCreationStore } from "../../model/usePresentationCreationStore";
 import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
-import { useCreatePresentationWithData } from "@/shared/api/presentations";
+import { useCreatePresentationWithData } from "@/shared/hooks/usePresentations";
 import SquareCheckIcon from "../../../../../public/icons/SquareCheckIcon";
 import Image from "next/image";
 

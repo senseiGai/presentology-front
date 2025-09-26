@@ -8,8 +8,8 @@ import type {
 export class PresentationsApi {
   // Получить все презентации пользователя
   static async getAll(): Promise<Presentation[]> {
-    const response = await apiClient.get(API_ENDPOINTS.PRESENTATIONS.LIST);
-    return response.data;
+    const response = await apiClient.get(API_ENDPOINTS.PRESENTATIONS.MY);
+    return response.data.presentations; // Возвращаем массив презентаций из PaginatedPresentationsDto
   }
 
   // Получить презентацию по ID
@@ -40,7 +40,7 @@ export class PresentationsApi {
     isPublic?: boolean;
   }): Promise<Presentation> {
     const response = await apiClient.post(
-      "/presentations/create-with-data",
+      API_ENDPOINTS.PRESENTATIONS.CREATE_WITH_DATA,
       data
     );
     return response.data;

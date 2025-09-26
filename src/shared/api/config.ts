@@ -161,7 +161,9 @@ export const API_ENDPOINTS = {
   },
   PRESENTATIONS: {
     LIST: "/presentations",
+    MY: "/presentations/my",
     CREATE: "/presentations",
+    CREATE_WITH_DATA: "/presentations/create-with-data",
     GET_BY_ID: (id: string) => `/presentations/${id}`,
     UPDATE: (id: string) => `/presentations/${id}`,
     DELETE: (id: string) => `/presentations/${id}`,

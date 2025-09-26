@@ -56,6 +56,47 @@ export const useCreatePresentation = () => {
   });
 };
 
+// Hook для создания презентации с данными
+export const useCreatePresentationWithData = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      title: string;
+      description?: string;
+      slug: string;
+      generatedData: any;
+      presentationState: any;
+      templateIds?: string[];
+      isPublic?: boolean;
+    }) => PresentationsApi.createWithData(data),
+    onSuccess: (newPresentation: Presentation) => {
+      // Обновляем список презентаций
+      queryClient.setQueryData(
+        QUERY_KEYS.PRESENTATIONS.LIST,
+        (old: Presentation[] | undefined) => {
+          if (!old) return [newPresentation];
+          return [newPresentation, ...old];
+        }
+      );
+
+      // Добавляем в кэш детальную информацию о презентации
+      queryClient.setQueryData(
+        QUERY_KEYS.PRESENTATIONS.DETAIL(newPresentation.id),
+        newPresentation
+      );
+
+      // Инвалидируем кэш презентаций для обновления
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.PRESENTATIONS.LIST,
+      });
+    },
+    onError: (error) => {
+      console.error("Create presentation with data error:", error);
+    },
+  });
+};
+
 // Hook для обновления презентации
 export const useUpdatePresentation = () => {
   const queryClient = useQueryClient();

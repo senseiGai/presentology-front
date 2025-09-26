@@ -14,7 +14,7 @@ import {
   useCreateTitleAndSlidesNew,
   useAddSlideToStructureNew,
 } from "@/shared/api/presentation-generation";
-import { useCreatePresentationWithData } from "@/shared/api/presentations";
+import { useCreatePresentationWithData } from "@/shared/hooks/usePresentations";
 import { useWindowWidth } from "@/shared/hooks/useWindowWidth";
 import Image from "next/image";
 

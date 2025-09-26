@@ -97,7 +97,9 @@ export interface Presentation {
   id: string;
   title: string;
   description?: string;
-  content?: any; // JSON content
+  htmlContent: string;
+  thumbnail?: string;
+  isPublic: boolean;
   userId: string;
   createdAt: string;
   updatedAt: string;
@@ -106,13 +108,17 @@ export interface Presentation {
 export interface CreatePresentationRequest {
   title: string;
   description?: string;
-  content?: any;
+  htmlContent: string;
+  thumbnail?: string;
+  isPublic?: boolean;
 }
 
 export interface UpdatePresentationRequest {
   title?: string;
   description?: string;
-  content?: any;
+  htmlContent?: string;
+  thumbnail?: string;
+  isPublic?: boolean;
 }
 
 // Survey Types

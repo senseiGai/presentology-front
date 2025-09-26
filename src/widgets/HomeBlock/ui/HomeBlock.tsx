@@ -176,6 +176,7 @@ export const HomeBlock = () => {
                   {formattedPresentations.map((item) => (
                     <PresentationCard
                       key={item.id}
+                      id={item.id}
                       label={item.label}
                       images={item.images}
                       date={item.date}

@@ -2,8 +2,10 @@ import React from "react";
 import Image from "next/image";
 import TrashIcon from "../../../../public/icons/TrashIcon";
 import { useConfirmDeleteStore } from "../../ConfirmDeletePopup/model/use-confirm-delete-popup";
+import { useRouter } from "next/navigation";
 
 interface PresentationCardProps {
+  id?: string;
   images: string[];
   label: string;
   date: string;
@@ -11,12 +13,14 @@ interface PresentationCardProps {
 }
 
 export const PresentationCard = ({
+  id,
   images,
   label,
   date,
   tag,
 }: PresentationCardProps) => {
   const { openModal } = useConfirmDeleteStore();
+  const router = useRouter();
 
   const getTagStyles = (tagType: string) => {
     switch (tagType) {
@@ -39,7 +43,12 @@ export const PresentationCard = ({
         if ((e.target as HTMLElement).closest("button")) {
           return;
         }
-        console.log("Card clicked:", label);
+        if (id) {
+          // Переход к редактору презентации
+          router.push(`/presentation-editor/${id}`);
+        } else {
+          console.log("No presentation ID available for:", label);
+        }
       }}
     >
       {/* Превью изображений */}

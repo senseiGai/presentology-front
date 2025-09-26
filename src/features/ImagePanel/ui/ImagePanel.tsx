@@ -201,7 +201,7 @@ export const ImagePanel: React.FC = () => {
 
     if (imageId) {
       // Обновляем элемент с URL изображения и убираем placeholder
-      updateImageElement(imageId, {
+      updateImageElement(imageId, currentSlide, {
         src: imageUrl,
         alt: "Изображение из поиска",
         placeholder: false, // Важно: убираем placeholder режим
@@ -298,7 +298,7 @@ export const ImagePanel: React.FC = () => {
               selectedImageElement
             );
 
-            updateImageElement(selectedImageElement, {
+            updateImageElement(selectedImageElement, currentSlide, {
               placeholder: false,
               src: imageUrl,
               alt: "Generated image",
@@ -309,11 +309,31 @@ export const ImagePanel: React.FC = () => {
               selectedImageElement
             );
           } else {
-            // Если нет выбранного элемента изображения, показываем сообщение
+            // Если нет выбранного элемента изображения, создаем новый
             console.log(
-              "No image element selected. Please select an image area first."
+              "No image element selected. Creating new image element."
             );
-            // Здесь можно показать уведомление пользователю
+
+            const newImageElementId = addImageElement(
+              currentSlide,
+              { x: 100, y: 100 }, // Initial position
+              { width: 300, height: 200 } // Default size
+            );
+
+            // Обновляем новый элемент с изображением
+            updateImageElement(newImageElementId, currentSlide, {
+              placeholder: false,
+              src: imageUrl,
+              alt: "Generated image",
+            });
+
+            // Выбираем новый элемент
+            setSelectedImageElement(newImageElementId);
+
+            console.log(
+              "Generated image added to new element with ID:",
+              newImageElementId
+            );
           }
 
           // После успешной генерации обнуляем поля
@@ -369,7 +389,7 @@ export const ImagePanel: React.FC = () => {
 
         // Если есть выбранный элемент изображения, сразу устанавливаем изображение
         if (selectedImageElement) {
-          updateImageElement(selectedImageElement, {
+          updateImageElement(selectedImageElement, currentSlide, {
             placeholder: false,
             src: result.data.url,
             alt: file.name,
@@ -410,7 +430,7 @@ export const ImagePanel: React.FC = () => {
 
     // Если есть выбранный элемент изображения, устанавливаем изображение по URL
     if (selectedImageElement) {
-      updateImageElement(selectedImageElement, {
+      updateImageElement(selectedImageElement, currentSlide, {
         placeholder: false,
         src: imageUrl,
         alt: "Image from URL",
@@ -445,7 +465,7 @@ export const ImagePanel: React.FC = () => {
         "ImagePanel: Deleting selected image element:",
         selectedImageElement
       );
-      deleteImageElement(selectedImageElement);
+      deleteImageElement(selectedImageElement, currentSlide);
       setSelectedImageElement(null);
     } else {
       console.log("ImagePanel: No image element selected to delete");

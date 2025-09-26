@@ -38,8 +38,10 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
   const [isDragging, setIsDragging] = React.useState(false);
   const [slideData, setSlideData] = React.useState<any>(null);
 
-  // Позиция subtitle - можно двигать влево без ограничений
-  const subtitlePosition = { left: -20, top: 85 };
+  // Позиции элементов
+  const titlePosition = { left: -20, top: 95 };
+  const subtitlePosition = { left: -20, top: 165 };
+  const text2Position = { left: 20, top: 350 };
 
   // Загружаем данные слайда
   React.useEffect(() => {
@@ -256,8 +258,8 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
         <div
           style={{
             position: "absolute",
-            left: "-20px",
-            top: "120px",
+            left: `${titlePosition.left}px`,
+            top: `${titlePosition.top}px`,
             width: "400px",
           }}
         >
@@ -326,7 +328,13 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
       )}
 
       {/* Левая колонка с текстом (расширенная ширина) */}
-      <div className="absolute left-[40px] top-[130px] w-[500px] h-[235px] space-y-4">
+      <div
+        className="absolute w-[500px] h-[235px] space-y-4"
+        style={{
+          left: `${text2Position.left}px`,
+          top: `${text2Position.top}px`,
+        }}
+      >
         {/* Text1 Block */}
         {slideData.text1?.t1 && (
           <div className="mb-6">
@@ -462,6 +470,72 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
                 />
               </ResizableTextBox>
             )}
+          </div>
+        )}
+
+        {/* T2_Content Block */}
+        {slideData.t2_content && (
+          <div className="mb-6">
+            <ResizableTextBox
+              elementId={`slide-${slideNumber}-t2-content`}
+              isSelected={selectedTextElements.includes(
+                `slide-${slideNumber}-t2-content`
+              )}
+              onDelete={handleTextDelete}
+              onCopy={() => handleTextCopy(`slide-${slideNumber}-t2-content`)}
+              onMoveUp={() =>
+                handleTextMoveUp(`slide-${slideNumber}-t2-content`)
+              }
+              onMoveDown={() =>
+                handleTextMoveDown(`slide-${slideNumber}-t2-content`)
+              }
+            >
+              <EditableText
+                elementId={`slide-${slideNumber}-t2-content`}
+                initialText={slideData.t2_content}
+                className="text-[16px] cursor-pointer transition-colors text-gray-700 leading-relaxed"
+                onClick={(e) => {
+                  handleTextClick(
+                    `slide-${slideNumber}-t2-content`,
+                    slideData.t2_content,
+                    e
+                  );
+                }}
+              />
+            </ResizableTextBox>
+          </div>
+        )}
+
+        {/* Text2 as String Block (когда text2 - строка, а не объект) */}
+        {typeof slideData.text2 === "string" && slideData.text2 && (
+          <div className="mb-6">
+            <ResizableTextBox
+              elementId={`slide-${slideNumber}-text2-string`}
+              isSelected={selectedTextElements.includes(
+                `slide-${slideNumber}-text2-string`
+              )}
+              onDelete={handleTextDelete}
+              onCopy={() => handleTextCopy(`slide-${slideNumber}-text2-string`)}
+              onMoveUp={() =>
+                handleTextMoveUp(`slide-${slideNumber}-text2-string`)
+              }
+              onMoveDown={() =>
+                handleTextMoveDown(`slide-${slideNumber}-text2-string`)
+              }
+            >
+              <EditableText
+                elementId={`slide-${slideNumber}-text2-string`}
+                initialText={slideData.text2}
+                className="text-[16px] cursor-pointer transition-colors text-gray-700 leading-relaxed"
+                onClick={(e) => {
+                  handleTextClick(
+                    `slide-${slideNumber}-text2-string`,
+                    slideData.text2,
+                    e
+                  );
+                }}
+              />
+            </ResizableTextBox>
           </div>
         )}
 

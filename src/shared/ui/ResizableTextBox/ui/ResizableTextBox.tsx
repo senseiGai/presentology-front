@@ -12,6 +12,10 @@ interface ResizableTextBoxProps {
   onCopy: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  initialWidth?: number; // Optional initial width
+  initialHeight?: number; // Optional initial height
+  minWidth?: number; // Optional minimum width (defaults to 100px)
+  maxWidth?: number; // Optional maximum width
 }
 
 export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
@@ -24,6 +28,10 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
   onCopy,
   onMoveUp,
   onMoveDown,
+  initialWidth,
+  initialHeight,
+  minWidth = 100,
+  maxWidth,
 }) => {
   const {
     setTextElementPosition,
@@ -279,14 +287,16 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
       const savedHeight = boxRef.current.getAttribute("data-height");
 
       if (!savedWidth || !savedHeight) {
-        // Wait for content to render, then set dimensions based on content
+        // Wait for content to render, then set dimensions based on content or initial props
         setTimeout(() => {
           if (boxRef.current) {
             const rect = boxRef.current.getBoundingClientRect();
 
-            // Use content dimensions or reasonable minimums
-            const contentWidth = Math.max(50, rect.width || 100);
-            const contentHeight = Math.max(20, rect.height || 30);
+            // Use initial props, content dimensions, or reasonable minimums
+            const contentWidth =
+              initialWidth || Math.max(minWidth, rect.width || 100);
+            const contentHeight =
+              initialHeight || Math.max(20, rect.height || 30);
 
             boxRef.current.setAttribute("data-width", contentWidth.toString());
             boxRef.current.setAttribute(
@@ -295,13 +305,15 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
             );
             boxRef.current.style.width = `${contentWidth}px`;
             boxRef.current.style.height = `${contentHeight}px`;
-            boxRef.current.style.maxWidth = `${contentWidth}px`;
+            boxRef.current.style.maxWidth = maxWidth
+              ? `${maxWidth}px`
+              : `${contentWidth}px`;
             boxRef.current.style.maxHeight = `${contentHeight}px`;
           }
         }, 100); // Small delay to let content render
       }
     }
-  }, []); // Run only once on mount
+  }, [initialWidth, initialHeight, minWidth, maxWidth]); // Run when props change
 
   // Don't render if element is deleted
   if (deletedTextElements.has(elementId)) {
@@ -326,9 +338,9 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           transformOrigin: "center",
           width: "auto", // Автоматическая ширина без принуждения
           height: "auto", // Автоматическая высота без принуждения
-          minWidth: "100px", // Увеличенный минимум для комфортного редактирования
+          minWidth: `${minWidth}px`, // Configurable minimum width
           minHeight: "40px", // Увеличенный минимум для комфортного редактирования
-          maxWidth: "none", // Убираем максимальное ограничение
+          maxWidth: maxWidth ? `${maxWidth}px` : "none", // Configurable maximum width
           wordWrap: "break-word",
           overflowWrap: "break-word",
           overflow: "visible",
@@ -344,7 +356,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
             zIndex: 10,
             width: "100%",
             height: "100%",
-            minWidth: "100px", // Увеличенный минимум для комфортного редактирования
+            minWidth: `${minWidth}px`, // Configurable minimum width
             minHeight: "40px", // Увеличенный минимум для комфортного редактирования
             overflow: "visible", // Изменено с hidden на visible
             boxSizing: "border-box",
@@ -370,9 +382,9 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
           transformOrigin: "center",
           width: "auto", // Автоматическая ширина без принуждения
           height: "auto", // Автоматическая высота без принуждения
-          minWidth: "100px", // Увеличенный минимум для комфортного редактирования
+          minWidth: `${minWidth}px`, // Configurable minimum width
           minHeight: "40px", // Увеличенный минимум для комфортного редактирования
-          maxWidth: "none", // Убираем максимальное ограничение
+          maxWidth: maxWidth ? `${maxWidth}px` : "none", // Configurable maximum width
           wordWrap: "break-word",
           overflowWrap: "break-word",
           overflow: "visible",
@@ -389,7 +401,7 @@ export const ResizableTextBox: React.FC<ResizableTextBoxProps> = ({
             zIndex: 10,
             width: "100%",
             height: "100%",
-            minWidth: "100px", // Увеличенный минимум для комфортного редактирования
+            minWidth: `${minWidth}px`, // Configurable minimum width
             minHeight: "40px", // Увеличенный минимум для комфортного редактирования
             overflow: "visible", // Изменено с hidden на visible
             boxSizing: "border-box",

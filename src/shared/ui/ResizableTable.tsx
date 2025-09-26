@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
-import { TableToolbar } from "./TableToolbar";
+import { TableToolbar } from "./TableToolbar/ui/TableToolbar";
 import { EditableTableRef } from "@/features/TablePanel/ui/EditableTable";
 import PlusIcon from "../../../public/icons/PlusIcon";
 import GrayPlusIcon from "../../../public/icons/GrayPlusIcon";
@@ -46,27 +46,29 @@ export const ResizableTable: React.FC<ResizableTableProps> = ({
   const tableData = getTableElement(elementId);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Don't start table dragging if clicking on row/column selection buttons or toolbars
+    // Don't start table dragging if clicking on specific interactive elements
     const target = e.target as HTMLElement;
+
+    // Skip dragging only for very specific elements that need their own interaction
     if (
-      target.closest('button[draggable="true"]') || // Row/column drag buttons
-      target.closest(".cursor-col-resize") || // Column resize handles
-      target.closest(".cursor-row-resize") || // Row resize handles
-      target.closest("button") || // Any button elements
-      target.closest(".row-toolbar") || // Row toolbar
-      target.closest(".col-toolbar") // Column toolbar
+      target.closest("input") ||
+      target.closest("textarea") ||
+      target.closest("button:not(.table-drag-handle)") ||
+      target.closest(".resize-handle") ||
+      target.closest(".column-resize") ||
+      target.closest(".row-resize")
     ) {
       return;
     }
 
-    if (
-      e.target === e.currentTarget ||
-      (e.target as HTMLElement).closest(".table-drag-handle")
-    ) {
+    // Always select table when clicking on it
+    setSelectedTableElement(elementId);
+
+    // Only start dragging if clicking on table-drag-handle areas
+    if (target.closest(".table-drag-handle") || target === e.currentTarget) {
       e.preventDefault();
       e.stopPropagation();
 
-      setSelectedTableElement(elementId);
       setIsDragging(true);
 
       const rect = containerRef.current!.getBoundingClientRect();
@@ -89,9 +91,33 @@ export const ResizableTable: React.FC<ResizableTableProps> = ({
         // No constraints - allow free movement
         // User can position table anywhere within or even slightly outside the slide
 
+        // Get current table data (either from store or default)
+        const currentData = getTableElement(elementId) || {
+          id: elementId,
+          position: { x: 50, y: 250 },
+          data: [
+            [
+              { id: "1-1", content: "Header 1", rowIndex: 0, colIndex: 0 },
+              { id: "1-2", content: "Header 2", rowIndex: 0, colIndex: 1 },
+              { id: "1-3", content: "Header 3", rowIndex: 0, colIndex: 2 },
+            ],
+            [
+              { id: "2-1", content: "Data 1", rowIndex: 1, colIndex: 0 },
+              { id: "2-2", content: "Data 2", rowIndex: 1, colIndex: 1 },
+              { id: "2-3", content: "Data 3", rowIndex: 1, colIndex: 2 },
+            ],
+            [
+              { id: "3-1", content: "Data 4", rowIndex: 2, colIndex: 0 },
+              { id: "3-2", content: "Data 5", rowIndex: 2, colIndex: 1 },
+              { id: "3-3", content: "Data 6", rowIndex: 2, colIndex: 2 },
+            ],
+          ],
+          columnWidths: [120, 120, 120],
+        };
+
         // Update position in store
         updateTableElement(elementId, {
-          ...tableData,
+          ...currentData,
           position: { x: newX, y: newY },
         });
       }
@@ -111,7 +137,7 @@ export const ResizableTable: React.FC<ResizableTableProps> = ({
         document.removeEventListener("mouseup", handleMouseUp);
       };
     }
-  }, [isDragging, dragOffset, isInternalDragging]);
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   // Update table size when container changes
   useEffect(() => {
@@ -132,25 +158,58 @@ export const ResizableTable: React.FC<ResizableTableProps> = ({
     };
   }, [children]);
 
-  if (!tableData) return null;
+  // Ensure we always have table data - use store data or create default
+  const defaultTableData = {
+    id: elementId,
+    position: { x: 50, y: 250 },
+    data: [
+      [
+        { id: "1-1", content: "Header 1", rowIndex: 0, colIndex: 0 },
+        { id: "1-2", content: "Header 2", rowIndex: 0, colIndex: 1 },
+        { id: "1-3", content: "Header 3", rowIndex: 0, colIndex: 2 },
+      ],
+      [
+        { id: "2-1", content: "Data 1", rowIndex: 1, colIndex: 0 },
+        { id: "2-2", content: "Data 2", rowIndex: 1, colIndex: 1 },
+        { id: "2-3", content: "Data 3", rowIndex: 1, colIndex: 2 },
+      ],
+      [
+        { id: "3-1", content: "Data 4", rowIndex: 2, colIndex: 0 },
+        { id: "3-2", content: "Data 5", rowIndex: 2, colIndex: 1 },
+        { id: "3-3", content: "Data 6", rowIndex: 2, colIndex: 2 },
+      ],
+      [
+        { id: "4-1", content: "Data 7", rowIndex: 3, colIndex: 0 },
+        { id: "4-2", content: "Data 8", rowIndex: 3, colIndex: 1 },
+        { id: "4-3", content: "Data 9", rowIndex: 3, colIndex: 2 },
+      ],
+    ],
+    columnWidths: [120, 120, 120],
+  };
+
+  const currentTableData = tableData || defaultTableData;
+
+  useEffect(() => {
+    if (!tableData) {
+      updateTableElement(elementId, defaultTableData);
+    }
+  }, [elementId, tableData]);
 
   return (
     <div
       ref={containerRef}
-      className={`absolute ${isDragging ? "cursor-move" : "cursor-pointer"} ${
-        isSelected ? "z-[100]" : "z-10"
-      }`}
+      className={`absolute select-none ${
+        isDragging ? "cursor-move" : "cursor-pointer"
+      } ${isSelected ? "z-[100]" : "z-10"}`}
       style={{
-        left: tableData.position.x,
-        top: tableData.position.y,
+        left: currentTableData.position.x,
+        top: currentTableData.position.y,
       }}
       onMouseDown={handleMouseDown}
-      onDragStart={() => setIsInternalDragging(true)}
-      onDragEnd={() => setIsInternalDragging(false)}
       data-table-element
     >
       {/* Table Content */}
-      <div className="relative ">
+      <div className="relative">
         {React.isValidElement(children) &&
           React.cloneElement(children as React.ReactElement<any>, {
             ref: tableRef,

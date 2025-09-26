@@ -16,8 +16,6 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
   isGenerated,
   isCurrentlyGenerating,
 }) => {
-  // Состояние для принудительного обновления
-  const [forceUpdateCount, forceUpdate] = useState(0);
   // Предотвращение hydration errors
   const [isMounted, setIsMounted] = useState(false);
 
@@ -39,26 +37,8 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
     setIsMounted(true);
   }, []);
 
-  // useEffect для отслеживания изменений
-  useEffect(() => {
-    if (!isMounted) return; // Ждем клиентского рендеринга
-
-    console.log(
-      "SlidePreviewContent useEffect triggered for slide:",
-      slideNumber
-    );
-    forceUpdate((prev) => prev + 1);
-  }, [
-    isMounted,
-    textElementContents,
-    textElementPositions,
-    textElementStyles,
-    tableElements,
-    imageElements,
-    slideTemplates,
-    selectedTextElement,
-    slideNumber,
-  ]);
+  // Убираем проблемный useEffect, который вызывает бесконечный цикл обновлений
+  // React автоматически перерендерит компонент при изменении пропсов или состояния store
 
   if (!isGenerated && !isCurrentlyGenerating) {
     return (
@@ -301,14 +281,22 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
               (_, index) => {
                 const row = Math.floor(index / Math.min(tableData.cols, 3));
                 const col = index % Math.min(tableData.cols, 3);
-                const cellContent = tableData.cells?.[row]?.[col] || "";
+                const cellData = tableData.cells?.[row]?.[col];
+
+                // Extract content from cell object or use empty string
+                const cellContent =
+                  typeof cellData === "object" && cellData?.content
+                    ? cellData.content
+                    : typeof cellData === "string"
+                    ? cellData
+                    : "";
 
                 return (
                   <div
                     key={index}
                     className="bg-gray-50 text-[2px] leading-tight overflow-hidden flex items-center justify-center border-[0.5px] border-gray-200"
                   >
-                    {cellContent.length > 3
+                    {cellContent && cellContent.length > 3
                       ? cellContent.substring(0, 3)
                       : cellContent}
                   </div>

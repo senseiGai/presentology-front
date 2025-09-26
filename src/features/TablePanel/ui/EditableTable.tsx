@@ -1145,7 +1145,10 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
                     hoveredRow !== null ? hoveredRow : selectedRow!
                   )
                 }
-                onMouseDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  // Only prevent drag if specifically clicking on row select button
+                }}
                 onMouseEnter={(e) => {
                   const buttonRect = e.currentTarget.getBoundingClientRect();
                   const containerRect =
@@ -1247,7 +1250,10 @@ export const EditableTable = forwardRef<EditableTableRef, EditableTableProps>(
                       hoveredColumn !== null ? hoveredColumn : selectedColumn!
                     )
                   }
-                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    // Only prevent drag if specifically clicking on column select button
+                  }}
                   onMouseEnter={(e) => {
                     const buttonRect = e.currentTarget.getBoundingClientRect();
                     const containerRect =

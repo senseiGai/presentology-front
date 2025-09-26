@@ -18,6 +18,7 @@ import GrayTrashIcon from "@/../public/icons/GrayTrashIcon";
 import { PresentationMascot } from "@/shared/ui/PesentationMascot";
 import GenerationLoaderIcon from "../../../../public/icons/GenerationLoaderIcon";
 import { Proto003Template } from "@/entities/TemplateSlides/ui/Proto003Template";
+import { Proto004Template } from "@/entities/TemplateSlides/ui/Proto004Template";
 interface SlideCanvasProps {
   children?: React.ReactNode;
 }
@@ -458,6 +459,14 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
       return (
         <div>
           <Proto003Template slideNumber={slideNumber} />
+        </div>
+      );
+    }
+
+    if (templateId === "proto_004") {
+      return (
+        <div>
+          <Proto004Template slideNumber={slideNumber} />
         </div>
       );
     }

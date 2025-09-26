@@ -17,7 +17,7 @@ interface SlideContentProps {
   isGenerating?: boolean;
 }
 
-export const Proto004Template = ({
+export const Proto005Template = ({
   slideNumber,
   slideType = "default",
 }: SlideContentProps) => {
@@ -27,7 +27,7 @@ export const Proto004Template = ({
   >(null);
   const [renderedHtml, setRenderedHtml] = React.useState<string | null>(null);
   const [isLoadingRender, setIsLoadingRender] = React.useState(false);
-  const [isTemplateMode, setIsTemplateMode] = React.useState(true); // Режим шаблона включен по умолчанию
+  const [isTemplateMode, setIsTemplateMode] = React.useState(true);
   const [renderedSlides, setRenderedSlides] = React.useState<
     Record<number, string>
   >({});
@@ -48,17 +48,16 @@ export const Proto004Template = ({
     clearTextSelection,
     updateTextElementStyle,
     getTextElementStyle,
+    textElementStyles,
+    getTextElementPosition,
+    setTextElementPosition,
+    textElementContents,
     setTextElementContent,
     getTextElementContent,
     deleteTextElement,
     copyTextElement,
     moveTextElementUp,
     moveTextElementDown,
-    textElementPositions,
-    textElementStyles,
-    textElementContents,
-    setTextElementPosition,
-    getTextElementPosition,
     isImageAreaSelectionMode,
     startImageAreaSelection,
     updateImageAreaSelection,
@@ -85,304 +84,66 @@ export const Proto004Template = ({
     setSelectedInfographicsElement,
     deleteInfographicsElement,
     copyTableElement,
-    // Template state
-    slideTemplates,
   } = usePresentationStore();
 
   // Get image area selection for current slide
   const imageAreaSelection = getImageAreaSelection(slideNumber);
 
-  // Функция для замены изображений в HTML шаблоне на наши изображения
-  // Функция для обработки изменений текста в шаблоне
-  const handleTemplateTextChange = (field: string, value: string) => {
-    console.log(`📝 Template text changed - field: ${field}, value: ${value}`);
-
-    // Получаем текущие данные презентации
-    const generatedPresentationStr = localStorage.getItem(
-      "generatedPresentation"
-    );
-    if (!generatedPresentationStr) return;
-
-    try {
-      const generatedPresentation = JSON.parse(generatedPresentationStr);
-      const slides = generatedPresentation.data?.slides;
-
-      if (!slides || !slides[slideNumber - 1]) return;
-
-      const slideData = slides[slideNumber - 1];
-
-      // Обновляем соответствующее поле
-      switch (field) {
-        case "title":
-          slideData.title = value;
-          break;
-        case "subtitle":
-          slideData.subtitle = value;
-          break;
-        case "text1_title":
-          if (!slideData.text1) slideData.text1 = {};
-          slideData.text1.t1 = value;
-          break;
-        case "text1_content":
-          if (!slideData.text1) slideData.text1 = {};
-          slideData.text1.t2 = value;
-          break;
-        case "text2_title":
-          if (!slideData.text2) slideData.text2 = {};
-          slideData.text2.t1 = value;
-          break;
-        case "text2_content":
-          if (!slideData.text2) slideData.text2 = {};
-          slideData.text2.t2 = value;
-          break;
-        case "text3_title":
-          if (!slideData.text3) slideData.text3 = {};
-          slideData.text3.t1 = value;
-          break;
-        case "text3_content":
-          if (!slideData.text3) slideData.text3 = {};
-          slideData.text3.t2 = value;
-          break;
-      }
-
-      // Сохраняем обновленные данные
-      localStorage.setItem(
-        "generatedPresentation",
-        JSON.stringify(generatedPresentation)
-      );
-
-      // Обновляем кэш рендера
-      setRenderedSlides((prev) => {
-        const newSlides = { ...prev };
-        delete newSlides[slideNumber]; // Удаляем кэш, чтобы перерендерить
-        return newSlides;
-      });
-
-      // Форсируем перерендеринг
-      setRenderedHtml(null);
-
-      console.log(`✅ Updated ${field} for slide ${slideNumber}`);
-    } catch (error) {
-      console.error("❌ Error updating template text:", error);
-    }
-  };
-
-  const replaceTemplateImagesWithOurs = (html: string): string => {
-    if (!html) {
-      console.log("🖼️ No HTML provided for image replacement");
-      return html;
-    }
-
-    const generatedPresentation = localStorage.getItem("generatedPresentation");
-    if (!generatedPresentation) {
-      console.log("🖼️ No generated presentation found for image replacement");
-      return html;
-    }
-
-    try {
-      const presentationData = JSON.parse(generatedPresentation);
-      const slides = presentationData.data?.slides;
-
-      if (!slides || !slides[slideNumber - 1]) {
-        console.log(`🖼️ No slide data found for slide ${slideNumber}`);
-        return html;
-      }
-
-      const slideData = slides[slideNumber - 1];
-      const slideImages = slideData._images;
-
-      if (!slideImages || slideImages.length === 0) {
-        console.log(`🖼️ No images found for slide ${slideNumber}`);
-        return html;
-      }
-
-      let modifiedHtml = html;
-
-      // Заменяем изображения в HTML
-      slideImages.forEach((imageUrl: string, index: number) => {
-        console.log(
-          `🖼️ [Preview] Replaced template image ${index} with our image:`,
-          imageUrl
-        );
-
-        // Заменяем различные паттерны изображений в HTML
-        const imgPatterns = [
-          /src="[^"]*\.(jpg|jpeg|png|gif|webp|svg)[^"]*"/gi,
-          /background-image:\s*url\(['"]?[^'"]*\.(jpg|jpeg|png|gif|webp|svg)[^'"]*['"]?\)/gi,
-        ];
-
-        imgPatterns.forEach((pattern) => {
-          if (index === 0) {
-            // Заменяем только первое найденное изображение
-            modifiedHtml = modifiedHtml.replace(pattern, (match) => {
-              if (match.includes("src=")) {
-                return `src="${imageUrl}"`;
-              } else {
-                return `background-image: url('${imageUrl}')`;
-              }
-            });
-          }
-        });
-      });
-
-      return modifiedHtml;
-    } catch (error) {
-      console.error("🖼️ Error replacing images:", error);
-      return html;
-    }
-  };
-
-  // Функция для инициализации содержимого элементов из данных слайда
+  // Add init callback
   const initializeElementContents = React.useCallback(
     (slideData: any) => {
       console.log(
-        "🎯 [SlideContent] Initializing element contents for slide",
-        slideNumber,
-        slideData
+        `🔧 Proto005Template: Initializing element contents for slide ${slideNumber}`,
+        { slideData }
       );
 
-      // Функция для безопасной установки содержимого элемента
-      const safeSetContent = (elementId: string, content: string) => {
-        const existingContent = getTextElementContent(elementId);
-        if (!existingContent || existingContent === "New text element") {
-          setTextElementContent(elementId, content);
-          console.log(`Set content: ${content} for ${elementId}`);
-        } else {
+      // Title initialization
+      if (slideData?.title) {
+        const titleId = `slide-${slideNumber}-title`;
+        const currentTitle = getTextElementContent(titleId);
+        if (!currentTitle || currentTitle !== slideData.title) {
+          setTextElementContent(titleId, slideData.title);
           console.log(
-            `Skipped setting content for ${elementId} - already has content: ${existingContent}`
+            `✅ Title initialized: ${titleId} = "${slideData.title}"`
           );
         }
-      };
-
-      // Инициализируем базовые элементы слайда только если их содержимое еще не установлено
-      if (slideData.title) {
-        const titleElementId = `slide-${slideNumber}-title`;
-        safeSetContent(titleElementId, slideData.title);
       }
 
-      if (slideData.subtitle) {
-        const subtitleElementId = `slide-${slideNumber}-subtitle`;
-        safeSetContent(subtitleElementId, slideData.subtitle);
-      }
-
-      // Инициализируем text1 элементы
-      if (slideData.text1) {
-        if (slideData.text1.t1) {
-          const text1TitleId = `slide-${slideNumber}-text1-title`;
-          safeSetContent(text1TitleId, slideData.text1.t1);
-        }
-        if (slideData.text1.t2) {
-          const text1ContentId = `slide-${slideNumber}-text1-content`;
-          safeSetContent(text1ContentId, slideData.text1.t2);
+      // Subtitle initialization
+      if (slideData?.subtitle) {
+        const subtitleId = `slide-${slideNumber}-subtitle`;
+        const currentSubtitle = getTextElementContent(subtitleId);
+        if (!currentSubtitle || currentSubtitle !== slideData.subtitle) {
+          setTextElementContent(subtitleId, slideData.subtitle);
+          console.log(
+            `✅ Subtitle initialized: ${subtitleId} = "${slideData.subtitle}"`
+          );
         }
       }
 
-      // Инициализируем text2 элементы
-      if (slideData.text2) {
-        if (slideData.text2.t1) {
-          const text2TitleId = `slide-${slideNumber}-text2-title`;
-          safeSetContent(text2TitleId, slideData.text2.t1);
-        }
-        if (slideData.text2.t2) {
-          const text2ContentId = `slide-${slideNumber}-text2-content`;
-          safeSetContent(text2ContentId, slideData.text2.t2);
-        }
-      }
-
-      // Инициализируем text3 элементы
-      if (slideData.text3) {
-        if (slideData.text3.t1) {
-          const text3TitleId = `slide-${slideNumber}-text3-title`;
-          safeSetContent(text3TitleId, slideData.text3.t1);
-        }
-        if (slideData.text3.t2) {
-          const text3ContentId = `slide-${slideNumber}-text3-content`;
-          safeSetContent(text3ContentId, slideData.text3.t2);
-        }
-      }
-
-      // Инициализируем изображения - ВСЕГДА проверяем и восстанавливаем
-      if (slideData._images && Array.isArray(slideData._images)) {
-        console.log(
-          `🖼️ [SlideContent] Processing ${slideData._images.length} images for slide ${slideNumber}:`,
-          slideData._images
-        );
-
+      // Image initialization - добавляем изображения из _images массива
+      if (slideData?._images && Array.isArray(slideData._images)) {
         slideData._images.forEach((imageSrc: string, index: number) => {
-          // Получаем все изображения для данного слайда
-          const store = usePresentationStore.getState();
-          const slideImages = store.imageElements[slideNumber] || {};
+          const imageId = `slide-${slideNumber}-image-${index + 1}`;
+          const existingImage = getImageElement(slideNumber, imageId);
 
-          // Ищем изображение с таким же src или по индексу
-          let existingImageId = null;
-          let existingImage = null;
-
-          // Сначала пробуем найти по src
-          for (const [id, img] of Object.entries(slideImages)) {
-            if (img.src === imageSrc) {
-              existingImageId = id;
-              existingImage = img;
-              break;
-            }
-          }
-
-          // Если не нашли по src, берем по индексу (если есть)
           if (!existingImage) {
-            const imageIds = Object.keys(slideImages);
-            if (imageIds[index]) {
-              existingImageId = imageIds[index];
-              existingImage = slideImages[existingImageId];
-            }
-          }
-
-          console.log(
-            `🖼️ [SlideContent] Processing image ${index} for slide ${slideNumber}:`,
-            {
-              imageSrc,
-              existingImageId,
-              existingImage: !!existingImage,
-              existingSrc: existingImage?.src,
-              needsUpdate: !existingImage || existingImage.src !== imageSrc,
-            }
-          );
-
-          // Создаем или обновляем изображение
-          if (!existingImage) {
-            // Создаем новое изображение
-            const defaultPosition = {
-              x: 400 + index * 20, // Смещаем каждое следующее изображение
-              y: 100 + index * 20,
-            };
-            const defaultSize = { width: 300, height: 200 };
-
-            const newElementId = addImageElement(
-              slideNumber,
-              defaultPosition,
-              defaultSize
-            );
-            // Обновляем изображение с правильным src
-            updateImageElement(newElementId, slideNumber, {
+            console.log(`🖼️ Adding image ${imageId}:`, imageSrc);
+            addImageElement(slideNumber, imageId, {
               src: imageSrc,
-              alt: `Slide ${slideNumber} Image ${index + 1}`,
-              placeholder: false,
+              position: { x: 50 + index * 20, y: 50 + index * 20 },
+              width: 200,
+              height: 150,
             });
-            console.log(
-              `✅ [SlideContent] Created new image ${imageSrc} as element ${newElementId} for slide ${slideNumber}`
-            );
-          } else if (existingImage.src !== imageSrc) {
-            // Обновляем существующий элемент с новым src
-            updateImageElement(existingImageId!, slideNumber, {
-              src: imageSrc,
-              alt: `Slide ${slideNumber} Image ${index + 1}`,
-              placeholder: false,
-            });
-            console.log(
-              `✅ [SlideContent] Updated existing image ${existingImageId} with new src ${imageSrc} for slide ${slideNumber}`
-            );
           } else {
-            console.log(
-              `⏭️ [SlideContent] Image ${existingImageId} is up to date for slide ${slideNumber}, src: ${imageSrc}`
-            );
+            // Обновляем src если изменился
+            if (existingImage.src !== imageSrc) {
+              console.log(`🖼️ Updating image ${imageId}:`, imageSrc);
+              updateImageElement(slideNumber, imageId, {
+                ...existingImage,
+                src: imageSrc,
+              });
+            }
           }
         });
       }
@@ -399,179 +160,116 @@ export const Proto004Template = ({
 
   // Простой эффект для логирования изменений слайда
   React.useEffect(() => {
-    if (!isMounted) return;
-    console.log(`🔄 [SlideContent] Switched to slide ${slideNumber}`);
+    if (isMounted) {
+      console.log(
+        `🎯 Proto005Template mounted for slide ${slideNumber}, slideType: ${slideType}`
+      );
+    }
   }, [slideNumber, isMounted]);
 
   // Debug effect to track state changes
   React.useEffect(() => {
     console.log(
-      "SlideContent render - slideNumber:",
-      slideNumber,
-      "slideType:",
-      slideType
+      `🐛 Proto005Template Debug - Slide: ${slideNumber}, Type: ${slideType}`,
+      {
+        textElementStyles: Object.keys(textElementStyles).filter((key) =>
+          key.includes(`slide-${slideNumber}`)
+        ),
+        selectedTextElement,
+      }
     );
-    console.log("Current textElementStyles:", textElementStyles);
-    console.log("selectedTextElement:", selectedTextElement);
   }, [slideNumber, slideType, textElementStyles, selectedTextElement]);
 
   // Эффект для инициализации элементов слайда при переключении
   React.useEffect(() => {
-    // Ждем клиентского рендеринга для предотвращения hydration errors
-    if (!isMounted) {
-      return;
-    }
-
-    // ВСЕГДА проверяем и инициализируем изображения для слайда
-    const generatedPresentationStr = localStorage.getItem(
-      "generatedPresentation"
-    );
     if (generatedPresentationStr) {
       try {
         const generatedPresentation = JSON.parse(generatedPresentationStr);
-        const slides = generatedPresentation.data?.slides;
-        const currentSlideData = slides?.[slideNumber - 1];
-        if (currentSlideData) {
-          // Проверяем количество изображений в store vs в данных
-          const store = usePresentationStore.getState();
-          const currentImageElements = store.imageElements[slideNumber] || {};
-          const expectedImages = currentSlideData._images || [];
-          const actualImageCount = Object.keys(currentImageElements).length;
-          const expectedImageCount = expectedImages.length;
+        const slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
 
-          console.log(`🎯 [SlideContent] Slide ${slideNumber} image check:`, {
-            expected: expectedImageCount,
-            actual: actualImageCount,
-            hasImages: expectedImages.length > 0,
-          });
-
-          // Проверяем, есть ли изображения с правильными src
-          let needsImageInit = false;
-          if (expectedImageCount > 0) {
-            if (actualImageCount === 0) {
-              needsImageInit = true;
-            } else {
-              // Проверяем, совпадают ли src изображений
-              const currentImages = Object.values(currentImageElements);
-              const expectedSrcs = expectedImages;
-              const actualSrcs = currentImages
-                .map((img) => img.src)
-                .filter(Boolean);
-
-              const srcMismatch = expectedSrcs.some(
-                (expectedSrc: string) => !actualSrcs.includes(expectedSrc)
-              );
-
-              if (srcMismatch || expectedImageCount !== actualImageCount) {
-                needsImageInit = true;
-              }
-            }
-          }
-
-          if (needsImageInit) {
-            console.log(
-              `🎯 [SlideContent] Force initializing images for slide ${slideNumber}`
-            );
-            initializeElementContents(currentSlideData);
-          }
-          // Для текстовых элементов используем флаг инициализации
-          else if (!initializedSlidesRef.current.has(slideNumber)) {
-            console.log(
-              `🎯 [SlideContent] Initializing text elements for slide ${slideNumber}`
-            );
-            initializeElementContents(currentSlideData);
-            initializedSlidesRef.current.add(slideNumber);
-          }
+        if (slideData) {
+          initializeElementContents(slideData);
         }
       } catch (error) {
-        console.error("Error initializing slide elements:", error);
+        console.error("Error parsing generated presentation:", error);
       }
     }
 
     // Проверяем, есть ли уже отрендеренный HTML для этого слайда
     if (renderedSlides[slideNumber]) {
-      console.log(
-        `🎯 [SlideContent] Using cached HTML for slide ${slideNumber}`
-      );
       setRenderedHtml(renderedSlides[slideNumber]);
+      console.log(
+        `♻️ Proto005Template: Using cached HTML for slide ${slideNumber}`
+      );
       return;
     }
 
     // Избегаем повторных запросов
     if (isLoadingRender) {
-      console.log("🔄 [SlideContent] Already loading slides");
+      console.log(
+        `⏳ Proto005Template: Already loading render for slide ${slideNumber}`
+      );
       return;
     }
 
     const loadAndRenderSlides = async () => {
-      const generatedPresentationStr = localStorage.getItem(
-        "generatedPresentation"
-      );
       if (!generatedPresentationStr) {
-        console.log("No presentation data found in localStorage");
+        console.log(
+          "❌ Proto005Template: No generated presentation data found"
+        );
         return;
       }
 
       try {
-        const generatedPresentation = JSON.parse(generatedPresentationStr);
-        const slides = generatedPresentation.data?.slides;
-        const templateIds = generatedPresentation.data?.templateIds;
+        setIsLoadingRender(true);
+        console.log(
+          `🚀 Proto005Template: Starting render for slide ${slideNumber}`
+        );
 
-        if (
-          !slides ||
-          !templateIds ||
-          slides.length === 0 ||
-          templateIds.length === 0
-        ) {
-          console.log("No slides or templateIds found in presentation data");
+        const generatedPresentation = JSON.parse(generatedPresentationStr);
+        const slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
+
+        if (!slideData) {
+          console.log(
+            `❌ Proto005Template: No slide data found for slide ${slideNumber}`
+          );
           return;
         }
 
-        console.log("🎨 [SlideContent] Starting slide rendering", {
-          slidesCount: slides.length,
-          templateIds,
-          currentSlide: slideNumber,
+        console.log(
+          `📊 Proto005Template: Processing slide data for slide ${slideNumber}:`,
+          slideData
+        );
+
+        const result = await renderSlidesWithDataMutation.mutateAsync({
+          slides: [slideData],
+          slideNumbers: [slideNumber],
         });
-
-        setIsLoadingRender(true);
-
-        // Вызываем API для рендеринга всех слайдов
-        const renderedSlidesResult =
-          await renderSlidesWithDataMutation.mutateAsync({
-            slides,
-            templateIds,
-          });
 
         console.log(
-          "✅ [SlideContent] Slides rendered successfully",
-          renderedSlidesResult
+          `✅ Proto005Template: Render completed for slide ${slideNumber}`,
+          result
         );
 
-        // Сохраняем все отрендеренные слайды в кэш
-        const slidesCache: Record<number, string> = {};
-        renderedSlidesResult.forEach((slide) => {
-          slidesCache[slide.slideNumber] = slide.html;
-        });
-        setRenderedSlides(slidesCache);
+        if (result?.renderedSlides?.[slideNumber]) {
+          const htmlContent = result.renderedSlides[slideNumber];
+          setRenderedHtml(htmlContent);
 
-        // Находим HTML для текущего слайда
-        const currentSlideHtml = renderedSlidesResult.find(
-          (slide) => slide.slideNumber === slideNumber
-        );
+          // Сохраняем в кеш
+          setRenderedSlides((prev) => ({
+            ...prev,
+            [slideNumber]: htmlContent,
+          }));
 
-        if (currentSlideHtml) {
-          console.log(`🎯 [SlideContent] Found HTML for slide ${slideNumber}`, {
-            templateId: currentSlideHtml.templateId,
-            htmlLength: currentSlideHtml.html.length,
-          });
-          setRenderedHtml(currentSlideHtml.html);
-        } else {
-          console.warn(
-            `⚠️ [SlideContent] No HTML found for slide ${slideNumber}`
+          console.log(
+            `💾 Proto005Template: Cached HTML for slide ${slideNumber}`
           );
         }
       } catch (error) {
-        console.error("❌ [SlideContent] Failed to render slides", error);
+        console.error(
+          `❌ Proto005Template: Error rendering slide ${slideNumber}:`,
+          error
+        );
       } finally {
         setIsLoadingRender(false);
       }
@@ -587,23 +285,13 @@ export const Proto004Template = ({
       defaultX: number,
       defaultY: number
     ) => {
-      // Check if element exists in textElementStyles (not just getting default values)
-      const elementExists = textElementStyles[elementId];
-
-      if (!elementExists) {
+      const currentPosition = getTextElementPosition(elementId);
+      if (!currentPosition) {
+        setTextElementPosition(elementId, { x: defaultX, y: defaultY });
         console.log(
-          `Initializing position for ${elementId} to (${defaultX}, ${defaultY})`
+          `🎯 Proto005Template: Initialized position for ${elementId}:`,
+          { x: defaultX, y: defaultY }
         );
-        updateTextElementStyle(elementId, {
-          x: defaultX,
-          y: defaultY,
-          rotation: 0,
-        });
-      } else {
-        console.log(`Element ${elementId} already has position:`, {
-          x: elementExists.x,
-          y: elementExists.y,
-        });
       }
     };
 
@@ -613,27 +301,14 @@ export const Proto004Template = ({
     console.log("Current textElementStyles:", textElementStyles);
 
     switch (slideType) {
-      case "title":
-        initializeElementPosition("title-main", 48, 48);
-        initializeElementPosition("title-sub", 48, 160);
-        break;
       case "content":
-        initializeElementPosition("content-main", 48, 48);
-        initializeElementPosition("content-sub", 48, 160);
-        // Initialize positions for grid elements
-        for (let i = 1; i <= 2; i++) {
-          initializeElementPosition(
-            `content-label-${i}`,
-            150 + (i - 1) * 300,
-            270
-          );
-          initializeElementPosition(
-            `content-desc-${i}`,
-            150 + (i - 1) * 300,
-            300
-          );
-        }
+        // Content slide specific positioning
+        initializeElementPosition(`slide-${slideNumber}-title`, 40, 20);
+        initializeElementPosition(`slide-${slideNumber}-subtitle`, 40, 60);
+        initializeElementPosition(`slide-${slideNumber}-text1`, 40, 100);
+        initializeElementPosition(`slide-${slideNumber}-text2`, 40, 140);
         break;
+
       default:
         // Initialize positions for slide elements from API data structure
         initializeElementPosition(`slide-${slideNumber}-title`, 40, 40);
@@ -696,9 +371,10 @@ export const Proto004Template = ({
       ];
 
       positions.forEach(({ id, pos }) => {
-        const currentPos = getTextElementPosition(id);
-        if (currentPos.x === 0 && currentPos.y === 0) {
+        const currentPosition = getTextElementPosition(id);
+        if (!currentPosition) {
           setTextElementPosition(id, pos);
+          console.log(`🎯 Set position for ${id}:`, pos);
         }
       });
     }
@@ -719,6 +395,7 @@ export const Proto004Template = ({
       case "title":
         slideElementIds.push("title-main", "title-sub");
         break;
+
       default:
         slideElementIds.push(
           `slide-${slideNumber}-title`,
@@ -766,7 +443,7 @@ export const Proto004Template = ({
       if (e.ctrlKey && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         store.undo();
-        console.log("🔄 Undo triggered");
+        console.log("↶ Undo triggered");
         return;
       }
 
@@ -777,39 +454,12 @@ export const Proto004Template = ({
       ) {
         e.preventDefault();
         store.redo();
-        console.log("🔄 Redo triggered");
+        console.log("↷ Redo triggered");
         return;
       }
 
       // Ctrl+C - Copy selected element
       if (e.ctrlKey && e.key === "c") {
-        e.preventDefault();
-
-        if (selectedTextElement) {
-          store.copyElementToClipboard(
-            "text",
-            selectedTextElement,
-            slideNumber
-          );
-        } else if (selectedImageElement) {
-          store.copyElementToClipboard(
-            "image",
-            selectedImageElement,
-            slideNumber
-          );
-        } else if (selectedTableElement) {
-          store.copyElementToClipboard(
-            "table",
-            selectedTableElement,
-            slideNumber
-          );
-        } else if (selectedInfographicsElement) {
-          store.copyElementToClipboard(
-            "infographics",
-            selectedInfographicsElement,
-            slideNumber
-          );
-        }
         console.log("📋 Copy triggered");
         return;
       }
@@ -836,14 +486,20 @@ export const Proto004Template = ({
         if (selectedTextElement) {
           console.log("Deleting text element:", selectedTextElement);
           deleteTextElement(selectedTextElement);
+          setSelectedTextElement(null);
         } else if (selectedImageElement) {
           console.log("Deleting image element:", selectedImageElement);
           deleteImageElement(selectedImageElement, slideNumber);
           setSelectedImageElement(null);
         } else if (selectedTableElement) {
+          console.log("Deleting table element:", selectedTableElement);
           deleteTableElement(selectedTableElement);
           setSelectedTableElement(null);
         } else if (selectedInfographicsElement) {
+          console.log(
+            "Deleting infographics element:",
+            selectedInfographicsElement
+          );
           deleteInfographicsElement(slideNumber, selectedInfographicsElement);
           setSelectedInfographicsElement(null);
         }
@@ -996,34 +652,84 @@ export const Proto004Template = ({
     }
 
     console.log(
-      `🎨 Proto004Template - Slide ${slideNumber}, templateId: ${templateId}`,
+      `🎨 Proto005Template - Slide ${slideNumber}, templateId: ${templateId}`,
       { slideData }
     );
 
     const getElementPosition = (elementType: string): React.CSSProperties => {
       switch (elementType) {
         case "title":
-          // Центрированный заголовок в белой области под синим градиентом
+          // Центрированный заголовок
           return {
             position: "absolute",
-            left: "260px", // Отступ слева
-            top: "190px", // Ниже синего градиента
+            left: "60px",
+            right: "60px",
+            top: "150px",
             textAlign: "center",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
           };
         case "subtitle":
+          // Центрированный подзаголовок под заголовком
           return {
             position: "absolute",
-            left: "175px", // Отступ слева
-            top: "220px",
+            left: "60px",
+            right: "60px",
+            top: "210px",
             textAlign: "center",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
           };
-
+        case "text1-title":
+          // Центрированный text1 title
+          return {
+            position: "absolute",
+            left: "60px",
+            right: "60px",
+            top: "270px",
+            textAlign: "center",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          };
+        case "text1-content":
+          // Центрированный text1 content
+          return {
+            position: "absolute",
+            left: "60px",
+            right: "60px",
+            top: "310px",
+            textAlign: "center",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          };
+        case "text2-title":
+          // Центрированный text2 title
+          return {
+            position: "absolute",
+            left: "60px",
+            right: "60px",
+            top: "370px",
+            textAlign: "center",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          };
+        case "text2-content":
+          // Центрированный text2 content
+          return {
+            position: "absolute",
+            left: "60px",
+            right: "60px",
+            top: "410px",
+            textAlign: "center",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          };
         default:
           return { position: "absolute", left: 0, top: 0 };
       }
@@ -1297,9 +1003,9 @@ export const Proto004Template = ({
         >
           <ResizableTextBox
             elementId={`slide-${slideNumber}-text2-content`}
-            isSelected={selectedTextElements.includes(
-              `slide-${slideNumber}-text2-content`
-            )}
+            isSelected={
+              selectedTextElement === `slide-${slideNumber}-text2-content`
+            }
             onDelete={handleTextDelete}
             onCopy={() => handleTextCopy(`slide-${slideNumber}-text2-content`)}
             onMoveUp={() =>
@@ -1390,7 +1096,7 @@ export const Proto004Template = ({
     );
   };
 
-  // Render image elements from store - для Proto004Template не показываем интерактивные изображения
+  // Render image elements from store - для Proto005Template не показываем интерактивные изображения
   const renderImageElements = () => {
     // Проверяем templateId для специального позиционирования
     let templateId = null;
@@ -1407,20 +1113,12 @@ export const Proto004Template = ({
       }
     }
 
-    // proto_004 изображения используются как фон, не как интерактивные элементы
-    if (templateId === "proto_004") {
+    // proto_005 изображения используются как фон, не как интерактивные элементы
+    if (templateId === "proto_005") {
       console.log(
-        `🎯 Proto004Template: Skipping interactive images - using as background`
+        `🎯 Proto005Template: Skipping interactive images - using as background`
       );
-      return []; // Пустой массив для proto_004
-    }
-
-    // proto_002 изображения рендерятся в Proto002Template, не здесь
-    if (templateId === "proto_002") {
-      console.log(
-        `🎯 SlideContent: Skipping proto_002 images - handled by Proto002Template`
-      );
-      return []; // Пустой массив для proto_002
+      return []; // Пустой массив для proto_005
     }
 
     // Обычная логика для других шаблонов
@@ -1498,7 +1196,6 @@ export const Proto004Template = ({
             isSelected={selectedInfographicsElement === elementId}
             onDelete={() => {
               deleteInfographicsElement(slideNumber, elementId);
-              setSelectedInfographicsElement(null);
             }}
           />
         );
@@ -1542,7 +1239,7 @@ export const Proto004Template = ({
 
     return (
       <>
-        {/* Left vertical guide line */}
+        {/* Left guide */}
         <div
           className="absolute pointer-events-none"
           style={{
@@ -1555,7 +1252,34 @@ export const Proto004Template = ({
             zIndex: 998,
           }}
         />
-        {/* Top horizontal guide line */}
+        {/* Center vertical guide */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: "50%",
+            top: "0px",
+            width: "1px",
+            height: "100%",
+            background:
+              "repeating-linear-gradient(to bottom, #bba2fe 0px, #bba2fe 4px, transparent 4px, transparent 8px)",
+            zIndex: 998,
+            transform: "translateX(-50%)",
+          }}
+        />
+        {/* Right guide */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            right: `24px`,
+            top: "0px",
+            width: "1px",
+            height: "100%",
+            background:
+              "repeating-linear-gradient(to bottom, #bba2fe 0px, #bba2fe 4px, transparent 4px, transparent 8px)",
+            zIndex: 998,
+          }}
+        />
+        {/* Top guide */}
         <div
           className="absolute pointer-events-none"
           style={{
@@ -1568,7 +1292,21 @@ export const Proto004Template = ({
             zIndex: 998,
           }}
         />
-        {/* Bottom horizontal guide line */}
+        {/* Center horizontal guide */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: "50%",
+            left: "0px",
+            height: "1px",
+            width: "100%",
+            background:
+              "repeating-linear-gradient(to right, #bba2fe 0px, #bba2fe 4px, transparent 4px, transparent 8px)",
+            zIndex: 998,
+            transform: "translateY(-50%)",
+          }}
+        />
+        {/* Bottom guide */}
         <div
           className="absolute pointer-events-none"
           style={{
@@ -1578,19 +1316,6 @@ export const Proto004Template = ({
             width: "100%",
             background:
               "repeating-linear-gradient(to right, #bba2fe 0px, #bba2fe 4px, transparent 4px, transparent 8px)",
-            zIndex: 998,
-          }}
-        />
-        {/* Right vertical guide line */}
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            right: `24px`,
-            top: "0px",
-            width: "1px",
-            height: "100%",
-            background:
-              "repeating-linear-gradient(to bottom, #bba2fe 0px, #bba2fe 4px, transparent 4px, transparent 8px)",
             zIndex: 998,
           }}
         />
@@ -1613,182 +1338,100 @@ export const Proto004Template = ({
 
     return (
       <div
-        className="absolute pointer-events-none z-[999]"
+        className="absolute border-2 border-blue-500 bg-blue-200 bg-opacity-20 pointer-events-none"
         style={{
           left: `${left}px`,
           top: `${top}px`,
           width: `${width}px`,
           height: `${height}px`,
+          zIndex: 999,
         }}
-      >
-        {/* Полупрозрачный фон */}
-        <div className="absolute inset-0 bg-[#BBA2FE] opacity-10" />
-
-        {/* Основная рамка */}
-        <div
-          className="absolute inset-0 border-2 border-[#BBA2FE]"
-          style={{
-            borderStyle: "solid",
-          }}
-        />
-
-        <div
-          className="absolute w-2 h-2 bg-[#BBA2FE] "
-          style={{
-            left: "-4px",
-            top: "-4px",
-          }}
-        />
-
-        {/* Верхний правый */}
-        <div
-          className="absolute w-2 h-2 bg-[#BBA2FE] "
-          style={{
-            right: "-4px",
-            top: "-4px",
-          }}
-        />
-
-        {/* Нижний левый */}
-        <div
-          className="absolute w-2 h-2 bg-[#BBA2FE] "
-          style={{
-            left: "-4px",
-            bottom: "-4px",
-          }}
-        />
-
-        {/* Нижний правый */}
-        <div
-          className="absolute w-2 h-2 bg-[#BBA2FE] "
-          style={{
-            right: "-4px",
-            bottom: "-4px",
-          }}
-        />
-      </div>
+      />
     );
   };
 
   const handleSlideClick = (e: React.MouseEvent) => {
-    // Don't clear text selection if we're in image area selection mode
-    if (isImageAreaSelectionMode) return;
-
-    const target = e.target as HTMLElement;
-    const isToolbarClick =
-      target.closest('[role="toolbar"]') ||
-      target.closest(".bg-white.rounded-\\[8px\\]") ||
-      target.closest("button");
-    const isTextElement = target.closest("[data-text-element]");
-    const isTableElement = target.closest("[data-table-element]");
-    const isImageElement = target.closest("[data-image-element]");
-    const isInfographicsElement = target.closest("[data-infographics-element]");
-
-    if (
-      !isToolbarClick &&
-      !isTextElement &&
-      !isTableElement &&
-      !isImageElement &&
-      !isInfographicsElement
-    ) {
+    // Only clear selection if clicking on the slide background
+    if (e.target === e.currentTarget) {
       clearTextSelection();
+      setSelectedImageElement(null);
       setSelectedTableElement(null);
-      setEditingTableElement(null); // Also clear editing state
-      setSelectedImageElement(null); // Clear image selection
-
-      // Close all tool panels by clearing their selections
-      // This will close any open panels (TextEditor, Image, Table, Infographics)
-      const store = usePresentationStore.getState();
-      store.setSelectedTextElement(null);
-      store.setSelectedImageElement(null);
-      store.setSelectedTableElement(null);
-      store.setSelectedInfographicsElement(null);
-      store.clearImageAreaSelection();
+      setSelectedInfographicsElement(null);
     }
   };
 
-  const renderSlideByType = () => {
-    // Предотвращаем hydration errors - ждем клиентского рендеринга
-    if (!isMounted) {
-      return (
-        <div
-          className="slide-container mx-auto w-[759px] h-[405px] bg-white rounded-[12px] overflow-hidden flex items-center justify-center"
-          style={{ position: "relative" }}
-        >
-          <div className="text-gray-500">Загрузка...</div>
-        </div>
-      );
+  // Get background image from slideData
+  let backgroundImage = null;
+  let slideData = null;
+  let templateId = null;
+
+  const generatedPresentationStr = localStorage.getItem(
+    "generatedPresentation"
+  );
+  if (generatedPresentationStr) {
+    try {
+      const generatedPresentation = JSON.parse(generatedPresentationStr);
+      slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
+      const templateIds = generatedPresentation.data?.templateIds;
+      templateId = templateIds?.[slideNumber - 1] || slideData?._template_id;
+
+      // Получаем фоновое изображение из _images массива
+      if (
+        slideData?._images &&
+        Array.isArray(slideData._images) &&
+        slideData._images.length > 0
+      ) {
+        backgroundImage = slideData._images[0];
+      }
+    } catch (error) {
+      console.error("Error parsing generated presentation:", error);
     }
+  }
 
-    console.log(`🎯 [Proto004Template] Render for slide ${slideNumber}`);
+  const backgroundStyle = backgroundImage
+    ? {
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }
+    : {
+        // Fallback gradient
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      };
 
-    return (
-      <div
-        className={`slide-container mx-auto w-[759px] h-[405px] bg-white rounded-[12px] overflow-hidden ${
-          isImageAreaSelectionMode ? "cursor-crosshair" : ""
-        }`}
-        onClick={handleSlideClick}
-        onDoubleClick={handleDoubleClick}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-        style={{ position: "relative" }}
-      >
-        {/* Фоновое изображение сверху или градиент как fallback */}
-        {(() => {
-          // Получаем изображение из данных слайда
-          const generatedPresentationStr = localStorage.getItem(
-            "generatedPresentation"
-          );
-          let backgroundImageUrl = null;
+  return (
+    <div
+      className="slide-canvas relative w-full h-full overflow-hidden cursor-crosshair"
+      style={{
+        width: "860px",
+        height: "484px",
+        ...backgroundStyle,
+      }}
+      onClick={handleSlideClick}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      onDoubleClick={handleDoubleClick}
+    >
+      {/* Render slide data elements */}
+      {renderSlideDataElements()}
 
-          if (generatedPresentationStr) {
-            try {
-              const generatedPresentation = JSON.parse(
-                generatedPresentationStr
-              );
-              const slideData =
-                generatedPresentation.data?.slides?.[slideNumber - 1];
-              backgroundImageUrl = slideData?._images?.[0];
-            } catch (error) {
-              console.error("Error getting background image:", error);
-            }
-          }
+      {/* Render interactive table elements */}
+      {renderTableElements()}
 
-          return (
-            <div
-              className="absolute top-0 left-0 w-full h-[202.5px] rounded-t-[12px]"
-              style={{
-                background: backgroundImageUrl
-                  ? `url('${backgroundImageUrl}') center/cover no-repeat`
-                  : "linear-gradient(135deg, #1E90FF 0%, #87CEEB 50%, #4169E1 100%)",
-                zIndex: 1,
-              }}
-            />
-          );
-        })()}
+      {/* Render interactive image elements */}
+      {renderImageElements()}
 
-        {/* Интерактивные элементы */}
-        <div
-          className="interactive-layer absolute inset-0"
-          style={{ zIndex: 10 }}
-        >
-          {renderSlideDataElements()}
-          {renderImageElements()}
-          {renderTableElements()}
-          {renderInfographicsElements()}
-          {renderAlignmentGuides()}
-          {renderImageAreaSelection()}
-        </div>
-      </div>
-    );
-  };
+      {/* Render interactive infographics elements */}
+      {renderInfographicsElements()}
 
-  return renderSlideByType();
-};
+      {/* Render alignment guides */}
+      {renderAlignmentGuides()}
 
-export const getSlideType = (slideNumber: number): "title" | "default" => {
-  if (slideNumber === 1) return "title";
-  return "default";
+      {/* Render image area selection */}
+      {renderImageAreaSelection()}
+    </div>
+  );
 };

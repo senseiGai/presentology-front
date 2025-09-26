@@ -3,6 +3,8 @@ import Image from "next/image";
 import TrashIcon from "../../../../public/icons/TrashIcon";
 import { useConfirmDeleteStore } from "../../ConfirmDeletePopup/model/use-confirm-delete-popup";
 import { useRouter } from "next/navigation";
+import { useDeletePresentation } from "@/shared/api/presentations";
+import { showDeletedToast } from "@/shared/lib/toasts";
 
 interface PresentationCardProps {
   id?: string;
@@ -21,6 +23,7 @@ export const PresentationCard = ({
 }: PresentationCardProps) => {
   const { openModal } = useConfirmDeleteStore();
   const router = useRouter();
+  const deletePresentationMutation = useDeletePresentation();
 
   const getTagStyles = (tagType: string) => {
     switch (tagType) {
@@ -72,15 +75,30 @@ export const PresentationCard = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log("Button clicked!"); // Для отладки
+              if (!id) {
+                console.error("No presentation ID available");
+                return;
+              }
+
               openModal({
                 title: label,
                 description:
                   "После удаления восстановить презентацию будет невозможно",
-
-                onConfirm: () => {
-                  console.log("Deleting presentation:", label);
-                  // TODO: Add actual delete logic here
+                onConfirm: async () => {
+                  try {
+                    await deletePresentationMutation.mutateAsync(id);
+                    showDeletedToast({
+                      title: `Презентация "${label}" удалена`,
+                      onUndo: () => {
+                        console.log("Undo delete presentation:", label);
+                        // TODO: Implement restore functionality if needed
+                      },
+                      durationMs: 5000,
+                    });
+                  } catch (error) {
+                    console.error("Failed to delete presentation:", error);
+                    // Можно добавить уведомление об ошибке
+                  }
                 },
               });
             }}

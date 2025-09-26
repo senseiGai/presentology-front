@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAuthToken } from "@/shared/stores/auth.store";
+import { apiClient } from "./client";
 
 export interface Presentation {
   id: string;
@@ -35,27 +35,16 @@ const fetchPresentations = async (params?: {
   if (params?.limit) searchParams.append("limit", params.limit.toString());
   if (params?.cursor) searchParams.append("cursor", params.cursor);
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://presentology-back-production.up.railway.app";
-  const token = getAuthToken();
+  const endpoint = searchParams.toString()
+    ? `/presentations/my?${searchParams.toString()}`
+    : "/presentations/my";
 
-  if (!token) {
-    throw new Error("Требуется авторизация");
-  }
-
-  const response = await fetch(`${baseUrl}/presentations/my?${searchParams}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!response.ok) {
+  try {
+    const response = await apiClient.get<PresentationsResponse>(endpoint);
+    return response;
+  } catch (error) {
     throw new Error("Failed to fetch presentations");
   }
-
-  return response.json();
 };
 
 // React Query хуки
@@ -85,30 +74,15 @@ export const createPresentationWithData = async (data: {
   templateIds?: string[];
   isPublic?: boolean;
 }): Promise<Presentation> => {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://presentology-back-production.up.railway.app";
-  const token = getAuthToken();
-
-  if (!token) {
-    throw new Error("Требуется авторизация");
+  try {
+    const response = await apiClient.post<Presentation>(
+      "/presentations/create-with-data",
+      data
+    );
+    return response;
+  } catch (error) {
+    throw new Error("Failed to create presentation");
   }
-
-  const response = await fetch(`${baseUrl}/presentations/create-with-data`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "Failed to create presentation");
-  }
-
-  return response.json();
 };
 
 // React Query хук для создания презентации с данными
@@ -120,6 +94,35 @@ export const useCreatePresentationWithData = () => {
     onSuccess: () => {
       // Инвалидируем кэш презентаций после создания новой
       queryClient.invalidateQueries({ queryKey: ["presentations"] });
+    },
+  });
+};
+
+// Функция для удаления презентации
+export const deletePresentation = async (
+  id: string
+): Promise<{ message: string }> => {
+  try {
+    const response = await apiClient.delete<{ message: string }>(
+      `/presentations/${id}`
+    );
+    return response;
+  } catch (error) {
+    throw new Error("Failed to delete presentation");
+  }
+};
+
+// React Query хук для удаления презентации
+export const useDeletePresentation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deletePresentation,
+    onSuccess: () => {
+      // Инвалидируем кэш презентаций после удаления
+      queryClient.invalidateQueries({ queryKey: ["presentations"] });
+      // Также инвалидируем все связанные с презентациями запросы
+      queryClient.invalidateQueries({ queryKey: ["presentations", "list"] });
     },
   });
 };

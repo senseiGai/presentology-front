@@ -1,0 +1,141 @@
+{
+  "success": true,
+  "data": {
+    "templateIds": ["proto_007", "proto_049", "proto_101"],
+    "deck": {
+      "title": "Тест: быстрое и точное тестирование будущего",
+      "tone": ["business"],
+      "audience": "investors",
+      "goal": "sell",
+      "action": "",
+      "rules": [
+        "Заголовок отражает ключевую идею слайда",
+        "Основной текст разбивай на 3–5 буллетов с фактами и цифрами",
+        "Каждый слайд выстраивай по спецификации DeckSpec",
+        "Сфокусируйся на ценности и выгоде для инвестора",
+        "Используй единый деловой язык",
+        "Структура: проблема, решение, выгода, призыв",
+        "Избегай клише, жаргона и излишних деталей",
+        "Минимизируй текст без утраты смысла",
+        "Заканчивай презентацию четким призывом к действию"
+      ],
+      "_globalFonts": {
+        "_fontScale": 1,
+        "_fontSizes": {
+          "title": 60,
+          "subtitle": 30,
+          "t1": 20,
+          "t2": 18,
+          "badge": 20
+        },
+        "_fontCaps": {
+          "title": 11,
+          "subtitle": 48,
+          "t1": 31,
+          "t2": 170,
+          "badge": 1
+        },
+        "_tableFontSize": 18
+      }
+    },
+    "slides": [
+      {
+        "title": "Тест",
+        "subtitle": "Тестируя будущее сегодня",
+        "_fontScale": 1,
+        "_fontSizes": {
+          "title": 60,
+          "subtitle": 30,
+          "t1": 20,
+          "t2": 18,
+          "badge": 20
+        },
+        "_fontCaps": {
+          "title": 11,
+          "subtitle": 48,
+          "t1": 31,
+          "t2": 170,
+          "badge": 1
+        },
+        "_tableFontSize": 18,
+        "_images": [
+          "https://images.unsplash.com/photo-1675207631177-78ee03c65943?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3ODE5NjB8MHwxfHNlYXJjaHw2NHx8JUQxJTgyJUQwJUI1JUQxJTgxJUQxJTgyJTIwJUQwJUEyJUQwJUI1JUQxJTgxJUQxJTgyJTIwbWluaW1hbCUyMHBsYWluJTIwZ3JhZGllbnQlMjBiYWNrZ3JvdW5kJTIwdGV4dHVyZSUyMGhpZ2glMjBxdWFsaXR5fGVufDF8MHx8fDE3NTg4Njc3NDl8MA&ixlib=rb-4.1.0&q=80&w=1080"
+        ],
+        "_mediaKind": "image"
+      },
+      {
+        "title": "ТестРешения",
+        "subtitle": "Ускоряет тестирование, снижая расходы",
+        "text1": {
+          "t1": "Проблема",
+          "t2": "• Медленные тесты приводят к перерасходу ресурсов\n• Платформа «тест»: адаптивная аналитика в реальном времени"
+        },
+        "text2": {
+          "t1": "Выгода",
+          "t2": "• Снижение затрат до 30% благодаря оптимизации процессов\n• Закажите демо и убедитесь в эффективности решения"
+        },
+        "_fontScale": 1,
+        "_fontSizes": {
+          "title": 60,
+          "subtitle": 30,
+          "t1": 20,
+          "t2": 18,
+          "badge": 20
+        },
+        "_fontCaps": {
+          "title": 11,
+          "subtitle": 48,
+          "t1": 31,
+          "t2": 170,
+          "badge": 1
+        },
+        "_tableFontSize": 18,
+        "_images": [
+          "https://images.unsplash.com/photo-1663177320254-51b22caf9ebd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3ODE5NjB8MHwxfHNlYXJjaHw1M3x8JUQxJTgyJUQwJUI1JUQxJTgxJUQxJTgyJTIwJUQwJUEyJUQwJUI1JUQxJTgxJUQxJTgyJUQwJUEwJUQwJUI1JUQxJTg4JUQwJUI1JUQwJUJEJUQwJUI4JUQxJThGJTIwbWluaW1hbCUyMGJhY2tncm91bmQlMjBubyUyMHRleHQlMjBubyUyMGNoYXJ0JTIwbm8lMjBncmFwaCUyMG5vJTIwZGlhZ3JhbSUyMGhpZ2glMjBxdWFsaXR5fGVufDF8MHx8fDE3NTg4Njc3Njh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+          "https://images.unsplash.com/photo-1758043322978-714d8af07de6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3ODE5NjB8MHwxfHNlYXJjaHw0OXx8JUQxJTgyJUQwJUI1JUQxJTgxJUQxJTgyJTIwJUQwJUEzJUQxJTgxJUQwJUJBJUQwJUJFJUQxJTgwJUQxJThGJUQwJUI1JUQxJTgyJTIwJUQxJTgyJUQwJUI1JUQxJTgxJUQxJTgyJUQwJUI4JUQxJTgwJUQwJUJFJUQwJUIyJUQwJUIwJUQwJUJEJUQwJUI4JUQwJUI1JTJDJTIwJUQxJTgxJUQwJUJEJUQwJUI4JUQwJUI2JUQwJUIwJUQxJThGJTIwJUQxJTgwJUQwJUIwJUQxJTgxJUQxJTg1JUQwJUJFJUQwJUI0JUQxJThCJTIwbWluaW1hbCUyMGJhY2tncm91bmQlMjBubyUyMHRleHQlMjBubyUyMGNoYXJ0JTIwbm8lMjBncmFwaCUyMG5vJTIwZGlhZ3JhbSUyMGhpZ2glMjBxdWFsaXR5fGVufDF8MHx8fDE3NTg4Njc3Njh8MA&ixlib=rb-4.1.0&q=80&w=1080"
+        ],
+        "_mediaKind": "image"
+      },
+      {
+        "title": "Инвестиции",
+        "subtitle": "Объем инвестиций и прогнозы",
+        "text1": {
+          "t1": "Проблема",
+          "t2": "Нехватка $1 млн на продукт, маркетинг и новые кадры."
+        },
+        "text2": {
+          "t1": "Решение",
+          "t2": "Прогноз выручки $5 млн и EBITDA 25% за 3 года."
+        },
+        "text3": {
+          "t1": "Вложитесь",
+          "t2": "в «тест» сегодня. Контакты info@test.com, +7 123 456 7890."
+        },
+        "_fontScale": 1,
+        "_fontSizes": {
+          "title": 60,
+          "subtitle": 30,
+          "t1": 20,
+          "t2": 18,
+          "badge": 20
+        },
+        "_fontCaps": {
+          "title": 11,
+          "subtitle": 48,
+          "t1": 31,
+          "t2": 170,
+          "badge": 1
+        },
+        "_tableFontSize": 18,
+        "_images": [
+          "https://cdn.ttapi.io/flux/2025-09-26/b1f299a7-6fd2-41c5-9a14-965f092ae932.jpg"
+        ],
+        "_mediaKind": "image"
+      }
+    ],
+    "templatesMetaVersion": "v2"
+  },
+  "statusCode": 200,
+  "timestamp": "2025-09-26T06:23:00.637Z",
+  "deckTitle": "Тест: быстрое и точное тестирование будущего"
+}

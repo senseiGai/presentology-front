@@ -12,7 +12,7 @@ interface StyleStepProps {
 
 export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
   const router = useRouter();
-  const { presentationData, updatePresentationData } =
+  const { presentationData, updatePresentationData, resetData } =
     usePresentationCreationStore();
 
   // Хук для создания презентации в базе данных
@@ -30,6 +30,7 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
     selectedTemplate,
     setSelectedTheme,
     setSelectedTemplate,
+    resetFlow,
   } = usePresentationFlowStore();
 
   const [selectedTemplateIndex, setSelectedTemplateIndex] = useState(0);
@@ -150,6 +151,14 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
 
       console.log("Presentation created in database:", createdPresentation);
 
+      // Очищаем stores после успешного создания презентации
+      resetData();
+      resetFlow();
+
+      // Также очищаем localStorage от данных предыдущих презентаций
+      localStorage.removeItem("presentationCreationData");
+      localStorage.removeItem("presentationFlowData");
+
       // Сохраняем данные в localStorage для передачи на страницу генерации
       localStorage.setItem(
         "presentationGenerationData",
@@ -163,6 +172,13 @@ export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
       router.push("/presentation-generation");
     } catch (error) {
       console.error("Error creating presentation:", error);
+
+      // Очищаем stores даже в случае ошибки, чтобы не накапливались данные
+      resetData();
+      resetFlow();
+      localStorage.removeItem("presentationCreationData");
+      localStorage.removeItem("presentationFlowData");
+
       // В случае ошибки все равно переходим на страницу генерации
       // чтобы не блокировать пользователя
       localStorage.setItem(

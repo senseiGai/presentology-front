@@ -44,6 +44,7 @@ export const PresentationGenerationBlock: React.FC<
     setIsGenerating,
     setSlideTemplates,
     setTotalSlides,
+    resetPresentation,
   } = usePresentationStore();
 
   // Получаем данные из PresentationFlowStore для правильного подсчета слайдов
@@ -265,6 +266,15 @@ export const PresentationGenerationBlock: React.FC<
   // Получение и обработка данных при загрузке компонента
   useEffect(() => {
     console.log("🔄 PresentationGenerationBlock useEffect called");
+
+    // Очищаем состояние store перед началом новой генерации
+    console.log("🧹 Clearing store state for new presentation");
+    resetPresentation();
+
+    // Очищаем также старые данные из localStorage
+    console.log("🧹 Clearing old presentation data from localStorage");
+    localStorage.removeItem("generatedPresentation");
+
     // Если генерация уже началась, не запускаем снова
     if (hasStartedGeneration.current) {
       console.log("⏭️ Generation already started, skipping");

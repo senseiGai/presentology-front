@@ -779,6 +779,8 @@ export const useGenerateSlidesForStructure = () => {
     mutationFn: generateSlidesForStructure,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["presentations"] });
+      // Очищаем localStorage после успешной генерации слайдов
+      localStorage.removeItem("presentationGenerationData");
     },
     onError: (error) => {
       console.error("Error generating slides for structure:", error);
@@ -1142,6 +1144,8 @@ export const useGenerateSlidesForStructureNew = () => {
     mutationFn: generateSlidesForStructureNew,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["presentations"] });
+      // Очищаем localStorage после успешной генерации слайдов
+      localStorage.removeItem("presentationGenerationData");
     },
     onError: (error) => {
       console.error("Error generating slides for structure:", error);
@@ -1284,8 +1288,8 @@ export const renderSlidesWithData = async (data: {
     templateIds: data.templateIds,
   });
 
-  const result = await apiClient.post<RenderSlidesResponse>(
-    "ai-proxy/slides/render-with-data",
+  const result = await makeApiRequest<RenderSlidesResponse>(
+    "slides/render-with-data",
     data
   );
 

@@ -817,9 +817,15 @@ export const SlideContent = ({
         return;
       }
 
-      // Ctrl+C - Copy selected element
-      if (e.ctrlKey && e.key === "c") {
+      // Ctrl+C/С - Copy selected element (support both English and Russian keyboard layouts)
+      if (
+        e.ctrlKey &&
+        (e.key === "c" || e.key === "C" || e.key === "с" || e.key === "С")
+      ) {
         e.preventDefault();
+        e.stopPropagation();
+
+        let copiedElement = null;
 
         if (selectedTextElement) {
           store.copyElementToClipboard(
@@ -827,34 +833,58 @@ export const SlideContent = ({
             selectedTextElement,
             slideNumber
           );
+          copiedElement = `text element: ${selectedTextElement}`;
         } else if (selectedImageElement) {
           store.copyElementToClipboard(
             "image",
             selectedImageElement,
             slideNumber
           );
+          copiedElement = `image element: ${selectedImageElement}`;
         } else if (selectedTableElement) {
           store.copyElementToClipboard(
             "table",
             selectedTableElement,
             slideNumber
           );
+          copiedElement = `table element: ${selectedTableElement}`;
         } else if (selectedInfographicsElement) {
           store.copyElementToClipboard(
             "infographics",
             selectedInfographicsElement,
             slideNumber
           );
+          copiedElement = `infographics element: ${selectedInfographicsElement}`;
+        } else {
+          console.log("📋 No element selected to copy");
+          return;
         }
-        console.log("📋 Copy triggered");
+
+        console.log(
+          `📋 Copy triggered - copied ${copiedElement} from slide ${slideNumber}`
+        );
         return;
       }
 
-      // Ctrl+V - Paste from clipboard
-      if (e.ctrlKey && e.key === "v") {
+      // Ctrl+V/М - Paste from clipboard (support both English and Russian keyboard layouts)
+      if (
+        e.ctrlKey &&
+        (e.key === "v" || e.key === "V" || e.key === "м" || e.key === "М")
+      ) {
         e.preventDefault();
+        e.stopPropagation();
+
+        if (!store.hasClipboardContent()) {
+          console.log("📋 Paste triggered - but clipboard is empty");
+          return;
+        }
+
+        const clipboardState = usePresentationStore.getState().clipboard;
+        console.log(
+          `📋 Paste triggered - pasting ${clipboardState?.type} element to slide ${slideNumber}`
+        );
+
         store.pasteElementFromClipboard(slideNumber);
-        console.log("📋 Paste triggered");
         return;
       }
 

@@ -33,11 +33,114 @@ export const Proto004Template = ({
   >({});
   const [isMounted, setIsMounted] = React.useState(false);
   const initializedSlidesRef = React.useRef<Set<number>>(new Set());
+  const [slideData, setSlideData] = React.useState<any>(null);
 
   // Предотвращаем hydration errors
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Загружаем данные слайда как в Proto003Template
+  React.useEffect(() => {
+    const generatedPresentationStr = localStorage.getItem(
+      "generatedPresentation"
+    );
+    if (generatedPresentationStr) {
+      try {
+        const generatedPresentation = JSON.parse(generatedPresentationStr);
+        const currentSlideData =
+          generatedPresentation.data?.slides?.[slideNumber - 1];
+        setSlideData(currentSlideData);
+        console.log(
+          `🎨 Proto004Template - Loaded slide ${slideNumber}:`,
+          currentSlideData
+        );
+      } catch (error) {
+        console.error("Error parsing generated presentation:", error);
+      }
+    }
+  }, [slideNumber]);
+
+  // Принудительно создаём изображение в store для работы ResizableImageBox как в Proto003Template
+  React.useEffect(() => {
+    const elementId = `slide-${slideNumber}-proto004-image`;
+    const imageUrl = slideData?._images?.[0];
+
+    console.log(`🔧 Proto004Template useEffect - Slide ${slideNumber}`);
+    console.log(`🔧 Trying to create proto004 image: ${elementId}`);
+    console.log(`Current slideData:`, slideData);
+    console.log(`Image URL:`, imageUrl);
+
+    // ПРИНУДИТЕЛЬНО создаем изображение с src из slideData
+    if (imageUrl) {
+      console.log(`🚀 Creating image element in store...`);
+      usePresentationStore.setState((state: any) => {
+        console.log(`📦 Current state before update:`, {
+          slideImages: state.imageElements[slideNumber],
+          allImages: Object.keys(state.imageElements),
+        });
+
+        const newState = {
+          imageElements: {
+            ...state.imageElements,
+            [slideNumber]: {
+              ...(state.imageElements[slideNumber] || {}),
+              [elementId]: {
+                id: elementId,
+                position: { x: 0, y: 0 }, // Позиция для верхней половины слайда
+                width: 759, // Вся ширина слайда
+                height: 230, // Половина высоты слайда (405/2)
+                placeholder: false,
+                alt: "Proto004 Background Image",
+                zIndex: 1,
+                src: imageUrl, // Устанавливаем src для показа в ResizableImageBox
+              },
+            },
+          },
+        };
+
+        console.log(`📦 New state after update:`, {
+          slideImages: newState.imageElements[slideNumber],
+          elementToCreate: newState.imageElements[slideNumber][elementId],
+        });
+
+        return newState;
+      });
+      console.log(`✅ FORCE created proto004 image in store: ${elementId}`);
+    } else {
+      console.log(`❌ No image URL found for slide ${slideNumber}`);
+    }
+
+    // Проверим, что изображение создалось
+    setTimeout(() => {
+      console.log(`🔍 Verification phase - checking created image...`);
+      const createdImage = getImageElement(elementId, slideNumber);
+      console.log(`🔍 getImageElement result:`, createdImage);
+
+      // Проверим весь store
+      const allImages = usePresentationStore.getState().imageElements;
+      console.log(`📦 Full store state:`, allImages);
+      console.log(`📦 Current slide images:`, allImages[slideNumber]);
+      console.log(
+        `📦 Images for slide ${slideNumber}:`,
+        allImages[slideNumber]
+      );
+      console.log(
+        `📦 Specific image ${elementId}:`,
+        allImages[slideNumber]?.[elementId]
+      );
+
+      console.log(
+        `🎯 ResizableImageBox should now find: ${elementId} on slide ${slideNumber}`
+      );
+
+      if (!createdImage) {
+        console.error(`❌ CRITICAL: Image not found after creation!`);
+      } else {
+        console.log(`✅ SUCCESS: Image found after creation!`);
+      }
+    }, 100);
+  }, [slideNumber, slideData]);
 
   const renderSlidesWithDataMutation = useRenderSlidesWithData();
 
@@ -348,12 +451,15 @@ export const Proto004Template = ({
 
           // Создаем или обновляем изображение
           if (!existingImage) {
-            // Создаем новое изображение
+            // Создаем новое изображение с позиционированием для Proto004Template
             const defaultPosition = {
-              x: 400 + index * 20, // Смещаем каждое следующее изображение
-              y: 100 + index * 20,
+              x: 0, // Начинаем с левого края
+              y: 0, // Начинаем с верхнего края
             };
-            const defaultSize = { width: 300, height: 200 };
+            const defaultSize = {
+              width: 759, // Полная ширина слайда
+              height: 202, // Половина высоты слайда (405/2)
+            };
 
             const newElementId = addImageElement(
               slideNumber,
@@ -636,33 +742,34 @@ export const Proto004Template = ({
         break;
       default:
         // Initialize positions for slide elements from API data structure
-        initializeElementPosition(`slide-${slideNumber}-title`, 40, 40);
-        initializeElementPosition(`slide-${slideNumber}-subtitle`, 40, 80);
+        // Для Proto004Template размещаем текст в нижней половине слайда
+        initializeElementPosition(`slide-${slideNumber}-title`, 40, 220);
+        initializeElementPosition(`slide-${slideNumber}-subtitle`, 40, 260);
 
         // Initialize text1 elements (both object and string formats)
-        initializeElementPosition(`slide-${slideNumber}-text1-title`, 40, 130);
+        initializeElementPosition(`slide-${slideNumber}-text1-title`, 40, 300);
         initializeElementPosition(
           `slide-${slideNumber}-text1-content`,
           40,
-          160
+          330
         );
-        initializeElementPosition(`slide-${slideNumber}-text1`, 40, 130);
+        initializeElementPosition(`slide-${slideNumber}-text1`, 40, 300);
 
         // Initialize text2 elements (both object and string formats)
-        initializeElementPosition(`slide-${slideNumber}-text2-title`, 40, 220);
+        initializeElementPosition(`slide-${slideNumber}-text2-title`, 300, 300);
         initializeElementPosition(
           `slide-${slideNumber}-text2-content`,
-          40,
-          250
+          300,
+          330
         );
-        initializeElementPosition(`slide-${slideNumber}-text2`, 40, 220);
+        initializeElementPosition(`slide-${slideNumber}-text2`, 300, 300);
 
         // Initialize text3 elements
-        initializeElementPosition(`slide-${slideNumber}-text3-title`, 40, 310);
+        initializeElementPosition(`slide-${slideNumber}-text3-title`, 500, 300);
         initializeElementPosition(
           `slide-${slideNumber}-text3-content`,
-          40,
-          340
+          500,
+          330
         );
         break;
     }
@@ -1003,25 +1110,23 @@ export const Proto004Template = ({
     const getElementPosition = (elementType: string): React.CSSProperties => {
       switch (elementType) {
         case "title":
-          // Центрированный заголовок в белой области под синим градиентом
+          // Центрированный заголовок в белой области (нижняя половина)
           return {
             position: "absolute",
-            left: "260px", // Отступ слева
-            top: "190px", // Ниже синего градиента
+            left: "540px",
+            top: "220px", // В нижней половине (405/2 + отступ)
+            transform: "translateX(-50%)",
             textAlign: "center",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
+            width: "680px", // Почти вся ширина с отступами
           };
         case "subtitle":
           return {
             position: "absolute",
-            left: "175px", // Отступ слева
-            top: "220px",
+            left: "450px",
+            top: "260px", // Ниже заголовка
+            transform: "translateX(-50%)",
             textAlign: "center",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
+            width: "680px", // Почти вся ширина с отступами
           };
 
         default:
@@ -1390,91 +1495,34 @@ export const Proto004Template = ({
     );
   };
 
-  // Render image elements from store - для Proto004Template не показываем интерактивные изображения
+  // Render image elements from store - для Proto004Template показываем как интерактивные элементы
+  // Render image elements - реализация как в Proto003Template
   const renderImageElements = () => {
-    // Проверяем templateId для специального позиционирования
-    let templateId = null;
-    const generatedPresentationStr = localStorage.getItem(
-      "generatedPresentation"
-    );
-    if (generatedPresentationStr) {
-      try {
-        const generatedPresentation = JSON.parse(generatedPresentationStr);
-        const templateIds = generatedPresentation.data?.templateIds;
-        templateId = templateIds?.[slideNumber - 1];
-      } catch (error) {
-        console.error("Error parsing generated presentation:", error);
-      }
-    }
+    const imageElementId = `slide-${slideNumber}-proto004-image`;
+    const storeImage = getImageElement(imageElementId, slideNumber);
 
-    // proto_004 изображения используются как фон, не как интерактивные элементы
-    if (templateId === "proto_004") {
-      console.log(
-        `🎯 Proto004Template: Skipping interactive images - using as background`
-      );
-      return []; // Пустой массив для proto_004
-    }
+    console.log(`� About to render ResizableImageBox:`, {
+      elementId: imageElementId,
+      slideNumber: slideNumber,
+      slideDataImages: slideData?._images,
+      storeImage: storeImage,
+      shouldRender: !!storeImage,
+    });
 
-    // proto_002 изображения рендерятся в Proto002Template, не здесь
-    if (templateId === "proto_002") {
-      console.log(
-        `🎯 SlideContent: Skipping proto_002 images - handled by Proto002Template`
-      );
-      return []; // Пустой массив для proto_002
-    }
-
-    // Обычная логика для других шаблонов
-    const currentSlideImages = imageElements[slideNumber] || {};
-    const currentSlideImageElements = Object.entries(currentSlideImages);
-
-    const elementCount = currentSlideImageElements.length;
-
-    console.log(
-      `🎬 [SlideContent] Rendering ${elementCount} images for slide ${slideNumber}:`,
-      currentSlideImageElements.map(([id, data]) => ({ id, src: data.src }))
-    );
-
-    if (elementCount === 0) {
-      console.log(`🎬 [SlideContent] No images found for slide ${slideNumber}`);
-      console.log(
-        `🎬 [SlideContent] Current slide imageElements:`,
-        currentSlideImages
+    // Рендерим если есть изображение в store
+    if (storeImage) {
+      return (
+        <ResizableImageBox
+          elementId={imageElementId}
+          slideNumber={slideNumber}
+          isSelected={selectedImageElement === imageElementId}
+          onDelete={() => {
+            setSelectedImageElement(null);
+          }}
+        />
       );
     }
-
-    return currentSlideImageElements
-      .map(([elementId, imageData]) => {
-        // Проверяем, что imageData существует и имеет необходимые поля
-        if (!imageData || !imageData.position) {
-          console.warn(
-            "❌ [SlideContent] Invalid image data for element:",
-            elementId,
-            imageData
-          );
-          return null;
-        }
-
-        console.log(`✅ [SlideContent] Rendering image element ${elementId}:`, {
-          src: imageData.src,
-          position: imageData.position,
-          size: { width: imageData.width, height: imageData.height },
-        });
-
-        // Всегда показываем изображения как интерактивные элементы
-        return (
-          <ResizableImageBox
-            key={elementId}
-            elementId={elementId}
-            slideNumber={slideNumber}
-            isSelected={selectedImageElement === elementId}
-            onDelete={() => {
-              deleteImageElement(elementId, slideNumber);
-              setSelectedImageElement(null);
-            }}
-          />
-        );
-      })
-      .filter(Boolean); // Убираем null элементы
+    return null;
   };
 
   // Render infographics elements from store
@@ -1598,75 +1646,24 @@ export const Proto004Template = ({
     );
   };
 
-  // Render image area selection
+  // Render image area selection как в Proto003Template
   const renderImageAreaSelection = () => {
     if (!isImageAreaSelectionMode || !imageAreaSelection) return null;
 
-    const { startX, startY, endX, endY } = imageAreaSelection;
-    const width = Math.abs(endX - startX);
-    const height = Math.abs(endY - startY);
-    const left = Math.min(startX, endX);
-    const top = Math.min(startY, endY);
-
-    // Минимальный размер для показа выделения
-    if (width < 5 || height < 5) return null;
-
     return (
       <div
-        className="absolute pointer-events-none z-[999]"
         style={{
-          left: `${left}px`,
-          top: `${top}px`,
-          width: `${width}px`,
-          height: `${height}px`,
+          position: "absolute",
+          left: imageAreaSelection.startX,
+          top: imageAreaSelection.startY,
+          width: Math.abs(imageAreaSelection.endX - imageAreaSelection.startX),
+          height: Math.abs(imageAreaSelection.endY - imageAreaSelection.startY),
+          border: "2px dashed #007acc",
+          backgroundColor: "rgba(0, 122, 204, 0.1)",
+          pointerEvents: "none",
+          zIndex: 1000,
         }}
-      >
-        {/* Полупрозрачный фон */}
-        <div className="absolute inset-0 bg-[#BBA2FE] opacity-10" />
-
-        {/* Основная рамка */}
-        <div
-          className="absolute inset-0 border-2 border-[#BBA2FE]"
-          style={{
-            borderStyle: "solid",
-          }}
-        />
-
-        <div
-          className="absolute w-2 h-2 bg-[#BBA2FE] "
-          style={{
-            left: "-4px",
-            top: "-4px",
-          }}
-        />
-
-        {/* Верхний правый */}
-        <div
-          className="absolute w-2 h-2 bg-[#BBA2FE] "
-          style={{
-            right: "-4px",
-            top: "-4px",
-          }}
-        />
-
-        {/* Нижний левый */}
-        <div
-          className="absolute w-2 h-2 bg-[#BBA2FE] "
-          style={{
-            left: "-4px",
-            bottom: "-4px",
-          }}
-        />
-
-        {/* Нижний правый */}
-        <div
-          className="absolute w-2 h-2 bg-[#BBA2FE] "
-          style={{
-            right: "-4px",
-            bottom: "-4px",
-          }}
-        />
-      </div>
+      />
     );
   };
 
@@ -1720,11 +1717,22 @@ export const Proto004Template = ({
       );
     }
 
+    // Проверяем наличие данных слайда как в Proto003Template
+    if (!slideData) {
+      return (
+        <div className="relative w-[759px] h-[405px] bg-white rounded-lg shadow-lg">
+          <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+            Нет данных для слайда
+          </div>
+        </div>
+      );
+    }
+
     console.log(`🎯 [Proto004Template] Render for slide ${slideNumber}`);
 
     return (
       <div
-        className={`slide-container mx-auto w-[759px] h-[405px] bg-white rounded-[12px] overflow-hidden ${
+        className={`relative w-[759px] h-[427px] bg-white rounded-lg shadow-lg overflow-hidden ${
           isImageAreaSelectionMode ? "cursor-crosshair" : ""
         }`}
         onClick={handleSlideClick}
@@ -1733,54 +1741,18 @@ export const Proto004Template = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
-        style={{ position: "relative" }}
       >
-        {/* Фоновое изображение сверху или градиент как fallback */}
-        {(() => {
-          // Получаем изображение из данных слайда
-          const generatedPresentationStr = localStorage.getItem(
-            "generatedPresentation"
-          );
-          let backgroundImageUrl = null;
+        {/* Изображение на весь слайд через ResizableImageBox */}
+        {renderImageElements()}
 
-          if (generatedPresentationStr) {
-            try {
-              const generatedPresentation = JSON.parse(
-                generatedPresentationStr
-              );
-              const slideData =
-                generatedPresentation.data?.slides?.[slideNumber - 1];
-              backgroundImageUrl = slideData?._images?.[0];
-            } catch (error) {
-              console.error("Error getting background image:", error);
-            }
-          }
+        {/* Текстовые элементы */}
+        {renderSlideDataElements()}
 
-          return (
-            <div
-              className="absolute top-0 left-0 w-full h-[202.5px] rounded-t-[12px]"
-              style={{
-                background: backgroundImageUrl
-                  ? `url('${backgroundImageUrl}') center/cover no-repeat`
-                  : "linear-gradient(135deg, #1E90FF 0%, #87CEEB 50%, #4169E1 100%)",
-                zIndex: 1,
-              }}
-            />
-          );
-        })()}
-
-        {/* Интерактивные элементы */}
-        <div
-          className="interactive-layer absolute inset-0"
-          style={{ zIndex: 10 }}
-        >
-          {renderSlideDataElements()}
-          {renderImageElements()}
-          {renderTableElements()}
-          {renderInfographicsElements()}
-          {renderAlignmentGuides()}
-          {renderImageAreaSelection()}
-        </div>
+        {/* Другие элементы */}
+        {renderTableElements()}
+        {renderInfographicsElements()}
+        {renderAlignmentGuides()}
+        {renderImageAreaSelection()}
       </div>
     );
   };

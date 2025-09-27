@@ -46,9 +46,9 @@ export const Proto003Template: React.FC<Proto003TemplateProps> = ({
 
   // Позиции элементов (соответствуют slide_003.html)
   // Center the title horizontally and position it near the top
-  const titlePosition = { left: 220, top: 30 }; // 720 is slide width, 680 is assumed title box width
-  const baseSubtitlePosition = { left: 220, top: 230 };
-  const baseText3Position = { left: 220, top: 330 };
+  const titlePosition = { left: 220, top: 100 }; // 720 is slide width, 680 is assumed title box width
+  const baseSubtitlePosition = { left: 220, top: 0 };
+  const baseText3Position = { left: 220, top: 0 };
 
   // Динамический расчет позиции subtitle относительно title
   const [dynamicSubtitlePosition, setDynamicSubtitlePosition] =
@@ -139,8 +139,8 @@ export const Proto003Template: React.FC<Proto003TemplateProps> = ({
               [elementId]: {
                 id: elementId,
                 position: { x: 0, y: 0 }, // Позиция на весь слайд
-                width: 720, // Вся ширина слайда
-                height: 405, // Вся высота слайда
+                width: 759, // Вся ширина слайда
+                height: 427, // Вся высота слайда
                 placeholder: false,
                 alt: "Proto003 Background Image",
                 zIndex: 1,
@@ -271,7 +271,7 @@ export const Proto003Template: React.FC<Proto003TemplateProps> = ({
 
   if (!slideData) {
     return (
-      <div className="relative w-[720px] h-[405px] bg-white rounded-lg shadow-lg">
+      <div className="relative w-[759px] h-[427px] bg-white rounded-lg shadow-lg">
         <div className="absolute inset-0 flex items-center justify-center text-gray-400">
           Нет данных для слайда
         </div>
@@ -281,7 +281,7 @@ export const Proto003Template: React.FC<Proto003TemplateProps> = ({
 
   return (
     <div
-      className="relative w-[720px] h-[405px] bg-white rounded-lg shadow-lg overflow-hidden"
+      className="relative w-[759px] h-[427px] bg-white rounded-lg shadow-lg overflow-hidden"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -336,10 +336,11 @@ export const Proto003Template: React.FC<Proto003TemplateProps> = ({
           style={{
             position: "absolute",
             left: subtitlePosition.left,
-            top: subtitlePosition.top,
+            top: 140,
           }}
         >
           <ResizableTextBox
+            minWidth={300}
             elementId={`slide-${slideNumber}-subtitle`}
             isSelected={selectedTextElements.includes(
               `slide-${slideNumber}-subtitle`
@@ -381,6 +382,7 @@ export const Proto003Template: React.FC<Proto003TemplateProps> = ({
           }}
         >
           <ResizableTextBox
+            minWidth={200}
             elementId={`slide-${slideNumber}-text3`}
             isSelected={selectedTextElements.includes(
               `slide-${slideNumber}-text3`

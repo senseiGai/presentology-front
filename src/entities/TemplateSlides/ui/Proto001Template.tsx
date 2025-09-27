@@ -44,8 +44,8 @@ export const Proto001Template: React.FC<Proto001TemplateProps> = ({
   });
 
   // Позиции элементов
-  const titlePosition = { left: -20, top: -20 };
-  const baseSubtitlePosition = { left: -20, top: 230 };
+  const titlePosition = { left: 0, top: 0 };
+  const baseSubtitlePosition = { left: 0, top: 230 };
 
   // Динамический расчет позиции subtitle относительно title
   const [dynamicSubtitlePosition, setDynamicSubtitlePosition] =
@@ -122,8 +122,8 @@ export const Proto001Template: React.FC<Proto001TemplateProps> = ({
               [elementId]: {
                 id: elementId,
                 position: { x: 0, y: 0 }, // Позиция на весь слайд
-                width: 720, // Вся ширина слайда
-                height: 405, // Вся высота слайда
+                width: 759, // Вся ширина слайда
+                height: 427, // Вся высота слайда
                 placeholder: false,
                 alt: "Proto001 Background Image",
                 zIndex: 1,
@@ -280,14 +280,13 @@ export const Proto001Template: React.FC<Proto001TemplateProps> = ({
 
   return (
     <div
-      className="relative w-[720px] h-[405px] bg-white rounded-lg shadow-lg overflow-hidden"
+      className="relative w-[759px] h-[427px] bg-white rounded-lg shadow-lg overflow-hidden"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
       onDoubleClick={handleDoubleClick}
     >
-      {/* Title */}
       {slideData.title && (
         <div
           ref={setTitleRef}
@@ -374,7 +373,6 @@ export const Proto001Template: React.FC<Proto001TemplateProps> = ({
         </div>
       )}
 
-      {/* Изображение на весь слайд через ResizableImageBox */}
       {(() => {
         const imageElementId = `slide-${slideNumber}-proto001-image`;
         const storeImage = getImageElement(imageElementId, slideNumber);
@@ -387,7 +385,6 @@ export const Proto001Template: React.FC<Proto001TemplateProps> = ({
           shouldRender: !!storeImage,
         });
 
-        // Рендерим если есть изображение в store
         if (storeImage) {
           return (
             <ResizableImageBox

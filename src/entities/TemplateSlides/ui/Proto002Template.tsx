@@ -122,9 +122,9 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
               ...(state.imageElements[slideNumber] || {}),
               [elementId]: {
                 id: elementId,
-                position: { x: 340, y: 0 }, // Позиция относительно слайда (не контейнера)
-                width: 380, // Почти вся доступная ширина (720 - 430 - 10px отступ)
-                height: 405, // Почти вся доступная высота (405 - 130 - 15px отступ)
+                position: { x: 380, y: 0 }, // Позиция относительно слайда (не контейнера)
+                width: 379.5, // Почти вся доступная ширина (720 - 430 - 10px отступ)
+                height: 427, // Почти вся доступная высота (427 - 130 - 15px отступ)
                 placeholder: false,
                 alt: "Proto002 Image",
                 zIndex: 2,
@@ -278,7 +278,7 @@ export const Proto002Template: React.FC<Proto002TemplateProps> = ({
 
   return (
     <div
-      className="relative w-[720px]  h-[405px] bg-white rounded-lg shadow-lg overflow-hidden"
+      className="relative w-[759px]  h-[427px] bg-white rounded-lg shadow-lg overflow-hidden"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}

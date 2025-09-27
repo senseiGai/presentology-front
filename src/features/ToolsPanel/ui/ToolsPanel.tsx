@@ -92,7 +92,12 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
     };
 
     // Устанавливаем начальное значение
-    setTotalSlidesFromLocalStorage(getStoredTotalSlides());
+    const initialTotal = getStoredTotalSlides();
+    console.log(
+      "🚀 [ToolsPanel] Setting initial totalSlidesFromLocalStorage:",
+      initialTotal
+    );
+    setTotalSlidesFromLocalStorage(initialTotal);
 
     // Слушаем изменения localStorage
     const handleStorageChange = (e: StorageEvent) => {
@@ -225,8 +230,18 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
           </div>
           <div className="text-[14px] text-[#6B7280] mb-4">
             <span className="text-[#BBA2FE] font-medium text-[47px]">
-              {totalSlidesFromLocalStorage || totalSlides} /{" "}
-              {totalSlidesFromLocalStorage || totalSlides}
+              {(() => {
+                const finalTotalSlides =
+                  totalSlidesFromLocalStorage || totalSlides;
+                console.log("🎨 [ToolsPanel] Rendering totalSlides:", {
+                  totalSlidesFromLocalStorage,
+                  totalSlides,
+                  finalTotalSlides,
+                  isGenerating,
+                });
+                return finalTotalSlides;
+              })()}{" "}
+              / {totalSlidesFromLocalStorage || totalSlides}
             </span>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { showPresentationFeedbackToast } from "@/shared/lib/toasts";
 import {
   generateSlidesForStructure,
   createPresentationWithData,
-  updatePresentationWithData,
+  updatePresentation,
 } from "@/shared/api/presentation-generation";
 import { toast } from "sonner";
 
@@ -250,23 +250,21 @@ export const useSlideGeneration = () => {
             createdPresentation.id
           );
 
-          // Step 2: Update presentation with generation results
+          // Step 2: Update presentation with generation results using standard update
           const updateData = {
-            presentationId: createdPresentation.id,
-            presentationData: response,
-            templateIds: response.data.templateIds || [],
-            presentationState: {
-              textElementPositions: {},
-              textElementContents: {},
-              textElementStyles: {},
-              imageElements: {},
-              tableElements: {},
-              selectedTemplateIndex: 0,
-              selectedStyleIndex: 0,
-            },
+            title: presentationTitle,
+            description: `Презентация сгенерирована с помощью ИИ. Слайдов: ${
+              response.data.slides?.length || 0
+            }`,
+            htmlContent: JSON.stringify({
+              generatedData: response.data,
+              slides: response.data.slides,
+              templateIds: response.data.templateIds,
+            }),
+            type: "GENERATED",
           };
 
-          await updatePresentationWithData(updateData);
+          await updatePresentation(createdPresentation.id, updateData);
           console.log(
             "✅ Presentation successfully updated with generated data!"
           );

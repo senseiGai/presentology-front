@@ -1427,3 +1427,52 @@ export const useUpdatePresentationWithData = () => {
     },
   });
 };
+
+// ==================== Standard Presentation Update API ====================
+
+export interface UpdatePresentationRequest {
+  title?: string;
+  description?: string;
+  htmlContent?: string;
+  type?: string;
+  thumbnail?: string;
+  isPublic?: boolean;
+}
+
+export const updatePresentation = async (
+  id: string,
+  data: UpdatePresentationRequest
+): Promise<UpdatePresentationWithDataResponse> => {
+  console.log("✏️ [API] Updating presentation", {
+    id,
+    hasTitle: !!data.title,
+    hasHtmlContent: !!data.htmlContent,
+  });
+
+  const response: any = await apiClient.put(
+    API_ENDPOINTS.PRESENTATIONS.UPDATE(id),
+    data
+  );
+
+  console.log("✅ [API] Presentation updated successfully", response.data);
+
+  return response.data;
+};
+
+export const useUpdatePresentation = () => {
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdatePresentationRequest;
+    }) => updatePresentation(id, data),
+    onSuccess: (data) => {
+      console.log("✅ [Hook] Presentation updated successfully", data);
+    },
+    onError: (error) => {
+      console.error("❌ [Hook] Error updating presentation", error);
+    },
+  });
+};

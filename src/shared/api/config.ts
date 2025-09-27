@@ -159,6 +159,7 @@ export const API_ENDPOINTS = {
     CREATE_WITH_DATA: "/presentations/create-with-data",
     GET_BY_ID: (id: string) => `/presentations/${id}`,
     UPDATE: (id: string) => `/presentations/${id}`,
+    UPDATE_WITH_DATA: "/presentations/update-with-data",
     DELETE: (id: string) => `/presentations/${id}`,
     DOWNLOAD_PPTX: (id: string) => `/presentations/${id}/download/pptx`,
     DOWNLOAD_PPTX_CUSTOM: (id: string) => `/presentations/${id}/download/pptx`,

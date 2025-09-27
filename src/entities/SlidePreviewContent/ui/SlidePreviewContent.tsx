@@ -34,10 +34,38 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
     zoomLevel,
   } = usePresentationStore();
 
+  // Данные слайда из localStorage
+  const [slideData, setSlideData] = useState<any>(null);
+
   // Предотвращаем hydration errors
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Загружаем данные слайда из localStorage
+  useEffect(() => {
+    if (!isMounted) return;
+
+    try {
+      const generatedPresentationStr = localStorage.getItem(
+        "generatedPresentation"
+      );
+      if (generatedPresentationStr) {
+        const generatedPresentation = JSON.parse(generatedPresentationStr);
+        const slideInfo = generatedPresentation.data?.slides?.[slideNumber - 1];
+        console.log(
+          `🎯 [SlidePreviewContent] Loading slide ${slideNumber} data:`,
+          slideInfo
+        );
+        setSlideData(slideInfo);
+      }
+    } catch (error) {
+      console.error(
+        "❌ [SlidePreviewContent] Error loading slide data:",
+        error
+      );
+    }
+  }, [slideNumber, isMounted]);
 
   // useEffect для отслеживания изменений
   useEffect(() => {
@@ -370,10 +398,55 @@ export const SlidePreviewContent: React.FC<SlidePreviewContentProps> = ({
 
   // Рендер превью на основе типа слайда и реального контента
   const renderSlidePreview = () => {
+    // Если есть данные слайда из API, показываем их
+    if (slideData) {
+      return (
+        <div className="w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 rounded-[4px] relative overflow-hidden border border-[#E5E7EB] p-2">
+          {/* Заголовок слайда */}
+          {slideData.title && (
+            <div className="text-[4px] font-bold text-purple-900 mb-1 leading-tight truncate">
+              {slideData.title}
+            </div>
+          )}
+
+          {/* Подзаголовок */}
+          {slideData.subtitle && (
+            <div className="text-[3px] font-medium text-purple-700 mb-1 leading-tight truncate">
+              {slideData.subtitle}
+            </div>
+          )}
+
+          {/* Основной текст */}
+          {slideData.text1?.t2 && (
+            <div className="text-[2px] text-purple-600 leading-[1.1] line-clamp-3">
+              {slideData.text1.t2.length > 60
+                ? slideData.text1.t2.substring(0, 60) + "..."
+                : slideData.text1.t2}
+            </div>
+          )}
+
+          {/* Дополнительный текст */}
+          {slideData.text2?.t2 && (
+            <div className="text-[2px] text-purple-500 leading-[1.1] mt-1 line-clamp-2">
+              {slideData.text2.t2.length > 40
+                ? slideData.text2.t2.substring(0, 40) + "..."
+                : slideData.text2.t2}
+            </div>
+          )}
+
+          {/* Индикатор изображения если есть */}
+          {slideData._images && slideData._images.length > 0 && (
+            <div className="absolute bottom-1 right-1 w-3 h-2 bg-purple-400 rounded-[1px] flex items-center justify-center">
+              <div className="text-[1px] text-white">IMG</div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Fallback - показываем редактируемые элементы из store
     return (
       <div className="w-full h-full bg-white rounded-[4px] relative overflow-hidden border border-[#E5E7EB]">
-        {/* HTML шаблон полностью убран */}
-
         {/* Редактируемые элементы поверх шаблона */}
         <div className="relative z-10">
           {renderPreviewTextElements()}

@@ -62,7 +62,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
           const data = JSON.parse(presentationGenerationData);
           console.log("📊 [ToolsPanel] Parsed data:", data);
 
-          const slidesFromData = data?.data?.slides;
+          const slidesFromData = data?.uiSlides;
           const slidesCount = slidesFromData?.length || 0;
 
           console.log("📋 [ToolsPanel] slides array:", slidesFromData);

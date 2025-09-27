@@ -745,8 +745,11 @@ export const SlideContent = ({
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Debug all keyboard events to see what's happening
-      if (e.ctrlKey && (e.key === "z" || e.key === "Z")) {
-        console.log("🔄 [DEBUG] Ctrl+Z detected in SlideContent:", {
+      if (
+        e.ctrlKey &&
+        (e.key === "z" || e.key === "Z" || e.key === "я" || e.key === "Я")
+      ) {
+        console.log("🔄 [DEBUG] Ctrl+Z/Я detected in SlideContent:", {
           ctrlKey: e.ctrlKey,
           key: e.key,
           code: e.code,
@@ -774,8 +777,12 @@ export const SlideContent = ({
 
       const store = usePresentationStore.getState();
 
-      // Ctrl+Z - Undo (handle both lowercase 'z' and uppercase 'Z')
-      if (e.ctrlKey && (e.key === "z" || e.key === "Z") && !e.shiftKey) {
+      // Ctrl+Z or Ctrl+Я - Undo (support both English and Russian keyboard layouts)
+      if (
+        e.ctrlKey &&
+        (e.key === "z" || e.key === "Z" || e.key === "я" || e.key === "Я") &&
+        !e.shiftKey
+      ) {
         e.preventDefault();
         e.stopPropagation();
         console.log("🔄 Undo key combination detected:", {
@@ -789,10 +796,13 @@ export const SlideContent = ({
         return;
       }
 
-      // Ctrl+Shift+Z or Ctrl+Y - Redo
+      // Ctrl+Shift+Z/Я or Ctrl+Y/Н - Redo (support both English and Russian keyboard layouts)
       if (
-        (e.ctrlKey && e.shiftKey && (e.key === "Z" || e.key === "z")) ||
-        (e.ctrlKey && (e.key === "y" || e.key === "Y"))
+        (e.ctrlKey &&
+          e.shiftKey &&
+          (e.key === "Z" || e.key === "z" || e.key === "Я" || e.key === "я")) ||
+        (e.ctrlKey &&
+          (e.key === "y" || e.key === "Y" || e.key === "н" || e.key === "Н"))
       ) {
         e.preventDefault();
         e.stopPropagation();

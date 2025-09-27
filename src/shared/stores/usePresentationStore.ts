@@ -305,6 +305,10 @@ export interface PresentationState {
   // Infographics editing actions
   setSelectedInfographicsElement: (elementId: string | null) => void;
   clearInfographicsSelection: () => void;
+
+  // Clear all element selections
+  clearAllElementSelections: () => void;
+
   setInfographicsElement: (
     slideNumber: number,
     elementId: string,
@@ -1517,6 +1521,17 @@ export const usePresentationStore = create<PresentationState>()(
       clearInfographicsSelection: () =>
         set({
           selectedInfographicsElement: null,
+        }),
+
+      // Clear all element selections
+      clearAllElementSelections: () =>
+        set({
+          selectedTextElement: null,
+          selectedTextElements: [],
+          selectedImageElement: null,
+          selectedTableElement: null,
+          selectedInfographicsElement: null,
+          selectedElement: "",
         }),
 
       setInfographicsElement: (

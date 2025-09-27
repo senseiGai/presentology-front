@@ -94,6 +94,7 @@ export const TextEditorPanel: React.FC = () => {
     setTextElementContent,
     getTextElementContent,
     textElementContents,
+    clearAllElementSelections,
   } = usePresentationStore();
 
   // State for UI interactions
@@ -672,6 +673,24 @@ export const TextEditorPanel: React.FC = () => {
       className="bg-white relative w-[274px]"
       style={{ height: "calc(100vh - 80px)" }}
     >
+      <button
+        onClick={clearAllElementSelections}
+        className="h-[36px] pl-2 gap-x-2 flex-row flex items-center justify-center  transition-colors cursor-pointer"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M10.5331 12.4691C10.674 12.61 10.7531 12.8011 10.7531 13.0003C10.7531 13.1996 10.674 13.3907 10.5331 13.5316C10.3922 13.6725 10.2011 13.7516 10.0018 13.7516C9.80258 13.7516 9.61149 13.6725 9.47059 13.5316L4.47059 8.53158C4.40067 8.4619 4.34519 8.3791 4.30734 8.28794C4.26949 8.19677 4.25 8.09904 4.25 8.00032C4.25 7.90161 4.26949 7.80387 4.30734 7.71271C4.34519 7.62155 4.40067 7.53875 4.47059 7.46907L9.47059 2.46907C9.61149 2.32818 9.80258 2.24902 10.0018 2.24902C10.2011 2.24902 10.3922 2.32818 10.5331 2.46907C10.674 2.60997 10.7531 2.80107 10.7531 3.00032C10.7531 3.19958 10.674 3.39068 10.5331 3.53157L6.06497 7.9997L10.5331 12.4691Z"
+            fill="#939396"
+          />
+        </svg>
+        <span className="text-[#8F8F92] text-[14px] font-medium">Назад</span>
+      </button>
       <div className="w-full h-9 bg-[#F4F4F4] flex items-center px-4">
         <div className="text-[14px] font-medium text-[#0B0911] tracking-[-0.42px]">
           Генерация

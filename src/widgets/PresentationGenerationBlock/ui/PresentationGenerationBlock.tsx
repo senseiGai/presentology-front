@@ -46,6 +46,7 @@ export const PresentationGenerationBlock: React.FC<
     setIsGenerating,
     setSlideTemplates,
     setTotalSlides,
+    setAllSlidesGenerated,
     resetPresentation,
   } = usePresentationStore();
 
@@ -282,13 +283,87 @@ export const PresentationGenerationBlock: React.FC<
           const presentationData = JSON.parse(presentation.presentationData);
           console.log("📊 Parsed presentation data:", presentationData);
 
-          // Обновляем store с загруженными данными
-          if (presentationData.data?.slides) {
-            // Здесь можно добавить логику для восстановления состояния презентации
+          // Восстанавливаем состояние презентации
+          if (
+            presentationData.data?.slides &&
+            Array.isArray(presentationData.data.slides)
+          ) {
+            const slides = presentationData.data.slides;
             console.log(
-              "🎯 Found slides in presentation data:",
-              presentationData.data.slides.length
+              "🎯 Restoring presentation with slides:",
+              slides.length
             );
+
+            // Также проверяем htmlContent для дополнительных данных
+            if (presentation.htmlContent) {
+              try {
+                const htmlContentData = JSON.parse(presentation.htmlContent);
+                console.log("📋 Parsed htmlContent:", htmlContentData);
+
+                // Сохраняем данные в localStorage для использования компонентами
+                const fullPresentationData = {
+                  data: presentationData.data,
+                  ...htmlContentData,
+                  presentationId: presentation.id,
+                  isExistingPresentation: true,
+                };
+
+                localStorage.setItem(
+                  "presentationGenerationData",
+                  JSON.stringify(fullPresentationData)
+                );
+                localStorage.setItem(
+                  "generatedPresentation",
+                  JSON.stringify(fullPresentationData)
+                );
+
+                console.log("💾 Saved presentation data to localStorage");
+
+                // Обновляем store с количеством слайдов
+                setTotalSlides(slides.length);
+                setAllSlidesGenerated(slides.length);
+
+                // Устанавливаем шаблоны слайдов если есть templateIds
+                if (
+                  presentationData.data.templateIds &&
+                  Array.isArray(presentationData.data.templateIds)
+                ) {
+                  try {
+                    const templates = await getMultipleTemplates(
+                      presentationData.data.templateIds
+                    );
+                    console.log(
+                      "📐 Loaded templates for existing presentation:",
+                      Object.keys(templates)
+                    );
+
+                    const slideTemplateMapping: Record<string, string> = {};
+                    presentationData.data.templateIds.forEach(
+                      (templateId: string, index: number) => {
+                        const slideNumber = index + 1;
+                        const slideKey = `slide_${slideNumber}`;
+                        if (templates[templateId]) {
+                          slideTemplateMapping[slideKey] =
+                            templates[templateId];
+                        }
+                      }
+                    );
+
+                    setSlideTemplates(slideTemplateMapping);
+                    console.log(
+                      "🎨 Set slide templates for existing presentation"
+                    );
+                  } catch (templateError) {
+                    console.error(
+                      "❌ Error loading templates for existing presentation:",
+                      templateError
+                    );
+                  }
+                }
+              } catch (htmlParseError) {
+                console.error("❌ Error parsing htmlContent:", htmlParseError);
+              }
+            }
           }
         } catch (parseError) {
           console.error("❌ Error parsing presentation data:", parseError);
@@ -335,6 +410,22 @@ export const PresentationGenerationBlock: React.FC<
         "📋 Existing presentation is loading or loaded, skipping generation"
       );
       return;
+    }
+
+    // Проверяем, есть ли уже загруженные данные существующей презентации
+    const existingData = localStorage.getItem("presentationGenerationData");
+    if (existingData) {
+      try {
+        const parsedData = JSON.parse(existingData);
+        if (parsedData.isExistingPresentation) {
+          console.log(
+            "📋 Found existing presentation data, skipping generation"
+          );
+          return;
+        }
+      } catch (e) {
+        // Игнорируем ошибки парсинга
+      }
     }
 
     // Очищаем состояние store перед началом новой генерации

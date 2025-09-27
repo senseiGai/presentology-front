@@ -239,9 +239,9 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
                   finalTotalSlides,
                   isGenerating,
                 });
-                return finalTotalSlides;
+                return finalTotalSlides - 1;
               })()}{" "}
-              / {totalSlidesFromLocalStorage || totalSlides}
+              / {totalSlidesFromLocalStorage - 1 || totalSlides}
             </span>
           </div>
         </div>

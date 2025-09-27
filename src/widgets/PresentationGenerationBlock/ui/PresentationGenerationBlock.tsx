@@ -16,6 +16,7 @@ import {
   useUpdatePresentationWithData,
 } from "@/shared/api/presentation-generation";
 import { PresentationsApi } from "@/shared/api/presentations.api";
+import { type Presentation } from "@/shared/api/types";
 import {
   useMixedImageGeneration,
   useFluxImageGeneration,
@@ -64,6 +65,11 @@ export const PresentationGenerationBlock: React.FC<
   // Состояние для процесса генерации
   const [generationProgress, setGenerationProgress] = useState(0);
   const [generationStatus, setGenerationStatus] = useState<string>("");
+
+  // Состояние для загруженной презентации
+  const [loadedPresentation, setLoadedPresentation] =
+    useState<Presentation | null>(null);
+  const [isLoadingPresentation, setIsLoadingPresentation] = useState(false);
 
   // Ref для предотвращения повторного запуска генерации
   const hasStartedGeneration = useRef(false);
@@ -259,6 +265,45 @@ export const PresentationGenerationBlock: React.FC<
     return prompt;
   };
 
+  // Функция для загрузки существующей презентации по ID
+  const loadPresentationById = async (presentationId: string) => {
+    try {
+      setIsLoadingPresentation(true);
+      console.log("🔄 Loading presentation with ID:", presentationId);
+
+      const presentation = await PresentationsApi.getById(presentationId);
+      console.log("✅ Presentation loaded:", presentation);
+
+      setLoadedPresentation(presentation);
+
+      // Если презентация имеет данные, попробуем их загрузить в store
+      if (presentation.presentationData) {
+        try {
+          const presentationData = JSON.parse(presentation.presentationData);
+          console.log("📊 Parsed presentation data:", presentationData);
+
+          // Обновляем store с загруженными данными
+          if (presentationData.data?.slides) {
+            // Здесь можно добавить логику для восстановления состояния презентации
+            console.log(
+              "🎯 Found slides in presentation data:",
+              presentationData.data.slides.length
+            );
+          }
+        } catch (parseError) {
+          console.error("❌ Error parsing presentation data:", parseError);
+        }
+      }
+
+      return presentation;
+    } catch (error) {
+      console.error("❌ Error loading presentation:", error);
+      throw error;
+    } finally {
+      setIsLoadingPresentation(false);
+    }
+  };
+
   // Устанавливаем правильное количество слайдов при изменении uiSlides
   useEffect(() => {
     if (uiSlides && uiSlides.length > 0) {
@@ -267,9 +312,30 @@ export const PresentationGenerationBlock: React.FC<
     }
   }, [uiSlides, setTotalSlides]);
 
+  // Загрузка существующей презентации, если передан presentationSlug
+  useEffect(() => {
+    if (presentationSlug && !loadedPresentation && !isLoadingPresentation) {
+      console.log(
+        "🔄 Loading existing presentation with slug:",
+        presentationSlug
+      );
+      loadPresentationById(presentationSlug).catch((error) => {
+        console.error("❌ Failed to load presentation:", error);
+      });
+    }
+  }, [presentationSlug, loadedPresentation, isLoadingPresentation]);
+
   // Получение и обработка данных при загрузке компонента
   useEffect(() => {
     console.log("🔄 PresentationGenerationBlock useEffect called");
+
+    // Если загружается существующая презентация, не запускаем генерацию
+    if (presentationSlug && (loadedPresentation || isLoadingPresentation)) {
+      console.log(
+        "📋 Existing presentation is loading or loaded, skipping generation"
+      );
+      return;
+    }
 
     // Очищаем состояние store перед началом новой генерации
     console.log("🧹 Clearing store state for new presentation");
@@ -568,7 +634,7 @@ export const PresentationGenerationBlock: React.FC<
 
     console.log("🎯 About to call startGeneration");
     startGeneration();
-  }, []);
+  }, [presentationSlug, loadedPresentation, isLoadingPresentation]);
 
   const elementOptions: ElementOption[] = [
     {
@@ -716,6 +782,18 @@ export const PresentationGenerationBlock: React.FC<
       />
     );
   };
+
+  // Показываем индикатор загрузки, если загружается существующая презентация
+  if (isLoadingPresentation) {
+    return (
+      <div className="h-screen bg-[#F8F9FA] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Загрузка презентации...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-[#F8F9FA] flex overflow-hidden">

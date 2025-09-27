@@ -29,6 +29,7 @@ import LogoIllustration from "../../../../public/icons/LogoIllustration";
 import { PresentationMascot } from "@/shared/ui/PesentationMascot";
 import SquareCheckIcon from "../../../../public/icons/SquareCheckIcon";
 import { AddSlideButton } from "../../../shared/ui/AddSlideButton";
+import { useWindowHeight } from "@/shared/hooks/useWindowHeight";
 
 export const PresentationCreationWizard: React.FC = () => {
   const router = useRouter();
@@ -50,11 +51,8 @@ export const PresentationCreationWizard: React.FC = () => {
     uiSlides,
     textVolume,
     imageSource,
-    setSlideCountMode,
     setUiSlides,
     setDeckTitle,
-    setTextVolume,
-    setImageSource,
     resetFlow,
   } = usePresentationFlowStore();
 
@@ -96,10 +94,13 @@ export const PresentationCreationWizard: React.FC = () => {
 
   // Add responsive breakpoints
   const windowWidth = useWindowWidth();
+  const height = useWindowHeight();
   const isMobile = windowWidth < 768;
   const isTablet = windowWidth >= 768 && windowWidth < 1024;
   const middleWidth = windowWidth > 1600;
   const topWidth = windowWidth > 1800;
+
+  const isMinimumHeight = 740 <= height && height <= 785;
 
   // Используем данные из store для StructureStep
   const slides = uiSlides || [];
@@ -533,7 +534,11 @@ export const PresentationCreationWizard: React.FC = () => {
 
   if (currentStep === "style") {
     return (
-      <div className="bg-white w-full h-[832px] flex">
+      <div
+        className={`bg-white w-full ${
+          isMinimumHeight ? "h-[740px]" : "h-[832px]"
+        } flex`}
+      >
         {/* Logo */}
         <div className="absolute top-6 left-10 z-20">
           <LogoIllustration />
@@ -555,12 +560,24 @@ export const PresentationCreationWizard: React.FC = () => {
         </div>
 
         <div className="flex-1 relative">
-          <div className="absolute bg-[#F4F4F4] h-[686px] rounded-[24px] top-[122px] w-full">
-            <div className="absolute font-medium text-[#0B0911] text-[24px] top-[48px] left-1/2 transform -translate-x-1/2">
+          <div
+            className={`absolute  bg-[#F4F4F4] ${
+              isMobile ? "w-full" : isMinimumHeight ? "h-[586px]" : "h-[686px]"
+            } rounded-[24px] top-[122px] w-full`}
+          >
+            <div
+              className={`absolute font-medium text-[#0B0911] text-[24px] ${
+                isMinimumHeight ? "top-[24px]" : "top-[48px]"
+              } left-1/2 transform -translate-x-1/2`}
+            >
               Выберите шаблон
             </div>
 
-            <div className="absolute left-1/2 top-[124px] transform -translate-x-1/2">
+            <div
+              className={`absolute left-1/2 ${
+                isMinimumHeight ? "top-[84px]" : "top-[124px]"
+              } transform -translate-x-1/2`}
+            >
               <div
                 onClick={() => {
                   setSelectedTemplateIndex(0);
@@ -589,7 +606,11 @@ export const PresentationCreationWizard: React.FC = () => {
               </div>
             </div>
 
-            <div className="absolute left-1/2 top-[387px] transform -translate-x-1/2">
+            <div
+              className={`absolute left-1/2 ${
+                isMinimumHeight ? "top-[330px]" : "top-[387px]"
+              }  transform -translate-x-1/2`}
+            >
               <div
                 onClick={() => {
                   setSelectedTemplateIndex(1);
@@ -620,7 +641,11 @@ export const PresentationCreationWizard: React.FC = () => {
           </div>
         </div>
 
-        <div className="w-[436px] max-h-[832px] bg-white relative flex flex-col">
+        <div
+          className={`w-[436px] ${
+            isMinimumHeight ? "max-h-[720px]" : " max-h-[832px]"
+          } bg-white relative flex flex-col`}
+        >
           <div className="flex-1 overflow-y-auto">
             <StyleStep onBack={handleBack} />
           </div>
@@ -1154,7 +1179,11 @@ export const PresentationCreationWizard: React.FC = () => {
       {/* Background Image - hide on mobile for better UX */}
       {!isMobile && (
         <div className="relative flex-1">
-          <div className="relative w-full h-[686px] overflow-hidden left-1/2 transform -translate-x-1/2 top-[122px]">
+          <div
+            className={`relative w-full ${
+              isMinimumHeight ? "h-[586px]" : "h-[686px]"
+            } overflow-hidden left-1/2 transform -translate-x-1/2 top-[122px]`}
+          >
             {topWidth ? (
               <Image
                 src="/assets/brief_mask_top.png"
@@ -1183,7 +1212,9 @@ export const PresentationCreationWizard: React.FC = () => {
             <div className="relative">
               <PresentationMascot
                 className={`!absolute ${
-                  topWidth
+                  isMinimumHeight
+                    ? "w-[400px] !h-[475px] bottom-[-730px] left-[570px]"
+                    : topWidth
                     ? "w-[429px] !h-[475px] bottom-[-780px] left-[830px]"
                     : middleWidth
                     ? "w-[429px] !h-[475px] bottom-[-780px] left-[730px]"
@@ -1196,12 +1227,12 @@ export const PresentationCreationWizard: React.FC = () => {
       )}
 
       <div
-        className={`bg-white relative overflow-hidden ${
+        className={`bg-white relative w-[436px] ${
           isMobile
             ? "w-full pt-20"
-            : isTablet
-            ? "w-96 max-h-[832px]"
-            : "w-[436px] max-h-[832px]"
+            : isMinimumHeight
+            ? "max-h-[720px]"
+            : " max-h-[832px]"
         }`}
       >
         {renderCurrentStep()}

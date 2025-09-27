@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Toaster } from "sonner";
 
 import { useWindowWidth } from "../hooks/useWindowWidth";
+import { useWindowHeight } from "../hooks/useWindowHeight";
 import { usePathname } from "next/navigation";
 
 export const MainLayout = ({
@@ -17,10 +18,12 @@ export const MainLayout = ({
   fullWidth?: boolean;
 }) => {
   const width = useWindowWidth();
+  const height = useWindowHeight();
   const pathname = usePathname();
 
   const middleWidth = width > 1600;
   const topWidth = width > 1800;
+  const isMinimumHeight = 740 <= height && height <= 785;
 
   return (
     <div className="relative overflow-x-hidden min-h-screen">
@@ -43,7 +46,9 @@ export const MainLayout = ({
           fullWidth
             ? `relative mx-auto`
             : `${
-                topWidth
+                isMinimumHeight
+                  ? "max-w-[1200px]"
+                  : topWidth
                   ? "max-w-[1760px]"
                   : middleWidth
                   ? "max-w-[1560px]"

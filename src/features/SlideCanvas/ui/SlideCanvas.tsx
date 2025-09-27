@@ -32,6 +32,8 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
     number | null
   >(null);
 
+  const [actualSlidesCount, setActualSlidesCount] = useState(0);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<Record<number, HTMLDivElement>>({});
 
@@ -377,6 +379,60 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
     return () => setScrollToSlideInCanvas(undefined);
   }, [scrollToSlide, setScrollToSlideInCanvas]);
 
+  // Get actual slides count from localStorage
+  useEffect(() => {
+    const getActualSlidesCount = () => {
+      try {
+        const presentationGenerationData = localStorage.getItem(
+          "presentationGenerationData"
+        );
+        if (presentationGenerationData) {
+          const data = JSON.parse(presentationGenerationData);
+
+          // Check for generated slides data structure
+          if (data?.data?.slides) {
+            console.log(
+              "🎯 [SlideCanvas] Using slides from data.slides:",
+              data.data.slides.length
+            );
+            return data.data.slides.length;
+          }
+
+          // Check for uiSlides structure
+          if (data?.uiSlides) {
+            console.log(
+              "🎯 [SlideCanvas] Using slides from uiSlides:",
+              data.uiSlides.length
+            );
+            return data.uiSlides.length;
+          }
+        }
+
+        console.log(
+          "🎯 [SlideCanvas] No valid slide data found, using store totalSlides:",
+          totalSlides
+        );
+        return totalSlides;
+      } catch (error) {
+        console.error("❌ [SlideCanvas] Error parsing slide data:", error);
+        return totalSlides;
+      }
+    };
+
+    const actualCount = getActualSlidesCount();
+    setActualSlidesCount(actualCount);
+
+    // Update periodically to catch changes
+    const interval = setInterval(() => {
+      const newCount = getActualSlidesCount();
+      if (newCount !== actualCount) {
+        setActualSlidesCount(newCount);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [totalSlides]);
+
   const handleCanvasClick = (e: React.MouseEvent) => {
     // Clear text selection if clicking on the canvas background
     if (e.target === e.currentTarget) {
@@ -483,13 +539,13 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
           gap: `${32 * (zoomLevel / 100)}px`, // Scale gap with zoom level to maintain visual density
         }}
       >
-        {Array.from({ length: totalSlides }, (_, index) => {
+        {Array.from({ length: actualSlidesCount }, (_, index) => {
           const slideNumber = index + 1;
           const isGenerated = generatedSlides.includes(slideNumber);
           const scale = zoomLevel / 100;
 
           return (
-            <React.Fragment key={`slide-${slideNumber}-${totalSlides}`}>
+            <React.Fragment key={`slide-${slideNumber}-${actualSlidesCount}`}>
               <div
                 ref={(el) => {
                   if (el) {

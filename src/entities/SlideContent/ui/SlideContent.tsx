@@ -744,6 +744,21 @@ export const SlideContent = ({
   // Handle keyboard shortcuts
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Debug all keyboard events to see what's happening
+      if (
+        e.ctrlKey &&
+        (e.key === "z" || e.key === "Z" || e.key === "я" || e.key === "Я")
+      ) {
+        console.log("🔄 [DEBUG] Ctrl+Z/Я detected in SlideContent:", {
+          ctrlKey: e.ctrlKey,
+          key: e.key,
+          code: e.code,
+          shiftKey: e.shiftKey,
+          target: e.target,
+          activeElement: document.activeElement,
+        });
+      }
+
       // Escape key - clear image area selection
       if (e.key === "Escape" && isImageAreaSelectionMode) {
         clearImageAreaSelection(slideNumber);
@@ -762,28 +777,55 @@ export const SlideContent = ({
 
       const store = usePresentationStore.getState();
 
-      // Ctrl+Z - Undo
-      if (e.ctrlKey && e.key === "z" && !e.shiftKey) {
+      // Ctrl+Z or Ctrl+Я - Undo (support both English and Russian keyboard layouts)
+      if (
+        e.ctrlKey &&
+        (e.key === "z" || e.key === "Z" || e.key === "я" || e.key === "Я") &&
+        !e.shiftKey
+      ) {
         e.preventDefault();
+        e.stopPropagation();
+        console.log("🔄 Undo key combination detected:", {
+          ctrlKey: e.ctrlKey,
+          key: e.key,
+          shiftKey: e.shiftKey,
+          code: e.code,
+        });
         store.undo();
         console.log("🔄 Undo triggered");
         return;
       }
 
-      // Ctrl+Shift+Z or Ctrl+Y - Redo
+      // Ctrl+Shift+Z/Я or Ctrl+Y/Н - Redo (support both English and Russian keyboard layouts)
       if (
-        (e.ctrlKey && e.shiftKey && e.key === "Z") ||
-        (e.ctrlKey && e.key === "y")
+        (e.ctrlKey &&
+          e.shiftKey &&
+          (e.key === "Z" || e.key === "z" || e.key === "Я" || e.key === "я")) ||
+        (e.ctrlKey &&
+          (e.key === "y" || e.key === "Y" || e.key === "н" || e.key === "Н"))
       ) {
         e.preventDefault();
+        e.stopPropagation();
+        console.log("🔄 Redo key combination detected:", {
+          ctrlKey: e.ctrlKey,
+          key: e.key,
+          shiftKey: e.shiftKey,
+          code: e.code,
+        });
         store.redo();
         console.log("🔄 Redo triggered");
         return;
       }
 
-      // Ctrl+C - Copy selected element
-      if (e.ctrlKey && e.key === "c") {
+      // Ctrl+C/С - Copy selected element (support both English and Russian keyboard layouts)
+      if (
+        e.ctrlKey &&
+        (e.key === "c" || e.key === "C" || e.key === "с" || e.key === "С")
+      ) {
         e.preventDefault();
+        e.stopPropagation();
+
+        let copiedElement = null;
 
         if (selectedTextElement) {
           store.copyElementToClipboard(
@@ -791,34 +833,58 @@ export const SlideContent = ({
             selectedTextElement,
             slideNumber
           );
+          copiedElement = `text element: ${selectedTextElement}`;
         } else if (selectedImageElement) {
           store.copyElementToClipboard(
             "image",
             selectedImageElement,
             slideNumber
           );
+          copiedElement = `image element: ${selectedImageElement}`;
         } else if (selectedTableElement) {
           store.copyElementToClipboard(
             "table",
             selectedTableElement,
             slideNumber
           );
+          copiedElement = `table element: ${selectedTableElement}`;
         } else if (selectedInfographicsElement) {
           store.copyElementToClipboard(
             "infographics",
             selectedInfographicsElement,
             slideNumber
           );
+          copiedElement = `infographics element: ${selectedInfographicsElement}`;
+        } else {
+          console.log("📋 No element selected to copy");
+          return;
         }
-        console.log("📋 Copy triggered");
+
+        console.log(
+          `📋 Copy triggered - copied ${copiedElement} from slide ${slideNumber}`
+        );
         return;
       }
 
-      // Ctrl+V - Paste from clipboard
-      if (e.ctrlKey && e.key === "v") {
+      // Ctrl+V/М - Paste from clipboard (support both English and Russian keyboard layouts)
+      if (
+        e.ctrlKey &&
+        (e.key === "v" || e.key === "V" || e.key === "м" || e.key === "М")
+      ) {
         e.preventDefault();
+        e.stopPropagation();
+
+        if (!store.hasClipboardContent()) {
+          console.log("📋 Paste triggered - but clipboard is empty");
+          return;
+        }
+
+        const clipboardState = usePresentationStore.getState().clipboard;
+        console.log(
+          `📋 Paste triggered - pasting ${clipboardState?.type} element to slide ${slideNumber}`
+        );
+
         store.pasteElementFromClipboard(slideNumber);
-        console.log("📋 Paste triggered");
         return;
       }
 
@@ -852,8 +918,19 @@ export const SlideContent = ({
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    console.log("🔄 [DEBUG] Adding keyboard event listener for SlideContent");
+
+    // Add both document and window listeners to ensure compatibility
+    document.addEventListener("keydown", handleKeyDown, true); // Use capture phase
+    window.addEventListener("keydown", handleKeyDown, true); // Backup window listener
+
+    return () => {
+      console.log(
+        "🔄 [DEBUG] Removing keyboard event listeners for SlideContent"
+      );
+      document.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("keydown", handleKeyDown, true);
+    };
   }, [
     isImageAreaSelectionMode,
     clearImageAreaSelection,

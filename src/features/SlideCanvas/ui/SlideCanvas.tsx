@@ -389,17 +389,35 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
         if (presentationGenerationData) {
           const data = JSON.parse(presentationGenerationData);
 
-          // Check for generated slides data structure
-          if (data?.data?.slides) {
+          console.log("🎯 [SlideCanvas] localStorage data structure:", {
+            hasData: !!data?.data,
+            hasSlides: !!data?.data?.slides,
+            slidesLength: data?.data?.slides?.length,
+            hasUiSlides: !!data?.uiSlides,
+            uiSlidesLength: data?.uiSlides?.length,
+            fullStructure: data,
+          });
+
+          // Priority 1: Check API response structure (data.data.slides)
+          if (data?.data?.slides && Array.isArray(data.data.slides)) {
             console.log(
-              "🎯 [SlideCanvas] Using slides from data.slides:",
+              "🎯 [SlideCanvas] Using slides from API response data.data.slides:",
               data.data.slides.length
             );
             return data.data.slides.length;
           }
 
-          // Check for uiSlides structure
-          if (data?.uiSlides) {
+          // Priority 2: Check direct slides structure
+          if (data?.slides && Array.isArray(data.slides)) {
+            console.log(
+              "🎯 [SlideCanvas] Using slides from data.slides:",
+              data.slides.length
+            );
+            return data.slides.length;
+          }
+
+          // Priority 3: Check uiSlides structure (input data)
+          if (data?.uiSlides && Array.isArray(data.uiSlides)) {
             console.log(
               "🎯 [SlideCanvas] Using slides from uiSlides:",
               data.uiSlides.length
@@ -420,12 +438,22 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
     };
 
     const actualCount = getActualSlidesCount();
+    console.log(
+      "🎯 [SlideCanvas] Initial actualSlidesCount set to:",
+      actualCount
+    );
     setActualSlidesCount(actualCount);
 
     // Update periodically to catch changes
     const interval = setInterval(() => {
       const newCount = getActualSlidesCount();
       if (newCount !== actualCount) {
+        console.log(
+          "🎯 [SlideCanvas] Updating actualSlidesCount from",
+          actualCount,
+          "to",
+          newCount
+        );
         setActualSlidesCount(newCount);
       }
     }, 1000);

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { usePresentationCreationStore } from "../../model/useImproveFileWizard";
+import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import SliderIcon from "../../../../../public/icons/SliderIcon";
 
 interface GoalOption {
@@ -23,6 +24,10 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
   // Store для ImprovingFileWizard
   const { presentationData, updatePresentationData } =
     usePresentationCreationStore();
+
+  // Main presentation store for updating totalSlides
+  const { setTotalSlides } = usePresentationStore();
+
   // State for form data - initialized from store
   const [topic, setTopic] = useState(presentationData.topic || "");
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
@@ -65,6 +70,61 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
         ? selectedAudience.join(", ")
         : customAudience;
 
+    // Determine slide count based on mode
+    let finalSlideCount;
+
+    if (slideCountMode === "auto") {
+      // If auto mode, try to get from API response first, fallback to default
+      try {
+        const presentationGenerationData = localStorage.getItem(
+          "presentationGenerationData"
+        );
+        if (presentationGenerationData) {
+          const data = JSON.parse(presentationGenerationData);
+
+          // Check for API response slides
+          if (data?.data?.slides && Array.isArray(data.data.slides)) {
+            finalSlideCount = data.data.slides.length;
+            console.log(
+              "🎯 [DescriptionStep] Auto mode: using API slides count:",
+              finalSlideCount
+            );
+          } else if (data?.uiSlides && Array.isArray(data.uiSlides)) {
+            finalSlideCount = data.uiSlides.length;
+            console.log(
+              "🎯 [DescriptionStep] Auto mode: using uiSlides count:",
+              finalSlideCount
+            );
+          } else {
+            finalSlideCount = 8; // Default fallback
+            console.log(
+              "🎯 [DescriptionStep] Auto mode: using default fallback:",
+              finalSlideCount
+            );
+          }
+        } else {
+          finalSlideCount = 8; // Default fallback
+          console.log(
+            "🎯 [DescriptionStep] Auto mode: no localStorage data, using default:",
+            finalSlideCount
+          );
+        }
+      } catch (error) {
+        finalSlideCount = 8; // Default fallback on error
+        console.error(
+          "❌ [DescriptionStep] Error parsing localStorage data:",
+          error
+        );
+      }
+    } else {
+      // Custom mode - use user selected count
+      finalSlideCount = customSlideCount;
+      console.log(
+        "🎯 [DescriptionStep] Custom mode: using user selected count:",
+        finalSlideCount
+      );
+    }
+
     updatePresentationData({
       topic,
       goal: goals,
@@ -72,8 +132,15 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
       context: keyIdea, // Store keyIdea as context since it's the key idea
       textVolume,
       imageSource,
-      slideCount: slideCountMode === "auto" ? 8 : customSlideCount,
+      slideCount: finalSlideCount,
     });
+
+    // Update totalSlides in main presentation store
+    console.log(
+      "🎯 [DescriptionStep] Updating store totalSlides to:",
+      finalSlideCount
+    );
+    setTotalSlides(finalSlideCount);
   }, [
     topic,
     selectedGoals,
@@ -86,6 +153,7 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
     slideCountMode,
     customSlideCount,
     updatePresentationData,
+    setTotalSlides,
   ]);
 
   // Options data
@@ -248,6 +316,32 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
         ? selectedAudience.join(", ")
         : customAudience;
 
+    // Use same logic as useEffect for determining slide count
+    let finalSlideCount;
+    if (slideCountMode === "auto") {
+      try {
+        const presentationGenerationData = localStorage.getItem(
+          "presentationGenerationData"
+        );
+        if (presentationGenerationData) {
+          const data = JSON.parse(presentationGenerationData);
+          if (data?.data?.slides && Array.isArray(data.data.slides)) {
+            finalSlideCount = data.data.slides.length;
+          } else if (data?.uiSlides && Array.isArray(data.uiSlides)) {
+            finalSlideCount = data.uiSlides.length;
+          } else {
+            finalSlideCount = 8;
+          }
+        } else {
+          finalSlideCount = 8;
+        }
+      } catch (error) {
+        finalSlideCount = 8;
+      }
+    } else {
+      finalSlideCount = customSlideCount;
+    }
+
     updatePresentationData({
       topic,
       goal: goals,
@@ -255,7 +349,7 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
       context: keyIdea,
       textVolume,
       imageSource,
-      slideCount: slideCountMode === "auto" ? 8 : customSlideCount,
+      slideCount: finalSlideCount,
     });
 
     onNext();
@@ -748,7 +842,7 @@ export const DescriptionStep: React.FC<DescriptionStepProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="bg-white mx-4 border-t border-[#f0f0f0] rounded-t-2xl shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)] mx-[11px] px-10 py-6">
+      <div className="bg-white border-t border-[#f0f0f0] rounded-t-2xl shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.03)] mx-[11px] px-10 py-6">
         <div className="flex gap-2">
           <button
             onClick={onBack}

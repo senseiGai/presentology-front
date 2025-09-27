@@ -503,6 +503,15 @@ export const PresentationGenerationBlock: React.FC<
             JSON.stringify(generatedPresentation)
           );
 
+          // Update totalSlides in store based on actual API response
+          const actualSlidesCount =
+            (finalResult as any).data?.slides?.length || uiSlides?.length || 3;
+          console.log(
+            "🎯 [PresentationGenerationBlock] Updating store totalSlides to:",
+            actualSlidesCount
+          );
+          setTotalSlides(actualSlidesCount);
+
           setGenerationProgress(100);
           // Завершаем процесс генерации - показываем обычный интерфейс
           setIsGenerating(false);

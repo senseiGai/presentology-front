@@ -2025,10 +2025,12 @@ export const usePresentationStore = create<PresentationState>()(
       undo: () => {
         const state = get();
         console.log(
-          "Undo called - current index:",
+          "🔄 [UNDO] Function called - current index:",
           state.historyIndex,
           "history length:",
-          state.history.length
+          state.history.length,
+          "history:",
+          state.history
         );
 
         if (state.historyIndex >= 0) {

@@ -37,6 +37,7 @@ export const PresentationCreationWizard: React.FC = () => {
     setCurrentStep,
     presentationData,
     updatePresentationData,
+    resetData,
   } = usePresentationCreationStore();
 
   // Store для workflow
@@ -54,6 +55,7 @@ export const PresentationCreationWizard: React.FC = () => {
     setDeckTitle,
     setTextVolume,
     setImageSource,
+    resetFlow,
   } = usePresentationFlowStore();
 
   // API хуки для StructureStep
@@ -476,14 +478,25 @@ export const PresentationCreationWizard: React.FC = () => {
     } else {
       const prevIndex = currentStepIndex - 1;
       if (prevIndex >= 0) {
+        const prevStep = steps[prevIndex].key;
+
         // Если возвращаемся на шаг описания, сбрасываем структуру
-        if (steps[prevIndex].key === "description") {
+        if (prevStep === "description") {
           setUiSlides([]);
           setHasGeneratedStructure(false);
           setVisibleSlidesCount(0);
           hasCalledApi.current = false;
         }
-        setCurrentStep(steps[prevIndex].key);
+
+        // Если возвращаемся на шаг структуры со стиля, очищаем данные стиля
+        if (currentStep === "style" && prevStep === "structure") {
+          updatePresentationData({
+            selectedTemplate: undefined,
+            selectedStyle: undefined,
+          });
+        }
+
+        setCurrentStep(prevStep);
       }
     }
   };
@@ -576,7 +589,6 @@ export const PresentationCreationWizard: React.FC = () => {
               </div>
             </div>
 
-            {/* Template 2 */}
             <div className="absolute left-1/2 top-[387px] transform -translate-x-1/2">
               <div
                 onClick={() => {
@@ -704,10 +716,24 @@ export const PresentationCreationWizard: React.FC = () => {
                         })
                       );
 
+                      // Сбрасываем сторы после успешного создания
+                      resetData();
+                      resetFlow();
+                      // Очищаем localStorage от данных мастера
+                      localStorage.removeItem("presentationCreationData");
+                      localStorage.removeItem("presentationFlowData");
+
                       // Navigate to presentation generation page
                       router.push("/presentation-generation");
                     } catch (error) {
                       console.error("Error creating presentation:", error);
+
+                      // Сбрасываем сторы даже в случае ошибки
+                      resetData();
+                      resetFlow();
+                      localStorage.removeItem("presentationCreationData");
+                      localStorage.removeItem("presentationFlowData");
+
                       // В случае ошибки все равно переходим на страницу генерации
                       localStorage.setItem(
                         "presentationGenerationData",
@@ -716,12 +742,9 @@ export const PresentationCreationWizard: React.FC = () => {
                       router.push("/presentation-generation");
                     }
                   }}
-                  disabled={!isCompleted}
-                  className={`flex-1 rounded-lg px-6 py-2 h-[52px] flex items-center justify-center ${
-                    isCompleted
-                      ? "bg-[#BBA2FE] hover:bg-[#A78BFA] cursor-pointer"
-                      : "bg-[#DDD1FF] text-white cursor-not-allowed"
-                  }`}
+                  className={`flex-1 rounded-lg px-6 py-2 h-[52px] flex items-center justify-center 
+                       bg-[#BBA2FE] hover:bg-[#A78BFA] cursor-pointer
+                  `}
                 >
                   <span
                     className={`font-normal text-[18px] text-nowrap ${
@@ -776,7 +799,7 @@ export const PresentationCreationWizard: React.FC = () => {
                 </div>
 
                 {/* Slides appearing during loading */}
-                <div className="space-y-3 max-w-[772px] pt-8">
+                <div className="space-y-3 w-full pt-8">
                   {slides.slice(0, visibleSlidesCount).map((slide, index) => (
                     <div
                       key={index}

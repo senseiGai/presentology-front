@@ -12,7 +12,7 @@ export default function PresentationCreationWizardPage() {
 
   return (
     <ProtectedRoute>
-      <MainLayout>
+      <MainLayout fullWidth={true}>
         <PresentationCreationWizardComponent />
       </MainLayout>
       <AddSlideModal

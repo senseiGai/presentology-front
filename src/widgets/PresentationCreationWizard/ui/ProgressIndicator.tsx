@@ -27,7 +27,8 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
       <div className="flex items-center">
         {steps.map((step, index) => {
           const isActive = step.key === currentStep;
-          const isStepCompleted = index < currentIndex || isCompleted;
+          // Шаг считается завершенным только если мы прошли его полностью (находимся на более поздней стадии)
+          const isStepCompleted = index < currentIndex;
 
           return (
             <React.Fragment key={step.key}>
@@ -62,11 +63,10 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
               {index < steps.length - 1 && (
                 <div className="flex flex-col items-center h-[74px] w-[120px] pt-5">
                   <div className="w-full h-1 bg-[#f4f4f4] rounded-lg relative">
-                    {isStepCompleted && (
+                    {/* Полоса между шагами заполняется только если текущий шаг завершен (мы на следующем шаге) */}
+                    {index < currentIndex && (
                       <div
-                        className={`absolute left-0 top-0 h-full w-[120px] rounded-lg ${
-                          isCompleted ? "bg-[#4ade80]" : "bg-[#4ade80]"
-                        }`}
+                        className={`absolute left-0 top-0 h-full w-[120px] rounded-lg bg-[#4ade80]`}
                       />
                     )}
                   </div>

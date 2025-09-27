@@ -12,8 +12,7 @@ interface StyleStepProps {
 
 export const StyleStep: React.FC<StyleStepProps> = ({ onBack }) => {
   const router = useRouter();
-  const { presentationData, updatePresentationData, resetData } =
-    usePresentationCreationStore();
+  const { resetData } = usePresentationCreationStore();
 
   // Хук для создания презентации в базе данных
   const createPresentationMutation = useCreatePresentationWithData();

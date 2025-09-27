@@ -470,7 +470,7 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
       >
         {/* Image content */}
         <div
-          className={`w-full h-full border-[1px] overflow-hidden ${
+          className={`w-full h-full border-[1px] overflow-hidden  ${
             isSelected ? "border-[#BBA2FE]" : "border-[#BBA2FE]"
           } ${
             placeholder
@@ -499,7 +499,11 @@ export const ResizableImageBox: React.FC<ResizableImageBoxProps> = ({
           })()}
 
           {src && !placeholder && (
-            <img src={src} alt={alt} className="w-full h-full object-cover" />
+            <img
+              src={src}
+              alt={alt}
+              className="w-full h-full object-cover rounded-[12px]"
+            />
           )}
         </div>
 

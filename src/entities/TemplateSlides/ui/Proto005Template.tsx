@@ -966,165 +966,112 @@ export const Proto005Template = ({
     );
   };
 
-  // Render image elements from store - для Proto005Template создаем интерактивные изображения
-  const renderImageElements = () => {
-    // Получаем templateId и backgroundImage для специального позиционирования
-    let templateId = null;
-    let backgroundImage = null;
+  // Create image element from slide data
+  React.useEffect(() => {
+    const elementId = `slide-${slideNumber}-proto005-image`;
+
+    // Get slideData from localStorage
+    let slideData = null;
     const generatedPresentationStr = localStorage.getItem(
       "generatedPresentation"
     );
     if (generatedPresentationStr) {
       try {
         const generatedPresentation = JSON.parse(generatedPresentationStr);
-        const templateIds = generatedPresentation.data?.templateIds;
-        const slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
-        templateId = templateIds?.[slideNumber - 1];
-
-        // Получаем фоновое изображение
-        if (
-          slideData?._images &&
-          Array.isArray(slideData._images) &&
-          slideData._images.length > 0
-        ) {
-          backgroundImage = slideData._images[0];
-        }
+        slideData = generatedPresentation.data?.slides?.[slideNumber - 1];
       } catch (error) {
         console.error("Error parsing generated presentation:", error);
       }
     }
 
-    const elements = [];
+    const imageUrl = slideData?._images?.[0];
 
-    // Для proto_005 создаем редактируемое фоновое изображение если оно есть
-    console.log(
-      `🔍 Debug renderImageElements: templateId = "${templateId}", backgroundImage = "${backgroundImage}"`
-    );
+    console.log(`🔧 Proto005Template useEffect - Slide ${slideNumber}`);
+    console.log(`🔧 Trying to create proto005 image: ${elementId}`);
+    console.log(`Current slideData:`, slideData);
+    console.log(`Image URL:`, imageUrl);
 
-    if (templateId === "proto_005" && backgroundImage) {
-      console.log(`✅ Creating interactive background for proto_005`);
-      // Ищем существующее фоновое изображение среди элементов
-      let backgroundElementId = null;
-      const currentSlideImages = imageElements[slideNumber] || {};
-
-      // Ищем элемент с фоновым изображением (по src)
-      console.log(`🔍 Looking for existing background in:`, currentSlideImages);
-      for (const [elementId, imageData] of Object.entries(currentSlideImages)) {
-        console.log(
-          `🔍 Checking element ${elementId} with src: "${imageData.src}" vs background: "${backgroundImage}"`
-        );
-        if (imageData.src === backgroundImage) {
-          backgroundElementId = elementId;
-          console.log(`✅ Found existing background element: ${elementId}`);
-
-          // Принудительно исправляем позицию если она неправильная
-          if (imageData.position?.y !== 213 || imageData.position?.x !== 0) {
-            console.log(
-              `🔧 Fixing background position for ${elementId}: current y=${imageData.position?.y}, setting to y=213`
-            );
-            updateImageElement(elementId, slideNumber, {
-              src: backgroundImage,
-              position: { x: 0, y: 213 },
-              width: 759,
-              height: 214,
-            });
-          }
-          break;
-        }
-      }
-
-      // Если нет в store, добавляем
-      if (!backgroundElementId) {
-        console.log(`➕ Creating new background element`);
-        backgroundElementId = addImageElement(
-          slideNumber,
-          { x: 0, y: 213 }, // Позиция - точно нижняя половина слайда (427/2 = 213.5 ≈ 213)
-          { width: 759, height: 214 } // Размеры - нижняя половина слайда
-        );
-
-        // Обновляем элемент с правильным src
-        updateImageElement(backgroundElementId, slideNumber, {
-          src: backgroundImage,
-          position: { x: 0, y: 213 },
-          width: 759,
-          height: 214,
+    // ПРИНУДИТЕЛЬНО создаем изображение с src из slideData
+    if (imageUrl) {
+      console.log(`🚀 Creating image element in store...`);
+      usePresentationStore.setState((state) => {
+        console.log(`📦 Current state before update:`, {
+          slideImages: state.imageElements[slideNumber],
+          allImages: Object.keys(state.imageElements),
         });
 
-        console.log(
-          `🎯 Proto005Template: Added background image as editable element with ID: ${backgroundElementId}`
-        );
-      }
+        const newState = {
+          imageElements: {
+            ...state.imageElements,
+            [slideNumber]: {
+              ...(state.imageElements[slideNumber] || {}),
+              [elementId]: {
+                id: elementId,
+                position: { x: 0, y: 213 }, // Позиция - нижняя половина слайда (427/2 = 213.5)
+                width: 759, // Вся ширина слайда
+                height: 214, // Нижняя половина слайда (427 - 213 = 214)
+                placeholder: false,
+                alt: "Proto005 Background Image",
+                zIndex: 2, // Фоновое изображение
+                src: imageUrl, // Устанавливаем src для показа в ResizableImageBox
+              },
+            },
+          },
+        };
 
-      // Рендерим как интерактивный элемент
-      elements.push(
+        console.log(`📦 New state after update:`, {
+          slideImages: newState.imageElements[slideNumber],
+          elementToCreate: newState.imageElements[slideNumber][elementId],
+        });
+
+        return newState;
+      });
+      console.log(`✅ FORCE created proto005 image in store: ${elementId}`);
+    } else {
+      console.log(`❌ No image URL found for slide ${slideNumber}`);
+    }
+
+    // Проверим, что изображение создалось
+    setTimeout(() => {
+      console.log(`🔍 Verification phase - checking created image...`);
+      const createdImage = getImageElement(elementId, slideNumber);
+      console.log(`🔍 getImageElement result:`, createdImage);
+
+      if (!createdImage) {
+        console.error(`❌ CRITICAL: Image not found after creation!`);
+      } else {
+        console.log(`✅ SUCCESS: Image found after creation!`);
+      }
+    }, 100);
+  }, [slideNumber, getImageElement]);
+
+  // Render image elements from store - для Proto005Template создаем интерактивные изображения
+  const renderImageElements = () => {
+    const imageElementId = `slide-${slideNumber}-proto005-image`;
+    const storeImage = getImageElement(imageElementId, slideNumber);
+
+    console.log(`🎯 About to render ResizableImageBox:`, {
+      elementId: imageElementId,
+      slideNumber: slideNumber,
+      slideDataImages: slideData?._images,
+      storeImage: storeImage,
+      shouldRender: !!storeImage,
+    });
+
+    // Рендерим если есть изображение в store
+    if (storeImage) {
+      return (
         <ResizableImageBox
-          key={backgroundElementId}
-          elementId={backgroundElementId}
+          elementId={imageElementId}
           slideNumber={slideNumber}
-          isSelected={selectedImageElement === backgroundElementId}
+          isSelected={selectedImageElement === imageElementId}
           onDelete={() => {
-            deleteImageElement(backgroundElementId, slideNumber);
             setSelectedImageElement(null);
           }}
         />
       );
     }
-
-    // Обычная логика для других шаблонов
-    const currentSlideImages = imageElements[slideNumber] || {};
-    const currentSlideImageElements = Object.entries(currentSlideImages);
-
-    const elementCount = currentSlideImageElements.length;
-
-    console.log(
-      `🎬 [SlideContent] Rendering ${elementCount} images for slide ${slideNumber}:`,
-      currentSlideImageElements.map(([id, data]) => ({ id, src: data.src }))
-    );
-
-    if (elementCount === 0) {
-      console.log(`🎬 [SlideContent] No images found for slide ${slideNumber}`);
-      console.log(
-        `🎬 [SlideContent] Current slide imageElements:`,
-        currentSlideImages
-      );
-    }
-
-    // Добавляем остальные изображения (не фоновые)
-    const otherImageElements = currentSlideImageElements
-      .map(([elementId, imageData]) => {
-        // Проверяем, что imageData существует и имеет необходимые поля
-        if (!imageData || !imageData.position) {
-          console.warn(
-            "❌ [SlideContent] Invalid image data for element:",
-            elementId,
-            imageData
-          );
-          return null;
-        }
-
-        console.log(`✅ [SlideContent] Rendering image element ${elementId}:`, {
-          src: imageData.src,
-          position: imageData.position,
-          size: { width: imageData.width, height: imageData.height },
-        });
-
-        // Всегда показываем изображения как интерактивные элементы
-        return (
-          <ResizableImageBox
-            key={elementId}
-            elementId={elementId}
-            slideNumber={slideNumber}
-            isSelected={selectedImageElement === elementId}
-            onDelete={() => {
-              deleteImageElement(elementId, slideNumber);
-              setSelectedImageElement(null);
-            }}
-          />
-        );
-      })
-      .filter(Boolean); // Убираем null элементы
-
-    return [...elements, ...otherImageElements];
+    return null;
   };
 
   // Render infographics elements from store
@@ -1346,6 +1293,11 @@ export const Proto005Template = ({
       onMouseLeave={handleMouseLeave}
       onDoubleClick={handleDoubleClick}
     >
+      {/* Render interactive image elements first (as background) */}
+      <div style={{ position: "relative", zIndex: 1 }}>
+        {renderImageElements()}
+      </div>
+
       {/* Render slide data elements */}
       <div style={{ position: "relative", zIndex: 10 }}>
         {renderSlideDataElements()}
@@ -1354,11 +1306,6 @@ export const Proto005Template = ({
       {/* Render interactive table elements */}
       <div style={{ position: "relative", zIndex: 3 }}>
         {renderTableElements()}
-      </div>
-
-      {/* Render interactive image elements */}
-      <div style={{ position: "relative", zIndex: 3 }}>
-        {renderImageElements()}
       </div>
 
       {/* Render interactive infographics elements */}

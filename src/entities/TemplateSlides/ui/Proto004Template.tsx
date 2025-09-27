@@ -1495,8 +1495,6 @@ export const Proto004Template = ({
     );
   };
 
-  // Render image elements from store - для Proto004Template показываем как интерактивные элементы
-  // Render image elements - реализация как в Proto003Template
   const renderImageElements = () => {
     const imageElementId = `slide-${slideNumber}-proto004-image`;
     const storeImage = getImageElement(imageElementId, slideNumber);

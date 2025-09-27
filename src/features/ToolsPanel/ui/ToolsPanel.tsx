@@ -45,21 +45,21 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
   useEffect(() => {
     setIsMounted(true);
 
-    // Получаем totalSlides из localStorage generatedPresentation
+    // Получаем totalSlides из localStorage presentationGenerationData
     const getStoredTotalSlides = () => {
       console.log("🔍 [ToolsPanel] Checking localStorage for totalSlides");
 
       try {
-        const generatedPresentation = localStorage.getItem(
-          "generatedPresentation"
+        const presentationGenerationData = localStorage.getItem(
+          "presentationGenerationData"
         );
         console.log(
-          "📦 [ToolsPanel] generatedPresentation from localStorage:",
-          generatedPresentation
+          "📦 [ToolsPanel] presentationGenerationData from localStorage:",
+          presentationGenerationData
         );
 
-        if (generatedPresentation) {
-          const data = JSON.parse(generatedPresentation);
+        if (presentationGenerationData) {
+          const data = JSON.parse(presentationGenerationData);
           console.log("📊 [ToolsPanel] Parsed data:", data);
 
           const slidesFromData = data?.data?.slides;
@@ -77,12 +77,12 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
           return totalWithTitle;
         } else {
           console.log(
-            "❌ [ToolsPanel] No generatedPresentation in localStorage"
+            "❌ [ToolsPanel] No presentationGenerationData in localStorage"
           );
         }
       } catch (error) {
         console.error(
-          "💥 [ToolsPanel] Error parsing generatedPresentation from localStorage:",
+          "💥 [ToolsPanel] Error parsing presentationGenerationData from localStorage:",
           error
         );
       }
@@ -101,7 +101,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
 
     // Слушаем изменения localStorage
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "generatedPresentation") {
+      if (e.key === "presentationGenerationData") {
         setTotalSlidesFromLocalStorage(getStoredTotalSlides());
       }
     };

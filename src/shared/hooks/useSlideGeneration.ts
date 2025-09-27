@@ -1,7 +1,11 @@
 import { useEffect, useRef } from "react";
 import { usePresentationStore } from "@/shared/stores/usePresentationStore";
 import { showPresentationFeedbackToast } from "@/shared/lib/toasts";
-import { generateSlidesForStructure } from "@/shared/api/presentation-generation";
+import {
+  generateSlidesForStructure,
+  createPresentationWithData,
+  updatePresentationWithData,
+} from "@/shared/api/presentation-generation";
 import { toast } from "sonner";
 
 export const useSlideGeneration = () => {
@@ -211,7 +215,70 @@ export const useSlideGeneration = () => {
           JSON.stringify(response.data)
         );
 
-        // Reload store with new data from localStorage
+        // Create and update presentation in database with generated data
+        try {
+          console.log("💾 Creating presentation in database...");
+
+          // Step 1: Create presentation with initial data
+          const presentationTitle =
+            response.data?.deck?.title || "Новая презентация";
+          const createData = {
+            title: presentationTitle,
+            description: "Сгенерированная презентация",
+            slug: `${presentationTitle
+              .toLowerCase()
+              .replace(/[^a-zа-я0-9]/g, "-")}-${Date.now()}`,
+            generatedData: requestData, // Save the original request data
+            presentationState: {
+              textElementPositions: {},
+              textElementContents: {},
+              textElementStyles: {},
+              imageElements: {},
+              tableElements: {},
+              selectedTemplateIndex: 0,
+              selectedStyleIndex: 0,
+            },
+            templateIds: response.data.templateIds || ["proto_001"],
+            isPublic: false,
+          };
+
+          const createdPresentation = await createPresentationWithData(
+            createData
+          );
+          console.log(
+            "✅ Presentation created with ID:",
+            createdPresentation.id
+          );
+
+          // Step 2: Update presentation with generation results
+          const updateData = {
+            presentationId: createdPresentation.id,
+            presentationData: response,
+            templateIds: response.data.templateIds || [],
+            presentationState: {
+              textElementPositions: {},
+              textElementContents: {},
+              textElementStyles: {},
+              imageElements: {},
+              tableElements: {},
+              selectedTemplateIndex: 0,
+              selectedStyleIndex: 0,
+            },
+          };
+
+          await updatePresentationWithData(updateData);
+          console.log(
+            "✅ Presentation successfully updated with generated data!"
+          );
+          toast.success("Презентация создана и сохранена в базе данных!");
+
+          // Store presentation ID for future use
+          localStorage.setItem("currentPresentationId", createdPresentation.id);
+        } catch (saveError) {
+          console.error("❌ Error saving presentation to database:", saveError);
+          toast.error("Ошибка при сохранении презентации в базу данных");
+          // Continue execution, don't fail the entire generation process
+        } // Reload store with new data from localStorage
         reloadDataFromStorage();
 
         // Set slides as generated without starting animation

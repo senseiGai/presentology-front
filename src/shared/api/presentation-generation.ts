@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { getAuthToken } from "@/shared/stores/auth.store";
 import { apiClient } from "./client";
+import { API_ENDPOINTS } from "./config";
 
 // ==================== Базовые типы ====================
 
@@ -1317,5 +1318,112 @@ export const renderSlidesWithData = async (data: {
 export const useRenderSlidesWithData = () => {
   return useMutation({
     mutationFn: renderSlidesWithData,
+  });
+};
+
+// ==================== Presentations API ====================
+
+export interface CreatePresentationWithDataRequest {
+  title: string;
+  description?: string;
+  slug: string;
+  generatedData: any;
+  presentationState: any;
+  templateIds: string[];
+  isPublic?: boolean;
+}
+
+export interface CreatePresentationWithDataResponse {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  htmlContent: string;
+  type?: string;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const createPresentationWithData = async (
+  data: CreatePresentationWithDataRequest
+): Promise<CreatePresentationWithDataResponse> => {
+  console.log("🆕 [API] Creating presentation with data", {
+    title: data.title,
+    templateIds: data.templateIds,
+    hasGeneratedData: !!data.generatedData,
+  });
+
+  const response: any = await apiClient.post(
+    API_ENDPOINTS.PRESENTATIONS.CREATE_WITH_DATA,
+    data
+  );
+
+  console.log("✅ [API] Presentation created successfully", response.data);
+
+  return response.data;
+};
+
+export const useCreatePresentationWithData = () => {
+  return useMutation({
+    mutationFn: createPresentationWithData,
+    onSuccess: (data) => {
+      console.log("✅ [Hook] Presentation created successfully", data);
+    },
+    onError: (error) => {
+      console.error("❌ [Hook] Error creating presentation", error);
+    },
+  });
+};
+
+export interface UpdatePresentationWithDataRequest {
+  presentationId: string;
+  presentationData: any;
+  templateIds?: string[];
+  presentationState: any;
+}
+
+export interface UpdatePresentationWithDataResponse {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  htmlContent: string;
+  thumbnail?: string;
+  isPublic: boolean;
+  type?: string;
+  presentationData?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const updatePresentationWithData = async (
+  data: UpdatePresentationWithDataRequest
+): Promise<UpdatePresentationWithDataResponse> => {
+  console.log("💾 [API] Updating presentation with generated data", {
+    presentationId: data.presentationId,
+    templateIds: data.templateIds,
+    hasData: !!data.presentationData,
+  });
+
+  const response: any = await apiClient.put(
+    API_ENDPOINTS.PRESENTATIONS.UPDATE_WITH_DATA,
+    data
+  );
+
+  console.log("✅ [API] Presentation updated successfully", response.data);
+
+  return response.data;
+};
+
+export const useUpdatePresentationWithData = () => {
+  return useMutation({
+    mutationFn: updatePresentationWithData,
+    onSuccess: (data) => {
+      console.log("✅ [Hook] Presentation updated successfully", data);
+    },
+    onError: (error) => {
+      console.error("❌ [Hook] Error updating presentation", error);
+    },
   });
 };

@@ -922,7 +922,7 @@ export const PresentationCreationWizard: React.FC = () => {
                   <div>
                     <div className="flex items-start gap-2 mb-2">
                       {isEditingTitle ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex w-full items-center gap-2">
                           <input
                             type="text"
                             value={tempTitle}
@@ -930,7 +930,7 @@ export const PresentationCreationWizard: React.FC = () => {
                             onKeyDown={handleKeyPress}
                             onBlur={handleSaveTitle}
                             autoFocus
-                            className="text-[24px] font-medium text-[#0B0911] leading-[1.3] tracking-[-0.48px] bg-transparent border-b-2 border-[#BBA2FE] outline-none min-w-[300px]"
+                            className="text-[24px] w-full font-medium text-[#0B0911] leading-[1.3] tracking-[-0.48px] bg-transparent border-b-2 border-[#BBA2FE] outline-none min-w-[600px]"
                           />
                           <button
                             onClick={handleSaveTitle}

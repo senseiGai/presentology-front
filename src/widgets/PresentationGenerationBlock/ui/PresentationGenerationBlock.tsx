@@ -39,6 +39,7 @@ export const PresentationGenerationBlock: React.FC<
   const {
     currentSlide,
     generatedSlides,
+    totalSlides,
     isGenerating,
     isSidebarCollapsed,
     isToolsPanelCollapsed,
@@ -848,6 +849,115 @@ export const PresentationGenerationBlock: React.FC<
     toggleSidebar();
   };
 
+  // Функция для обработки удаления слайда
+  const handleSlideDelete = async (slideIndex: number) => {
+    console.log("🗑️ Handling slide deletion at index:", slideIndex);
+
+    try {
+      // Обновляем данные в localStorage
+      const presentationGenerationData = localStorage.getItem(
+        "presentationGenerationData"
+      );
+      if (presentationGenerationData) {
+        const data = JSON.parse(presentationGenerationData);
+
+        // Обновляем данные слайдов
+        if (data.data?.slides && Array.isArray(data.data.slides)) {
+          // Удаляем слайд из массива
+          data.data.slides.splice(slideIndex, 1);
+          console.log(
+            "📊 Updated slides in localStorage, new count:",
+            data.data.slides.length
+          );
+        }
+
+        if (data.uiSlides && Array.isArray(data.uiSlides)) {
+          // Удаляем соответствующий uiSlide (с учетом титульного слайда)
+          const uiSlideIndex = slideIndex - 1; // Учитываем, что первый слайд - титульный
+          if (uiSlideIndex >= 0 && uiSlideIndex < data.uiSlides.length) {
+            data.uiSlides.splice(uiSlideIndex, 1);
+            console.log(
+              "📋 Updated uiSlides in localStorage, new count:",
+              data.uiSlides.length
+            );
+          }
+        }
+
+        // Обновляем templateIds если есть
+        if (data.data?.templateIds && Array.isArray(data.data.templateIds)) {
+          data.data.templateIds.splice(slideIndex, 1);
+          console.log(
+            "🎨 Updated templateIds in localStorage, new count:",
+            data.data.templateIds.length
+          );
+        }
+
+        // Сохраняем обновленные данные
+        localStorage.setItem(
+          "presentationGenerationData",
+          JSON.stringify(data)
+        );
+        localStorage.setItem("generatedPresentation", JSON.stringify(data));
+
+        console.log(
+          "💾 Successfully updated localStorage after slide deletion"
+        );
+      }
+
+      // Обновляем store
+      const newTotalSlides = Math.max(1, totalSlides - 1); // Не можем иметь меньше 1 слайда
+      setTotalSlides(newTotalSlides);
+
+      // Обновляем список сгенерированных слайдов
+      const updatedGeneratedSlides = generatedSlides
+        .filter((slideNum) => slideNum !== slideIndex + 1) // Удаляем текущий слайд
+        .map((slideNum) =>
+          slideNum > slideIndex + 1 ? slideNum - 1 : slideNum
+        ); // Сдвигаем номера
+
+      // Устанавливаем новый список сгенерированных слайдов
+      setAllSlidesGenerated(newTotalSlides);
+
+      // Обновляем презентацию на сервере если это существующая презентация
+      if (loadedPresentation?.id && presentationGenerationData) {
+        try {
+          const updatedData = JSON.parse(presentationGenerationData);
+          await updatePresentationMutation.mutateAsync({
+            presentationId: loadedPresentation.id,
+            presentationData: {
+              success: true,
+              data: updatedData.data,
+              statusCode: 200,
+              timestamp: new Date().toISOString(),
+            },
+            templateIds: updatedData.data?.templateIds || [],
+            presentationState: updatedData.presentationState || {
+              textElementPositions: {},
+              textElementContents: {},
+              textElementStyles: {},
+              imageElements: {},
+              tableElements: {},
+              selectedTemplateIndex: 0,
+              selectedStyleIndex: 0,
+            },
+          });
+          console.log(
+            "💾 Successfully updated presentation on server after slide deletion"
+          );
+        } catch (serverError) {
+          console.error(
+            "❌ Error updating presentation on server:",
+            serverError
+          );
+        }
+      }
+
+      console.log("✅ Slide deletion completed successfully");
+    } catch (error) {
+      console.error("❌ Error handling slide deletion:", error);
+    }
+  };
+
   const renderSlideContent = (slideNumber: number) => {
     return (
       <SlidePreviewContent
@@ -909,7 +1019,7 @@ export const PresentationGenerationBlock: React.FC<
           )}
 
           <SlidesSidebar renderSlideContent={renderSlideContent} />
-          <SlideCanvas />
+          <SlideCanvas onSlideDelete={handleSlideDelete} />
 
           {!isToolsPanelCollapsed && (
             <ToolsPanel elementOptions={elementOptions} />

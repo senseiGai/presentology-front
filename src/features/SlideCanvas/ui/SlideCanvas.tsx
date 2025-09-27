@@ -20,9 +20,10 @@ import GenerationLoaderIcon from "../../../../public/icons/GenerationLoaderIcon"
 import { Proto003Template } from "@/entities/TemplateSlides/ui/Proto003Template";
 interface SlideCanvasProps {
   children?: React.ReactNode;
+  onSlideDelete?: (slideIndex: number) => Promise<void> | void;
 }
 
-export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
+export const SlideCanvas: React.FC<SlideCanvasProps> = ({ onSlideDelete }) => {
   const [deleteConfirmSlide, setDeleteConfirmSlide] = useState<{
     slideNumber: number;
     slideIndex: number;
@@ -606,7 +607,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
       <DeleteConfirmationModal
         isOpen={deleteConfirmSlide !== null}
         slideNumber={deleteConfirmSlide?.slideNumber || 0}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (deleteConfirmSlide) {
             console.log(
               `[DEBUG] Confirming delete for slide: ${deleteConfirmSlide.slideNumber} at index: ${deleteConfirmSlide.slideIndex}`
@@ -616,7 +617,19 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
               generatedSlides
             );
             console.log(`[DEBUG] Current totalSlides:`, totalSlides);
+
+            // Сначала удаляем из store
             deleteSlideByIndex(deleteConfirmSlide.slideIndex);
+
+            // Затем вызываем внешний обработчик для обновления localStorage
+            if (onSlideDelete) {
+              try {
+                await onSlideDelete(deleteConfirmSlide.slideIndex);
+              } catch (error) {
+                console.error("Error handling slide deletion:", error);
+              }
+            }
+
             setDeleteConfirmSlide(null);
           }
         }}

@@ -96,7 +96,6 @@ export const PresentationCreationWizard: React.FC = () => {
   const windowWidth = useWindowWidth();
   const height = useWindowHeight();
   const isMobile = windowWidth < 768;
-  const isTablet = windowWidth >= 768 && windowWidth < 1024;
   const middleWidth = windowWidth > 1600;
   const topWidth = windowWidth > 1800;
 

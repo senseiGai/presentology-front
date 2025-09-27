@@ -9,10 +9,10 @@ import { StyleStep } from "./steps/StyleStep";
 import { ProgressIndicator } from "./ProgressIndicator";
 import { usePresentationCreationStore } from "../model/usePresentationCreationStore";
 import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowStore";
+import { useAddSlideStore } from "@/shared/stores/useAddSlideStore";
 import {
   useSelectStructureNew,
   useCreateTitleAndSlidesNew,
-  useAddSlideToStructureNew,
 } from "@/shared/api/presentation-generation";
 import { useCreatePresentationWithData } from "@/shared/hooks/usePresentations";
 import { useWindowWidth } from "@/shared/hooks/useWindowWidth";
@@ -59,7 +59,6 @@ export const PresentationCreationWizard: React.FC = () => {
   // API хуки для StructureStep
   const selectStructureMutation = useSelectStructureNew();
   const createTitleAndSlidesMutation = useCreateTitleAndSlidesNew();
-  const addSlideMutation = useAddSlideToStructureNew();
 
   // Хук для создания презентации в базе данных
   const createPresentationMutation = useCreatePresentationWithData();
@@ -76,10 +75,8 @@ export const PresentationCreationWizard: React.FC = () => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  // Состояние для добавления нового слайда
-  const [isAddSlideModalOpen, setIsAddSlideModalOpen] = useState(false);
-  const [newSlidePrompt, setNewSlidePrompt] = useState("");
-  const [isAddingSlide, setIsAddingSlide] = useState(false);
+  // Store для добавления нового слайда
+  const { openModal } = useAddSlideStore();
 
   // Состояние для редактирования слайдов
   const [editingSlideId, setEditingSlideId] = useState<number | null>(null);
@@ -377,54 +374,6 @@ export const PresentationCreationWizard: React.FC = () => {
       handleSaveSlideEdit();
     } else if (e.key === "Escape") {
       handleCancelSlideEdit();
-    }
-  };
-
-  const handleAddSlide = async () => {
-    if (!newSlidePrompt.trim() || !brief || !slides.length || isAddingSlide) {
-      return;
-    }
-
-    try {
-      setIsAddingSlide(true);
-
-      const addSlideRequest = {
-        newSlidePrompt: newSlidePrompt.trim(),
-        brief: {
-          topic: brief.topic,
-          goal: brief.goal,
-          audience: brief.audience,
-          expectedAction: brief.expectedAction,
-          tones: brief.tones || [],
-        },
-        slides: slides.map((slide) => ({
-          title: slide.title,
-          summary: slide.summary,
-        })),
-      };
-
-      const newSlide = await addSlideMutation.mutateAsync(addSlideRequest);
-
-      const updatedSlides = [
-        ...slides,
-        {
-          title: newSlide.title,
-          summary: newSlide.summary,
-        },
-      ];
-
-      setUiSlides(updatedSlides);
-
-      setIsAddSlideModalOpen(false);
-      setNewSlidePrompt("");
-
-      setTimeout(() => {
-        setVisibleSlidesCount(updatedSlides.length);
-      }, 200);
-    } catch (error) {
-      console.error("Error adding slide:", error);
-    } finally {
-      setIsAddingSlide(false);
     }
   };
 
@@ -976,8 +925,8 @@ export const PresentationCreationWizard: React.FC = () => {
 
                   <div className="flex gap-3">
                     <AddSlideButton
-                      onClick={() => setIsAddSlideModalOpen(true)}
-                      isLoading={isAddingSlide}
+                      onClick={openModal}
+                      isLoading={false}
                       variant="default"
                     />
                   </div>
@@ -1089,63 +1038,6 @@ export const PresentationCreationWizard: React.FC = () => {
             <StructureStep onNext={handleNext} onBack={handleBack} />
           </div>
         </div>
-
-        {/* Modal for adding new slide */}
-        {isAddSlideModalOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-[16px] p-8 w-full max-w-[800px] max-h-[90vh] overflow-y-auto shadow-2xl">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[24px] font-medium text-[#0B0911] leading-[1.3] tracking-[-0.48px]">
-                  Добавить новый слайд
-                </h3>
-                <button
-                  onClick={() => {
-                    setIsAddSlideModalOpen(false);
-                    setNewSlidePrompt("");
-                  }}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center p-2 hover:bg-gray-100 transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-[16px] font-medium text-[#0B0911] leading-[1.2] tracking-[-0.32px] mb-3">
-                  Описание нового слайда
-                </label>
-                <textarea
-                  value={newSlidePrompt}
-                  onChange={(e) => setNewSlidePrompt(e.target.value)}
-                  placeholder="Например: Добавь кейс клиента с примером использования продукта..."
-                  className="w-full h-[120px] p-4 border border-[#E9E9E9] rounded-[8px] text-[16px] font-normal text-[#0B0911] leading-[1.4] tracking-[-0.32px] resize-none focus:outline-none focus:border-[#BBA2FE]"
-                />
-              </div>
-
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => {
-                    setIsAddSlideModalOpen(false);
-                    setNewSlidePrompt("");
-                  }}
-                  disabled={isAddingSlide}
-                  className="px-6 py-3 bg-white border border-[#C0C0C1] rounded-[8px] text-[16px] font-normal text-[#0B0911] leading-[1.2] tracking-[-0.32px] hover:bg-gray-50 transition-colors disabled:cursor-not-allowed"
-                >
-                  Отмена
-                </button>
-                <button
-                  onClick={handleAddSlide}
-                  disabled={!newSlidePrompt.trim() || isAddingSlide}
-                  className="px-6 py-3 bg-[#BBA2FE] rounded-[8px] text-[16px] font-normal text-white leading-[1.2] tracking-[-0.32px] hover:bg-[#A693FD] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {isAddingSlide && (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  )}
-                  {isAddingSlide ? "Добавляем..." : "Добавить слайд"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   }

@@ -6,6 +6,7 @@ import AuthInitializer from "@/shared/components/AuthInitializer";
 import { AccountSettingsPopup } from "@/features/AccountSettingsPopup";
 import { ChangeEmailPopup } from "@/features/ChangeEmailPopup";
 import ChangePasswordPopup from "@/features/ChangePasswordPopup";
+import { AddSlideOverlay } from "@/shared/ui/AddSlideOverlay";
 
 const onest = Onest({
   subsets: ["latin", "cyrillic"], // шрифт поддерживает кириллицу!
@@ -31,6 +32,7 @@ export default function RootLayout({
           <AccountSettingsPopup />
           <ChangeEmailPopup />
           <ChangePasswordPopup />
+          <AddSlideOverlay />
         </QueryProvider>
       </body>
     </html>

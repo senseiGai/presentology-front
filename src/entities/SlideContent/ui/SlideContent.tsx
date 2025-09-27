@@ -879,13 +879,15 @@ export const SlideContent = ({
     };
 
     console.log("🔄 [DEBUG] Adding keyboard event listener for SlideContent");
-    
+
     // Add both document and window listeners to ensure compatibility
     document.addEventListener("keydown", handleKeyDown, true); // Use capture phase
     window.addEventListener("keydown", handleKeyDown, true); // Backup window listener
-    
+
     return () => {
-      console.log("🔄 [DEBUG] Removing keyboard event listeners for SlideContent");
+      console.log(
+        "🔄 [DEBUG] Removing keyboard event listeners for SlideContent"
+      );
       document.removeEventListener("keydown", handleKeyDown, true);
       window.removeEventListener("keydown", handleKeyDown, true);
     };

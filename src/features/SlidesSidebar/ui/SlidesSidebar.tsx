@@ -37,8 +37,6 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
     scrollToSlideInCanvas,
   } = usePresentationStore();
 
-  const [actualSlidesCount, setActualSlidesCount] = useState(totalSlides);
-
   const { scrollToSlideInSidebar } = useSlideNavigation({
     slideRefs,
     scrollContainerRef,
@@ -79,87 +77,6 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
       scrollToSlideInSidebar(currentSlide);
     }
   }, [currentSlide, isGenerating, generatedSlides, scrollToSlideInSidebar]);
-
-  // Get actual slides count from localStorage
-  useEffect(() => {
-    const getActualSlidesCount = () => {
-      try {
-        const presentationGenerationData = localStorage.getItem(
-          "presentationGenerationData"
-        );
-        if (presentationGenerationData) {
-          const data = JSON.parse(presentationGenerationData);
-
-          console.log("🎯 [SlidesSidebar] localStorage data structure:", {
-            hasData: !!data?.data,
-            hasSlides: !!data?.data?.slides,
-            slidesLength: data?.data?.slides?.length,
-            hasUiSlides: !!data?.uiSlides,
-            uiSlidesLength: data?.uiSlides?.length,
-          });
-
-          // Priority 1: Check API response structure (data.data.slides)
-          if (data?.data?.slides && Array.isArray(data.data.slides)) {
-            console.log(
-              "🎯 [SlidesSidebar] Using slides from API response data.data.slides:",
-              data.data.slides.length
-            );
-            return data.data.slides.length;
-          }
-
-          // Priority 2: Check direct slides structure
-          if (data?.slides && Array.isArray(data.slides)) {
-            console.log(
-              "🎯 [SlidesSidebar] Using slides from data.slides:",
-              data.slides.length
-            );
-            return data.slides.length;
-          }
-
-          // Priority 3: Check uiSlides structure (input data)
-          if (data?.uiSlides && Array.isArray(data.uiSlides)) {
-            console.log(
-              "🎯 [SlidesSidebar] Using slides from uiSlides:",
-              data.uiSlides.length
-            );
-            return data.uiSlides.length;
-          }
-        }
-
-        console.log(
-          "🎯 [SlidesSidebar] No valid slide data found, using store totalSlides:",
-          totalSlides
-        );
-        return totalSlides;
-      } catch (error) {
-        console.error("❌ [SlidesSidebar] Error parsing slide data:", error);
-        return totalSlides;
-      }
-    };
-
-    const actualCount = getActualSlidesCount();
-    console.log(
-      "🎯 [SlidesSidebar] Initial actualSlidesCount set to:",
-      actualCount
-    );
-    setActualSlidesCount(actualCount);
-
-    // Update periodically to catch changes
-    const interval = setInterval(() => {
-      const newCount = getActualSlidesCount();
-      if (newCount !== actualCount) {
-        console.log(
-          "🎯 [SlidesSidebar] Updating actualSlidesCount from",
-          actualCount,
-          "to",
-          newCount
-        );
-        setActualSlidesCount(newCount);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [totalSlides]);
 
   const handleClosePopup = () => {
     setIsAddSlidePopupOpen(false);
@@ -209,7 +126,7 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
           }`}
         >
           <div className="flex flex-col gap-y-[24px]">
-            {Array.from({ length: actualSlidesCount }, (_, index) => {
+            {Array.from({ length: totalSlides }, (_, index) => {
               const slideNumber = index + 1;
               const isGenerated = generatedSlides.includes(slideNumber);
               const isCurrentlyGenerating =

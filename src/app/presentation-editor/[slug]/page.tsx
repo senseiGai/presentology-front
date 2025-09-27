@@ -19,8 +19,11 @@ function PresentationEditorPage() {
     // Сохраняем slug в localStorage для использования в компонентах
     if (slug) {
       localStorage.setItem("currentPresentationSlug", slug);
+      console.log("🔗 Set currentPresentationSlug to:", slug);
     }
   }, [slug]);
+
+  console.log("📋 PresentationEditorPage rendering with slug:", slug);
 
   return (
     <MainLayout fullWidth>

@@ -744,6 +744,18 @@ export const SlideContent = ({
   // Handle keyboard shortcuts
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Debug all keyboard events to see what's happening
+      if (e.ctrlKey && (e.key === "z" || e.key === "Z")) {
+        console.log("🔄 [DEBUG] Ctrl+Z detected in SlideContent:", {
+          ctrlKey: e.ctrlKey,
+          key: e.key,
+          code: e.code,
+          shiftKey: e.shiftKey,
+          target: e.target,
+          activeElement: document.activeElement,
+        });
+      }
+
       // Escape key - clear image area selection
       if (e.key === "Escape" && isImageAreaSelectionMode) {
         clearImageAreaSelection(slideNumber);
@@ -762,9 +774,16 @@ export const SlideContent = ({
 
       const store = usePresentationStore.getState();
 
-      // Ctrl+Z - Undo
-      if (e.ctrlKey && e.key === "z" && !e.shiftKey) {
+      // Ctrl+Z - Undo (handle both lowercase 'z' and uppercase 'Z')
+      if (e.ctrlKey && (e.key === "z" || e.key === "Z") && !e.shiftKey) {
         e.preventDefault();
+        e.stopPropagation();
+        console.log("🔄 Undo key combination detected:", {
+          ctrlKey: e.ctrlKey,
+          key: e.key,
+          shiftKey: e.shiftKey,
+          code: e.code,
+        });
         store.undo();
         console.log("🔄 Undo triggered");
         return;
@@ -772,10 +791,17 @@ export const SlideContent = ({
 
       // Ctrl+Shift+Z or Ctrl+Y - Redo
       if (
-        (e.ctrlKey && e.shiftKey && e.key === "Z") ||
-        (e.ctrlKey && e.key === "y")
+        (e.ctrlKey && e.shiftKey && (e.key === "Z" || e.key === "z")) ||
+        (e.ctrlKey && (e.key === "y" || e.key === "Y"))
       ) {
         e.preventDefault();
+        e.stopPropagation();
+        console.log("🔄 Redo key combination detected:", {
+          ctrlKey: e.ctrlKey,
+          key: e.key,
+          shiftKey: e.shiftKey,
+          code: e.code,
+        });
         store.redo();
         console.log("🔄 Redo triggered");
         return;
@@ -852,8 +878,17 @@ export const SlideContent = ({
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    console.log("🔄 [DEBUG] Adding keyboard event listener for SlideContent");
+    
+    // Add both document and window listeners to ensure compatibility
+    document.addEventListener("keydown", handleKeyDown, true); // Use capture phase
+    window.addEventListener("keydown", handleKeyDown, true); // Backup window listener
+    
+    return () => {
+      console.log("🔄 [DEBUG] Removing keyboard event listeners for SlideContent");
+      document.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("keydown", handleKeyDown, true);
+    };
   }, [
     isImageAreaSelectionMode,
     clearImageAreaSelection,

@@ -101,6 +101,8 @@ export interface Presentation {
   thumbnail?: string;
   isPublic: boolean;
   userId: string;
+  type?: string;
+  presentationData?: string;
   createdAt: string;
   updatedAt: string;
 }

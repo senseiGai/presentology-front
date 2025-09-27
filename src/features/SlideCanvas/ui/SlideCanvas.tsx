@@ -389,47 +389,22 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
         if (presentationGenerationData) {
           const data = JSON.parse(presentationGenerationData);
 
-          console.log("🎯 [SlideCanvas] localStorage data structure:", {
-            hasData: !!data?.data,
-            hasSlides: !!data?.data?.slides,
-            slidesLength: data?.data?.slides?.length,
-            hasUiSlides: !!data?.uiSlides,
-            uiSlidesLength: data?.uiSlides?.length,
-            fullStructure: data,
-          });
-
           // Priority 1: Check API response structure (data.data.slides)
           if (data?.data?.slides && Array.isArray(data.data.slides)) {
-            console.log(
-              "🎯 [SlideCanvas] Using slides from API response data.data.slides:",
-              data.data.slides.length
-            );
             return data.data.slides.length;
           }
 
           // Priority 2: Check direct slides structure
           if (data?.slides && Array.isArray(data.slides)) {
-            console.log(
-              "🎯 [SlideCanvas] Using slides from data.slides:",
-              data.slides.length
-            );
             return data.slides.length;
           }
 
           // Priority 3: Check uiSlides structure (input data)
           if (data?.uiSlides && Array.isArray(data.uiSlides)) {
-            console.log(
-              "🎯 [SlideCanvas] Using slides from uiSlides:",
-              data.uiSlides.length
-            );
             return data.uiSlides.length;
           }
         }
 
-        console.log(
-          "🎯 [SlideCanvas] No valid slide data found, using store totalSlides:",
-          totalSlides
-        );
         return totalSlides;
       } catch (error) {
         console.error("❌ [SlideCanvas] Error parsing slide data:", error);
@@ -438,27 +413,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
     };
 
     const actualCount = getActualSlidesCount();
-    console.log(
-      "🎯 [SlideCanvas] Initial actualSlidesCount set to:",
-      actualCount
-    );
     setActualSlidesCount(actualCount);
-
-    // Update periodically to catch changes
-    const interval = setInterval(() => {
-      const newCount = getActualSlidesCount();
-      if (newCount !== actualCount) {
-        console.log(
-          "🎯 [SlideCanvas] Updating actualSlidesCount from",
-          actualCount,
-          "to",
-          newCount
-        );
-        setActualSlidesCount(newCount);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
   }, [totalSlides]);
 
   const handleCanvasClick = (e: React.MouseEvent) => {
@@ -592,17 +547,11 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      if (isGenerated) {
-                        setCurrentSlideForTypeChange(slideNumber);
-                        openPopup();
-                      }
+                      setCurrentSlideForTypeChange(slideNumber);
+                      openPopup();
                     }}
-                    className={`flex items-center justify-center gap-2 w-[250px] h-[40px] bg-white rounded-[8px] border border-[#E5E7EB] transition-colors ${
-                      isGenerated
-                        ? "hover:bg-gray-50 cursor-pointer"
-                        : "opacity-50 cursor-not-allowed"
-                    }`}
-                    disabled={!isGenerated}
+                    className={`flex items-center justify-center gap-2 w-[250px] h-[40px] bg-white rounded-[8px] border border-[#E5E7EB] transition-colors`}
+                    // disabled={!isGenerated}
                   >
                     <SparksIcon className="w-5 h-5" />
                     <span className="text-[#0B0911] text-[18px] font-normal">
@@ -613,34 +562,26 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = () => {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      if (isGenerated) {
-                        console.log(
-                          `[DEBUG] Deleting slide ${slideNumber} from position ${
-                            index + 1
-                          }`
-                        );
-                        console.log(
-                          `[DEBUG] generatedSlides:`,
-                          generatedSlides
-                        );
-                        console.log(`[DEBUG] slideNumber:`, slideNumber);
-                        console.log(`[DEBUG] array index:`, index);
-                        console.log(
-                          `[DEBUG] slideIndex to pass:`,
-                          slideNumber - 1
-                        );
-                        setDeleteConfirmSlide({
-                          slideNumber,
-                          slideIndex: slideNumber - 1, // Use slideNumber - 1 as the actual index
-                        });
-                      }
+                      console.log(
+                        `[DEBUG] Deleting slide ${slideNumber} from position ${
+                          index + 1
+                        }`
+                      );
+                      console.log(`[DEBUG] generatedSlides:`, generatedSlides);
+                      console.log(`[DEBUG] slideNumber:`, slideNumber);
+                      console.log(`[DEBUG] array index:`, index);
+                      console.log(
+                        `[DEBUG] slideIndex to pass:`,
+                        slideNumber - 1
+                      );
+                      setDeleteConfirmSlide({
+                        slideNumber,
+                        slideIndex: slideNumber - 1, // Use slideNumber - 1 as the actual index
+                      });
                     }}
-                    className={`flex items-center justify-center w-[40px] h-[40px] bg-white rounded-[8px] border border-[#E5E7EB] transition-colors ${
-                      isGenerated
-                        ? "hover:bg-gray-50 cursor-pointer"
-                        : "opacity-50 cursor-not-allowed"
-                    }`}
-                    disabled={!isGenerated}
+                    className={`flex items-center justify-center w-[40px] h-[40px] bg-white rounded-[8px] border border-[#E5E7EB] transition-colors 
+                   `}
+                    // disabled={!isGenerated}
                   >
                     <GrayTrashIcon className="w-4 h-5" />
                   </button>

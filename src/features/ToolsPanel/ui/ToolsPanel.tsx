@@ -47,56 +47,30 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
 
     // Получаем totalSlides из localStorage presentationGenerationData
     const getStoredTotalSlides = () => {
-      console.log("🔍 [ToolsPanel] Checking localStorage for totalSlides");
-
       try {
         const presentationGenerationData = localStorage.getItem(
           "presentationGenerationData"
         );
-        console.log(
-          "📦 [ToolsPanel] presentationGenerationData from localStorage:",
-          presentationGenerationData
-        );
 
         if (presentationGenerationData) {
           const data = JSON.parse(presentationGenerationData);
-          console.log("📊 [ToolsPanel] Parsed data:", data);
-
           const slidesFromData = data?.uiSlides;
           const slidesCount = slidesFromData?.length || 0;
-
-          console.log("📋 [ToolsPanel] slides array:", slidesFromData);
-          console.log("🔢 [ToolsPanel] slidesCount:", slidesCount);
-
           const totalWithTitle = slidesCount > 0 ? slidesCount + 1 : 0;
-          console.log(
-            "🎯 [ToolsPanel] Final totalSlides (with +1 for title):",
-            totalWithTitle
-          );
-
           return totalWithTitle;
-        } else {
-          console.log(
-            "❌ [ToolsPanel] No presentationGenerationData in localStorage"
-          );
         }
       } catch (error) {
         console.error(
-          "💥 [ToolsPanel] Error parsing presentationGenerationData from localStorage:",
+          "[ToolsPanel] Error parsing presentationGenerationData:",
           error
         );
       }
 
-      console.log("🔙 [ToolsPanel] Returning fallback value: 0");
       return 0;
     };
 
     // Устанавливаем начальное значение
     const initialTotal = getStoredTotalSlides();
-    console.log(
-      "🚀 [ToolsPanel] Setting initial totalSlidesFromLocalStorage:",
-      initialTotal
-    );
     setTotalSlidesFromLocalStorage(initialTotal);
 
     // Слушаем изменения localStorage

@@ -908,10 +908,122 @@ export const usePresentationStore = create<PresentationState>()(
             Math.min(newCurrentSlide, newTotalSlides)
           );
 
+          // Helper function to shift object keys (slide numbers)
+          const shiftObjectKeys = <T>(
+            obj: Record<number, T>
+          ): Record<number, T> => {
+            const newObj: Record<number, T> = {};
+            Object.entries(obj).forEach(([key, value]) => {
+              const slideNum = parseInt(key);
+              if (slideNum < slideNumber) {
+                // Keep slides before deleted slide
+                newObj[slideNum] = value;
+              } else if (slideNum > slideNumber) {
+                // Shift slides after deleted slide
+                newObj[slideNum - 1] = value;
+              }
+              // Skip the deleted slide (slideNum === slideNumber)
+            });
+            return newObj;
+          };
+
+          // Remove data for the deleted slide and shift all subsequent slides
+          const newImageAreaSelections = shiftObjectKeys(
+            state.imageAreaSelections
+          );
+          const newImageElements = shiftObjectKeys(state.imageElements);
+          const newTableElements = shiftObjectKeys(state.tableElements);
+
+          // For text elements, we need to filter by slide-specific keys
+          const filterTextElementsBySlide = <T>(
+            obj: Record<string, T>
+          ): Record<string, T> => {
+            const newObj: Record<string, T> = {};
+            Object.entries(obj).forEach(([key, value]) => {
+              // Extract slide number from element key (assuming format like "slide_X_element_Y")
+              const slideMatch = key.match(/slide_(\d+)_/);
+              if (slideMatch) {
+                const elementSlideNum = parseInt(slideMatch[1]);
+                if (elementSlideNum < slideNumber) {
+                  // Keep elements from slides before deleted slide
+                  newObj[key] = value;
+                } else if (elementSlideNum > slideNumber) {
+                  // Shift elements from slides after deleted slide
+                  const newKey = key.replace(
+                    `slide_${elementSlideNum}_`,
+                    `slide_${elementSlideNum - 1}_`
+                  );
+                  newObj[newKey] = value;
+                }
+                // Skip elements from deleted slide
+              } else {
+                // Keep non-slide-specific elements
+                newObj[key] = value;
+              }
+            });
+            return newObj;
+          };
+
+          const newTextElementPositions = filterTextElementsBySlide(
+            state.textElementPositions
+          );
+          const newTextElementContents = filterTextElementsBySlide(
+            state.textElementContents
+          );
+          const newTextElementStyles = filterTextElementsBySlide(
+            state.textElementStyles
+          );
+
+          // Update deleted text elements set to remove elements from deleted slide
+          const newDeletedTextElements = new Set<string>();
+          state.deletedTextElements.forEach((elementId) => {
+            const slideMatch = elementId.match(/slide_(\d+)_/);
+            if (slideMatch) {
+              const elementSlideNum = parseInt(slideMatch[1]);
+              if (elementSlideNum < slideNumber) {
+                newDeletedTextElements.add(elementId);
+              } else if (elementSlideNum > slideNumber) {
+                const newElementId = elementId.replace(
+                  `slide_${elementSlideNum}_`,
+                  `slide_${elementSlideNum - 1}_`
+                );
+                newDeletedTextElements.add(newElementId);
+              }
+            } else {
+              newDeletedTextElements.add(elementId);
+            }
+          });
+
           const result = {
             totalSlides: newTotalSlides,
             generatedSlides: updatedGeneratedSlides,
             currentSlide: newCurrentSlide,
+            imageAreaSelections: newImageAreaSelections,
+            imageElements: newImageElements,
+            tableElements: newTableElements,
+            textElementPositions: newTextElementPositions,
+            textElementContents: newTextElementContents,
+            textElementStyles: newTextElementStyles,
+            deletedTextElements: newDeletedTextElements,
+            // Clear selected elements if they belonged to deleted slide
+            selectedTextElement: state.selectedTextElement?.includes(
+              `slide_${slideNumber}_`
+            )
+              ? null
+              : state.selectedTextElement,
+            selectedImageElement: state.selectedImageElement?.includes(
+              `slide_${slideNumber}_`
+            )
+              ? null
+              : state.selectedImageElement,
+            selectedTableElement: state.selectedTableElement?.includes(
+              `slide_${slideNumber}_`
+            )
+              ? null
+              : state.selectedTableElement,
+            selectedTextElements: state.selectedTextElements.filter(
+              (id) => !id.includes(`slide_${slideNumber}_`)
+            ),
           };
 
           console.log("STORE: DeleteByIndex result:", result);

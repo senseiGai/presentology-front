@@ -17,6 +17,8 @@ interface ToolsPanelProps {
 
 export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
   const [isMounted, setIsMounted] = useState(false);
+  const [totalSlidesFromLocalStorage, setTotalSlidesFromLocalStorage] =
+    useState(0);
 
   const {
     isGenerating,
@@ -42,6 +44,77 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
 
   useEffect(() => {
     setIsMounted(true);
+
+    // Получаем totalSlides из localStorage generatedPresentation
+    const getStoredTotalSlides = () => {
+      console.log("🔍 [ToolsPanel] Checking localStorage for totalSlides");
+
+      try {
+        const generatedPresentation = localStorage.getItem(
+          "generatedPresentation"
+        );
+        console.log(
+          "📦 [ToolsPanel] generatedPresentation from localStorage:",
+          generatedPresentation
+        );
+
+        if (generatedPresentation) {
+          const data = JSON.parse(generatedPresentation);
+          console.log("📊 [ToolsPanel] Parsed data:", data);
+
+          const slidesFromData = data?.data?.slides;
+          const slidesCount = slidesFromData?.length || 0;
+
+          console.log("📋 [ToolsPanel] slides array:", slidesFromData);
+          console.log("🔢 [ToolsPanel] slidesCount:", slidesCount);
+
+          const totalWithTitle = slidesCount > 0 ? slidesCount + 1 : 0;
+          console.log(
+            "🎯 [ToolsPanel] Final totalSlides (with +1 for title):",
+            totalWithTitle
+          );
+
+          return totalWithTitle;
+        } else {
+          console.log(
+            "❌ [ToolsPanel] No generatedPresentation in localStorage"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "💥 [ToolsPanel] Error parsing generatedPresentation from localStorage:",
+          error
+        );
+      }
+
+      console.log("🔙 [ToolsPanel] Returning fallback value: 0");
+      return 0;
+    };
+
+    // Устанавливаем начальное значение
+    setTotalSlidesFromLocalStorage(getStoredTotalSlides());
+
+    // Слушаем изменения localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "generatedPresentation") {
+        setTotalSlidesFromLocalStorage(getStoredTotalSlides());
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // Также проверяем изменения через интервал (для изменений в том же окне)
+    const interval = setInterval(() => {
+      const newTotal = getStoredTotalSlides();
+      setTotalSlidesFromLocalStorage((prev) =>
+        prev !== newTotal ? newTotal : prev
+      );
+    }, 1000);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(interval);
+    };
   }, []);
   const handleElementSelect = (elementId: string) => {
     setSelectedElement(elementId);
@@ -152,7 +225,8 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = ({ elementOptions }) => {
           </div>
           <div className="text-[14px] text-[#6B7280] mb-4">
             <span className="text-[#BBA2FE] font-medium text-[47px]">
-              {totalSlides} / {totalSlides}
+              {totalSlidesFromLocalStorage || totalSlides} /{" "}
+              {totalSlidesFromLocalStorage || totalSlides}
             </span>
           </div>
         </div>

@@ -27,12 +27,34 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
 
   console.log("TableToolbar rendering at position:", position);
 
-  // Handle duplicating table as new object (not copying to clipboard)
-  const handleDuplicateTable = () => {
-    console.log("TableToolbar: Duplicating table:", elementId);
-    const newTableId = copyTableElement(elementId);
-    console.log("TableToolbar: Table duplicated with new ID:", newTableId);
+  // Handle duplicating table element (create immediate copy)
+  const handleDuplicateTableElement = () => {
+    console.log(
+      "📋 TableToolbar: Starting duplicate operation for element:",
+      elementId
+    );
+
+    // Get table data to verify it exists
+    const tableData = getTableElement(elementId);
+    if (!tableData) {
+      console.error("❌ TableToolbar: Table element not found:", elementId);
+      return;
+    }
+    console.log("📋 TableToolbar: Table data found:", tableData);
+
+    try {
+      // Use direct copyTableElement function
+      const newElementId = copyTableElement(elementId);
+      console.log(
+        "✅ TableToolbar: Element successfully duplicated with new ID:",
+        newElementId
+      );
+    } catch (error) {
+      console.error("❌ TableToolbar: Error duplicating element:", error);
+    }
+
     // onCopy callback can be used if needed for additional logic
+    console.log("📋 TableToolbar: Calling onCopy callback");
     onCopy();
   };
 
@@ -117,8 +139,13 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
       </button>
       <button
         onClick={handleButtonClick(() => {
-          console.log("TableToolbar: Duplicate table button clicked");
-          handleDuplicateTable();
+          console.log(
+            "🖱️ TableToolbar: Duplicate button clicked for element:",
+            elementId
+          );
+          console.log("🖱️ TableToolbar: Button position:", position);
+          handleDuplicateTableElement();
+          console.log("🖱️ TableToolbar: Duplicate operation completed");
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"

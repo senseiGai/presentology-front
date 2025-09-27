@@ -22,10 +22,36 @@ export const TextToolbar: React.FC<TextToolbarProps> = ({
   onCopy,
   onDelete,
 }) => {
-  const { getTextElementStyle, updateTextElementStyle } =
+  const { getTextElementStyle, updateTextElementStyle, copyTextElement } =
     usePresentationStore();
 
   console.log("TextToolbar rendering at position:", position);
+
+  // Handle duplicating text element (create immediate copy)
+  const handleDuplicateTextElement = () => {
+    console.log(
+      "📋 TextToolbar: Starting duplicate operation for element:",
+      elementId
+    );
+
+    // Get current slide number from store
+    const currentSlide = usePresentationStore.getState().currentSlide;
+    console.log("📋 TextToolbar: Current slide number:", currentSlide);
+
+    try {
+      // Use direct copyTextElement function (same as images)
+      const newElementId = copyTextElement(elementId, currentSlide);
+      console.log(
+        "✅ TextToolbar: Element successfully duplicated with new ID:",
+        newElementId
+      );
+    } catch (error) {
+      console.error("❌ TextToolbar: Error duplicating element:", error);
+    }
+
+    console.log("📋 TextToolbar: Calling onCopy callback");
+    onCopy();
+  };
 
   // Prevent toolbar from losing focus when clicking on buttons
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -77,11 +103,12 @@ export const TextToolbar: React.FC<TextToolbarProps> = ({
       <button
         onClick={handleButtonClick(() => {
           console.log(
-            "TextToolbar: Copy/Duplicate button clicked for element:",
+            "🖱️ TextToolbar: Duplicate button clicked for element:",
             elementId
           );
-          onCopy();
-          console.log("TextToolbar: onCopy callback executed");
+          console.log("🖱️ TextToolbar: Button position:", position);
+          handleDuplicateTextElement();
+          console.log("🖱️ TextToolbar: Duplicate operation completed");
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"

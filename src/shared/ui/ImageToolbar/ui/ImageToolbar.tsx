@@ -22,20 +22,35 @@ export const ImageToolbar: React.FC<ImageToolbarProps> = ({
   onCopy,
   onDelete,
 }) => {
-  const {
-    getImageElement,
-    updateImageElement,
-    deleteImageElement,
-    setSelectedImageElement,
-    copyImageElement,
-  } = usePresentationStore();
+  const { getImageElement, updateImageElement, copyImageElement } =
+    usePresentationStore();
 
   console.log("ImageToolbar rendering at position:", position);
 
-  // Handle duplicating image element
-  const handleDuplicateImage = () => {
-    console.log("ImageToolbar: Duplicating image element:", elementId);
-    copyImageElement(elementId);
+  // Handle duplicating image element (create immediate copy)
+  const handleDuplicateImageElement = () => {
+    console.log(
+      "📋 ImageToolbar: Starting duplicate operation for element:",
+      elementId
+    );
+
+    // Get current slide number from store
+    const currentSlide = usePresentationStore.getState().currentSlide;
+    console.log("📋 ImageToolbar: Current slide number:", currentSlide);
+
+    try {
+      // Use direct copyImageElement function
+      const newElementId = copyImageElement(elementId, currentSlide);
+      console.log(
+        "✅ ImageToolbar: Element successfully duplicated with new ID:",
+        newElementId
+      );
+    } catch (error) {
+      console.error("❌ ImageToolbar: Error duplicating element:", error);
+    }
+
+    console.log("📋 ImageToolbar: Calling onCopy callback");
+    onCopy();
   };
 
   // Handle moving element up
@@ -124,8 +139,13 @@ export const ImageToolbar: React.FC<ImageToolbarProps> = ({
       </button>
       <button
         onClick={handleButtonClick(() => {
-          console.log("ImageToolbar: Duplicate button clicked");
-          onCopy();
+          console.log(
+            "🖱️ ImageToolbar: Duplicate button clicked for element:",
+            elementId
+          );
+          console.log("🖱️ ImageToolbar: Button position:", position);
+          handleDuplicateImageElement();
+          console.log("🖱️ ImageToolbar: Duplicate operation completed");
         })}
         onMouseDown={handleMouseDown}
         className="bg-[#f4f4f4] w-8 h-8 flex items-center justify-center hover:bg-[#e5e5e5] rounded-[8px] transition-colors p-[8px]"

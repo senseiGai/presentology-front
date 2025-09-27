@@ -13,6 +13,7 @@ import { usePresentationFlowStore } from "@/shared/stores/usePresentationFlowSto
 import {
   useGenerateSlidesForStructureNew,
   getMultipleTemplates,
+  useUpdatePresentationWithData,
 } from "@/shared/api/presentation-generation";
 import { PresentationsApi } from "@/shared/api/presentations.api";
 import {
@@ -52,6 +53,9 @@ export const PresentationGenerationBlock: React.FC<
 
   // API хук для генерации презентации
   const generateSlidesMutation = useGenerateSlidesForStructureNew();
+
+  // API хук для обновления презентации
+  const updatePresentationMutation = useUpdatePresentationWithData();
 
   // API хуки для генерации изображений
   const fluxImageMutation = useFluxImageGeneration();
@@ -511,6 +515,41 @@ export const PresentationGenerationBlock: React.FC<
             actualSlidesCount
           );
           setTotalSlides(actualSlidesCount);
+
+          // Обновляем презентацию в базе данных
+          if (presentationData.presentationId) {
+            console.log("💾 Updating presentation in database...");
+            setGenerationStatus("Сохранение презентации...");
+            setGenerationProgress(90);
+
+            try {
+              await updatePresentationMutation.mutateAsync({
+                presentationId: presentationData.presentationId,
+                presentationData: finalResult,
+                templateIds: templateIds,
+                presentationState: {
+                  textElementPositions: {},
+                  textElementContents: {},
+                  textElementStyles: {},
+                  imageElements: {},
+                  tableElements: {},
+                  selectedTemplateIndex: 0,
+                  selectedStyleIndex: 0,
+                },
+              });
+              console.log("✅ Presentation updated in database successfully");
+            } catch (updateError) {
+              console.error(
+                "❌ Error updating presentation in database:",
+                updateError
+              );
+              // Не прерываем процесс, продолжаем с локальными данными
+            }
+          } else {
+            console.log(
+              "⚠️ No presentation ID found, skipping database update"
+            );
+          }
 
           setGenerationProgress(100);
           // Завершаем процесс генерации - показываем обычный интерфейс
